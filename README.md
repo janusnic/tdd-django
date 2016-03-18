@@ -1,841 +1,1255 @@
-# tdd-django unit_01
+# tdd-django unit_02
 
-Install Python
-==============
+# Selenium
 
-Unix & Linux Installation:
---------------------------
+http://docs.seleniumhq.org/
 
-- Переходим на http://www.python.org/download/
-- Распаковываем загруженный файл.
-- Редактируем Modules/Setup файл.
-- Выполняем
-1. ./configure script
-2. make
-3. make install
+Selenium – это проект, в рамках которого разрабатывается серия программных продуктов с открытым исходным кодом (open source):
 
-python обысно устанавливается в /usr/local/bin, а его библиотеки - в /usr/local/lib/pythonXX.
+- Selenium WebDriver,
+- Selenium RC,
+- Selenium Server,
+- Selenium Grid,
+- Selenium IDE.
 
-Windows Installation
----------------------
-- Переходим на http://www.python.org/download/
-- Загружаем и запускаем python-XYZ.msi.
+Называть просто словом Selenium любой из этих пяти продуктов, вообще говоря, неправильно, хотя так часто делают, если из контекста понятно, о каком именно из продуктов идёт речь, или если речь идёт о нескольких продуктах одновременно, или обо всех сразу.
 
-Macintosh Installation
------------------------
-- Обычно на Macs Python установлен. Если нет, читаем http://www.python.org/download/mac/.
-- Иструкция Jack Jansen Website : http://www.cwi.nl/~jack/macpython.html
+## Selenium RC
 
-Setting up PATH
-================
+Selenium RC – это предыдущая версия библиотеки для управления браузерами. Аббревиатура RC в названии этого продукта расшифровывается как Remote Control, то есть это средство для «удалённого» управления браузером.
 
-Setting path at Unix/Linux
----------------------------
-- В csh shell: набрать setenv PATH "$PATH:/usr/local/bin/python" и нажать Enter.
-- В bash shell (Linux): набрать export PATH="$PATH:/usr/local/bin/python" и нажать Enter.
-- В sh или ksh shell: набрать PATH="$PATH:/usr/local/bin/python" и нажать Enter.
+## Selenium Server
 
-/usr/local/bin/python - стандартный path Python
+Selenium Server – это сервер, который позволяет управлять браузером с удалённой машины, по сети. 
 
-Setting path at Windows
-------------------------
-- В command prompt : набрать path %path%;C:\Python и нажать Enter.
+## Selenium Grid
 
-C:\Python - стандартный path Python
+Selenium Grid – это кластер, состоящий из нескольких Selenium-серверов. 
 
-# Настройка рабочего окружения
+## Selenium IDE
 
-# Установка easy_install и pip
-## easy_install
+Selenium IDE – плагин к браузеру Firefox, который может записывать действия пользователя, воспроизводить их, а также генерировать код для WebDriver или Selenium RC, в котором выполняются те же самые действия.
 
-Easy Install — это модуль Python (easy_install), идущий в комплекте библиотеки setuptools, которая позволяет автоматически загружать, собирать, устанавливать и управлять пакетами языка Python. 
-Пакеты носят название «eggs» и имеют расширение .egg. Как правило, эти пакеты распространяются в формате архива ZIP.
+# Selenium WebDriver
 
-### Использование easy_install
+http://selenium-python.readthedocs.org/en/latest/api.html
 
-Для начала установим пакет setuptools для Python версии 2.7:
+Selenium WebDriver – это программная библиотека для управления браузерами. WebDriver представляет собой драйверы для различных браузеров и клиентские библиотеки на разных языках программирования, предназначенные для управления этими драйверами.
+
+Часто употребляется также более короткое название WebDriver.
+
+использование такого веб-драйвера сводится к созданию бота, выполняющего всю ручную работу с браузером автоматизированно.
+
+Библиотеки WebDriver доступны на языках Java, .Net (C#), Python, Ruby, JavaScript, драйверы реализованы для браузеров Firefox, InternetExplorer, Safari, Andriod, iOS, Chrome и Opera.
+
+Чаще всего Selenium WebDriver используется для тестирования функционала веб-сайтов/веб-ориентированных приложений. Автоматизированное тестирование удобно, потому что позволяет многократно запускать повторяющиеся тесты. Регрессионное тестирование, то есть, проверка, что старый код не перестал работать правильно после внесения новых изменений, является типичным примером, когда необходима автоматизация. WebDriver предоставляет все необходимые методы, обеспечивает высокую скорость теста и гарантирует корректность проверки (поскольку человеский фактор исключен). В официальной документации Selenium приводятся следующие плюсы автоматизированного тестирования веб-приложений:
+
+- возможность проводить чаще регрессионное тестирование;
+- быстрое предоставление разработчикам отчета о состоянии продукта;
+- получение потенциально бесконечного числа прогонов тестов;
+- обеспечение поддержки Agile и экстремальным методам разработки;
+- сохранение строгой документации тестов;
+- обнаружение ошибок, которые были пропущены на стадии ручного тестирования.
+
+Привязка Python-Selenium предоставляет удобный API для доступа к таким веб-драйверам Selenium как Firefox, Ie, Chrome, Remote и других. На данный момент поддерживаются версии Python 2.7, 3.2, 3.3, 3.4 и 3.5.
+
+Загрузка Selenium для Python
+-----------------------------
+        pip install -U selenium
+
+        Collecting selenium
+          Downloading selenium-2.53.1.tar.gz (815kB)
+            100% |████████████████████████████████| 819kB 1.2MB/s 
+        Building wheels for collected packages: selenium
+          Running setup.py bdist_wheel for selenium ... done
+          Stored in directory: /home/janus/.cache/pip/wheels/6e/46/f4/1636b1ae525c3bfba962e767bfc02ce7695007a4b2e454a9b7
+        Successfully built selenium
+        Installing collected packages: selenium
+          Found existing installation: selenium 2.49.2
+            Uninstalling selenium-2.49.2:
+              Successfully uninstalled selenium-2.49.2
+        Successfully installed selenium-2.53.1
+
+
+
+## В виртуальное окружение ставим Selenium
+
+        $ workon dj21
+
+        (dj21)$ pip install django==1.9.4 
+        (dj21)$ pip install -U selenium
+
+        # (dj21)$ pip install unittest2 # (only if using Python 2.6)
+
+
+# Подробная инструкция для пользователей Windows
+
+1. Установите Python 3.4 через файл MSI, доступный на странице загрузок сайта python.org.
+2. Запустите командную строку через программу cmd.exe и запустите команду pip установки selenium.
 ```
-$ wget pypi.python.org/packages/2.7/s/setuptools/setuptools-0.6c11-py2.7.egg
-$ sudo sh setuptools-0.6c11-py2.7.egg
+C:\Python34\Scripts\pip.exe install selenium
 ```
-Теперь можно установить любой пакет, находящийся в центральном репозитарии модулей языка Python, который называется PyPI (Python Package Index): pypi.python.org/pypi. Работа с easy_install напоминает работу с пакетными менеджерами apt-get, rpm, yum и подобными. 
-Для примера установим пакет, содержащий оболочку IPython:
+Теперь вы можете запускать свои тестовые скрипты, используя Python:
 ```
-sudo easy_install ipython
-```
-В качестве аргумента указывается либо имя пакета, либо путь до пакета .egg, находящегося на диске. Обратите внимание, что для выполнения установки требуются права суперпользователя, так как easy_install установлен и сам устанавливает пакеты в глобальный для Python каталог site-packages. Установка easy_install в домашнюю директорию производится следующим образом: sh setuptools-0.6c11-py2.7.egg --prefix=~
-
-Поиск пакета на веб-странице:
-```
-easy_install -f code.google.com/p/liten/ liten
-```
-Первый аргумент в данном примере — это на какой странице искать, второй — что искать.
-Также предусмотрена возможность HTTP Basic аутентификации на сайтах:
-```
-easy_install -f user:password@example.com/path/
-```
-Установка архива с исходными кодами по указанному URL:
-```
-easy_install liten.googlecode.com/files/liten-0.1.5.tar.gz
-```
-В качестве аргумента достаточно передать адрес архива, а easy_install автоматически распознает архив и установит дистрибутив. Чтобы этот способ сработал, в корневом каталоге архива должен находиться файл setup.py.
-
-Для обновления пакета используется ключ --upgrade:
-```
-easy_install --upgrade PyProtocols
-```
-Изменение активной версии установленного пакета:
-```
-easy_install liten=0.1.3
-```
-В данном случае производится откат пакета liten до версии 0.1.3.
-
-Преобразование отдельного файла .py в пакет .egg
-```
-easy_install -f "http://some.example.com/downloads/foo.py#egg=foo-1.0" foo
-```
-Это полезно, когда, например, необходимо обеспечить доступ к отдельному файлу из любой точки файловой системы. Как вариант, можно добавить путь к файлу в переменную PYTHONPATH. В этом примере #egg=foo-1.0 — это версия пакета, а foo — это его имя.
-
-### Использование конфигурационных файлов
-
-Для опытных пользователей и администраторов предусмотрена возможность создания конфигурационных файлов. Значения параметров по умолчанию можно задать в конфигурационном файле, который имеет формат ini-файла. easy_install осуществляет поиск конфигурационного файла в следующем порядке: 
-- текущий_каталог/setup.cfg, 
-- ~/.pydistutils.cfg 
-- в файле distutils.cfg, в каталоге пакета distutils.
-
-Пример такого файла:
-```
-[easy_install]
-
-# где искать пакеты
-find_links = code.example.com/downloads
-
-# ограничить поиск по доменам
-allow_hosts = *.example.com
-
-# куда устанавливать пакеты (каталог должен находиться в переменной окружения PYTHONPATH)
-install_dir = /src/lib/python
-```
-pip - Python Package Installer
-==============================
-## Python 2.7.9+ and 3.4+
-
-Download get-pip.py
---------------------
-https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py
-
-Выполнить
-```
-python get-pip.py
+C:\Python34\python.exe C:\my_selenium_script.py
 ```
 
-## Получение Administrative credentials
+pip list
+---------
 
-To start a command prompt as an administrator
+        alabaster (0.7.7)
+        Babel (2.2.0)
+        Django (1.9.4)
+        pip (8.1.0)
+        Pygments (2.1)
+        pytz (2015.7)
+        selenium (2.53.1)
+        setuptools (19.7)
+        six (1.10.0)
+        snowballstemmer (1.2.1)
+        Sphinx (1.3.4)
+        sphinx-rtd-theme (0.1.9)
+        wheel (0.24.0)
 
-1. Click Start, click All Programs, and then click Accessories.
-2. Right-click Command prompt, and then click Run as administrator.
-3. If the User Account Control dialog box appears, confirm that the action it displays is what you want, and then click Continue.
+Проверка работы selenium
+========================
+        
+        mkdir functional_tests
+        cd functional_tests/
+        touch tests.py
 
-To start a command prompt as an administrator (alternative method)
+        subl tests.py 
 
-1. Click Start.
-2. In the Start Search box, type cmd, and then press CTRL+SHIFT+ENTER.
-3. If the User Account Control dialog box appears, confirm that the action it displays is what you want, and then click Continue.
+tests.py
+--------
 
-## Установка для Windows:
+        # -*- coding: utf-8 -*-
+        from selenium import webdriver
 
-1. Install setuptools http://www.lfd.uci.edu/~gohlke/pythonlibs/#setuptools
-2. Install pip http://www.lfd.uci.edu/~gohlke/pythonlibs/#pip
+        # Создаем новый instance от Firefox driver
+        driver = webdriver.Firefox()
 
-Установит Pip в C:\Python27\Scripts\pip.exe. 
-Нужно добавить путь C:\Python27\Scripts) в установки path (Start / Edit environment variables).
+        # идем на страницу google
+        # Метод driver.get перенаправляет к странице URL. 
+        # WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. Стоит отметить, что если страница использует много AJAX-кода при загрузке, то WebDriver может не распознать, загрузилась ли она полностью:
+        
+        driver.get("http://www.google.com")
 
-Установить пакет
-```
-pip install httpie
-```
-Установка для Windows:
+        # найдем элемент body
 
-1. Загрузить http://pypi.python.org/pypi/pip#downloads
-2. Распаковать
-3. Загрузить installer для Windows: (.exe http://pypi.python.org/pypi/setuptools ). 
-4. Установить
-5. Сковировать каталог pip в C:\Python2x\ (только содеожимое)
-6. Выполнить
+        body = browser.find_element_by_tag_name('body')
 
-python setup.py install
+        # это утверждение (assertion), что body.text содержит слово “Google” 
+        
+        assert 'Google' in body.text
 
-7. Добавить C:\Python2x\Scripts в переменную path
+        # В завершение, окно браузера закрывается.
 
-# Virtual Environments
-Виртуальное окружение — это независимый от установленных в системе набор библиотек, модулей и самого интерпретатора Python, которые используются при работе с текущим проектом. 
+        browser.quit()
 
-## Установка virtualenv
+
+tests.py
+--------
+
+        # -*- coding: utf-8 -*-
+        from selenium import webdriver
+
+        browser = webdriver.Firefox()
+        browser.get('http://google.com/')
+
+        # найдем элемент body
+
+        body = browser.find_element_by_tag_name('body')
+
+        # assert позволяет проверять предположения о значениях произвольных данных в произвольном месте программы. По своей сути assert напоминает констатацию факта, расположенную посреди кода программы. 
+        
+        # В случаях, когда произнесенное утверждение не верно, assert возбуждает исключение. 
+
+        # Такое поведение позволяет контролировать выполнение программы в строго определенном русле. 
+
+        # Отличие assert от условий заключается в том, что программа с assert не приемлет иного хода событий, считая дальнейшее выполнение программы или функции бессмысленным.
+
+        assert 'Google' in body.text
+          
+        print('Hello Google')
+
+        browser.quit()
+
+Пошук Google
+------------
+search_tests.py
 ```
-$ pip install virtualenv
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait # начиная с версии 2.4.0
+from selenium.webdriver.support import expected_conditions as EC # начиная с версии 2.26.0
+
+# Создаем новый instance от Firefox driver
+driver = webdriver.Firefox()
+
+# идем на страницу google
+# Метод driver.get перенаправляет к странице URL. 
+# WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. Стоит отметить, что если страница использует много AJAX-кода при загрузке, то WebDriver может не распознать, загрузилась ли она полностью:
+driver.get("http://www.google.com")
+
+# страница динамическая, поэтому title найдем здесь:
+print (driver.title)
+
+# Google
+
+assert "Google" in driver.title
+
+# это утверждение (assertion), что заголовок содержит слово “Google” [assert позволяет проверять предположения о значениях произвольных данных в произвольном месте программы. По своей сути assert напоминает констатацию факта, расположенную посреди кода программы. В случаях, когда произнесенное утверждение не верно, assert возбуждает исключение. Такое поведение позволяет контролировать выполнение программы в строго определенном русле. Отличие assert от условий заключается в том, что программа с assert не приемлет иного хода событий, считая дальнейшее выполнение программы или функции бессмысленным.]
+
+# WebDriver предоставляет ряд способов получения элементов с помощью методов find_element_by_*. Для примера, элемент ввода текста input может быть найден по его атрибуту name методом find_element_by_name. 
+
+# найдем элемент с атрибутом name = q (google search box)
+inputElement = driver.find_element_by_name("q")
+
+# После этого мы посылаем нажатия клавиш (аналогично введению клавиш с клавиатуры). Специальные команды могут быть переданы с помощью класса Keys импортированного из selenium.webdriver.common.keys
+# inputElement.send_keys(Keys.RETURN)
+
+# набираем строку поиска
+inputElement.send_keys("cheese!")
+
+# сабмитим форму (обычно google автоматически выполняет поиск без submitting)
+inputElement.submit()
+
+# После ответа страницы, вы получите результат, если таковой ожидается. Чтобы удостовериться, что мы получили какой-либо результат, добавим утверждение:
+
+# assert "No results found." not in driver.page_source
+
+try:
+    # ждем обновления страницы, ждем обновления title
+    WebDriverWait(driver, 10).until(EC.title_contains("cheese!"))
+
+    # Должны увидеть "cheese! - Поиск в Google"
+    print (driver.title)
+
+# В завершение, окно браузера закрывается. Вы можете также вызывать метод quit вместо close. Метод quit закроет браузер полностью, в то время как close закроет одну вкладку. Однако, в случае, когда открыта только одна вкладка, по умолчанию большинство браузеров закрывается полностью:
+finally:
+    driver.quit()
 ```
-Создать virtual environment:
+
+python search_tests.py 
+----------------------
 ```
-$ cd my_project_folder
-$ virtualenv venv
+Google
+cheese! - Пошук Google
+
 ```
-Для выбранной версии Python.
-----------------------------
+
+## Selenium для написания тестов
+Selenium чаще всего используется для написания тестовых ситуаций. Сам пакет selenium не предоставляет никаких тестовых утилит или инструментов разработки. Вы можете писать тесты с помощью модуля Python unittest, py.test или nose.
+
+### тесты с помощью модуля Python unittest
+Данный скрипт тестирует функциональность поиска на сайте www.google.com:
+
+py_search_tests.py
 ```
-$ virtualenv -p /usr/bin/python2.7 venv
+import unittest
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+
+# Сначала были импортированы все основные необходимые модули. Модуль unittest встроен в Python и реализован на Java’s JUnit. Этот модуль предоставляет собой утилиту для организации тестов.
+
+# Класс теста унаследован от unittest.TestCase. Наследование класса TestCase является способом сообщения модулю unittest, что это тест:
+
+class PythonOrgSearch(unittest.TestCase):
+
+# setUp — это часть инициализации, этот метод будет вызываться перед каждым методом теста, который вы собираетесь написать внутри класса теста. Здесь мы создаем элемент класса Firefox WebDriver.
+
+    def setUp(self):
+        self.driver = webdriver.Firefox()
+
+# Метод теста всегда должен начинаться с фразы test. Первая строка метода создает локальную ссылку на объект драйвера, созданный методом setUp.
+
+    def test_search_in_python_org(self):
+        driver = self.driver
+
+        # Метод driver.get перенаправляет к странице URL в параметре. WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. 
+
+        driver.get("http://www.google.com")
+
+        # утверждение, что заголовок содержит слово “Google”:
+
+        self.assertIn("Google", driver.title)
+        
+        # WebDriver предоставляет ряд способов получения элементов с помощью методов find_element_by_*. Для примера, элемент ввода текста input может быть найден по его атрибуту name методом find_element_by_name. 
+
+        elem = driver.find_element_by_name("q")
+
+        # После этого мы посылаем нажатия клавиш (аналогично введению клавиш с клавиатуры). Специальные команды могут быть переданы с помощью класса Keys импортированного из selenium.webdriver.common.keys:
+
+        elem.send_keys("django")
+
+        # После ответа страницы, вы получите результат, если таковой ожидается. Чтобы удостовериться, что мы получили какой-либо результат, добавим утверждение:
+
+        assert "No results found." not in driver.page_source
+        elem.send_keys(Keys.RETURN)
+
+    # Метод tearDown будет вызван после каждого метода теста. Это метод для действий чистки. В текущем методе реализовано закрытие окна браузера. Вы можете также вызывать метод quit вместо close. Метод quit закроет браузер полностью, в то время как close закроет одну вкладку. Однако, в случае, когда открыта только одна вкладка, по умолчанию большинство браузеров закрывается полностью.:
+
+    def tearDown(self):
+        self.driver.close()
+
+# Завершающий код — это стандартная вставка кода для запуска набора тестов [Сравнение __name__ с "__main__" означает, что модуль (файл программы) запущен как отдельная программа («main» — «основная», «главная») (а не импортирован из другого модуля). Если вы импортируете модуль, атрибут модуля __name__ будет равен имени файла без каталога и расширения.]:
+
+if __name__ == "__main__":
+    unittest.main()
 ```
-Активировать virtual:
--------------
+
+запустить тест python py_search_tests.py 
+------------------------------------
 ```
-$ source venv/bin/activate
+python py_search_tests.py 
+.
+----------------------------------------------------------------------
+Ran 1 test in 9.733s
+
+OK
 ```
-Установка пакетов:
-------------------
+тест завершился успешно
+
+
+Setup Project
+=============
+
 ```
-$ pip install requests
+django-admin startproject mysite
+
+-- mysite
+    |-- manage.py
+    `-- mysite
+        |-- __init__.py
+        |-- settings.py
+        |-- urls.py
+        `-- wsgi.py
 ```
-Деактивировать virtualenv:
----------------
+
+## Наш первый functional test:
+
 ```
-$ deactivate
+cd mysite
+mkdir f_test
+cd f_test/
+touch test0.py
 ```
-Удалить virtualenv
+
+test0.py
 --------
 ```
-rm -rf venv
-```
-Заморозка “freeze”
-------------------
-```
-$ pip freeze > requirements.txt
-```
-Разморозка:
------------
-```
-$ pip install -r requirements.txt
-```
-# virtualenvwrapper
+from selenium import webdriver
 
-Установка (virtualenv должен быть установлен):
-----------------------------------------------
-```
-$ pip install virtualenvwrapper
-$ export WORKON_HOME=~/Envs
-$ source /usr/local/bin/virtualenvwrapper.sh
+browser = webdriver.Firefox()
+browser.get('http://localhost:8000')
+
+assert 'Django' in browser.title
 
 ```
-Для Windows используйте virtualenvwrapper-win.
-----------------------------------------------
-```
-$ pip install virtualenvwrapper-win
-```
-Для Windows путь WORKON_HOME - %USERPROFILE%Envs
-------------------------------------------------
-
-Создаем виртуальное окружение командой:
----------------------------------------
-```
-mkvirtualenv venv
-
-mkvirtualenv -p python3.4 dj21
-```
-Эта команда создаст виртуальное окружение с названием venv внутри ~/Envs.
-
-Эта команда активирует virtual environment:
--------------------------------------------
-```
-$ workon venv
-```
-Деактивировать:
+python test0.py 
 ---------------
 ```
-$ deactivate
+Traceback (most recent call last):
+  File "test0.py", line 7, in <module>
+    assert 'Django' in browser.title
+AssertionError
 ```
-Удалить:
----------
+python manage.py runserver
+--------------------------
 ```
-$ rmvirtualenv venv
-```
-Список environments.
---------------------
-```
-lsvirtualenv
+./manage.py runserver
 
-dj21
-====
-env1
-====
+Performing system checks...
+
+System check identified no issues (0 silenced).
+January 20, 2016 - 11:05:08
+Django version 1.9.1, using settings 'mysite.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+
 
 ```
-Переход в каталог текущего virtual environment
-----------------------------------------------
+python test0.py 
+---------------
+## Наш первый functional test для нашего сайта: 
+
+test1.py
+--------
 ```
-cdvirtualenv
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
+from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
+
+browser = webdriver.Firefox()
+browser.get('http://localhost:8000')
+
+assert 'Django' in browser.title
+
+print (browser.title)
+
+try:
+    
+    WebDriverWait(browser, 10).until(EC.title_contains("Welcome"))
+
+    # You should see "Welcome to Django This is my cool Site!"
+    print (browser.title,' This is my cool Site!')
+
+finally:
+    browser.quit()
 ```
-Показать контент каталога site-packages
+python test1.py 
+---------------
+```
+Welcome to Django
+Welcome to Django  This is my cool Site!
+
+```
+Selenium WebDriver – это спецификация интерфейса для управления браузером
+--------------------------------------------------------------------------
+WebDriver – это драйвер браузера, то есть не имеющая пользовательского интерфейса программная библиотека, которая позволяет различным другим программам взаимодействовать с браузером, управлять его поведением, получать от браузера какие-то данные и заставлять браузер выполнять какие-то команды.
+
+Исходя из этого определения, ясно, что WebDriver не имеет прямого отношения к тестированию. Он всего лишь предоставляет автотестам доступ к браузеру. 
+
+Самое главное отличие WebDriver от всех остальных драйверов заключается в том, что это «стандартный» драйвер, а все остальные – «нестандартные».
+
+Организация W3C действительно приняла WebDriver за основу при разработке стандарта интерфейса для управления браузером.
+
+реализация интерфейса WebDriver возложена на производителей браузеров.
+
+В рамках проекта Selenium было разработано несколько референсных реализаций для различных браузеров, но постепенно эта деятельность переходит в ведение производителей браузеров. Драйвер для браузера Chrome разрабатывается в рамках проекта Chromium, его делает та же команда, которая занимается разработкой самого браузера. Драйвер для браузера Opera разрабатывается в компании Opera Software. Драйвер для браузера Firefox разрабатывается участниками проекта Selenium, но в недрах компании Mozilla уже готовится ему замена, которая носит кодовое название Marionette. Этот новый драйвер для Firefox уже доступен в девелоперских сборках браузера. На очереди Internet Explorer и Safari, к их разработке сотрудники соответствующих компаний пока не подключились.
+
+В общем, можно сказать, что Selenium это единственный проект по созданию средств автоматизации управления браузерами, в котором участвуют непосредственно компании, разрабатывающие браузеры. 
+
+ChromeDriver - WebDriver for Chrome
+-----------------------------------
+https://sites.google.com/a/chromium.org/chromedriver/getting-started
+```
+import time
+from selenium import webdriver
+
+driver = webdriver.Chrome('/path/to/chromedriver')  # Optional argument, if not specified will search path.
+driver.get('http://www.google.com/xhtml');
+time.sleep(5) # Let the user actually see something!
+search_box = driver.find_element_by_name('q')
+search_box.send_keys('ChromeDriver')
+search_box.submit()
+time.sleep(5) # Let the user actually see something!
+driver.quit()
+```
+Controlling ChromeDriver's lifetime
+-----------------------------------
+```
+import time
+
+from selenium import webdriver
+import selenium.webdriver.chrome.service as service
+
+service = service.Service('/path/to/chromedriver')
+service.start()
+capabilities = {'chrome.binary': '/path/to/custom/chrome'}
+driver = webdriver.Remote(service.service_url, capabilities)
+driver.get('http://www.google.com/xhtml');
+time.sleep(5) # Let the user actually see something!
+driver.quit()
+```
+
+# Functional Test == Acceptance Test == End-to-End Test
+
+test_hello.py
+```
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
+from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
+
+browser = webdriver.Firefox()
+browser.get('http://localhost:8000')
+
+assert 'This is my cool Site!' in browser.title
+
+print (browser.title)
+
+try:
+    
+    WebDriverWait(browser, 10).until(EC.title_contains("Site"))
+ 
+    print (browser.title)
+
+finally:
+    browser.quit()
+
+```
+python test_hello.py 
+```
+Traceback (most recent call last):
+  File "test_hello.py", line 9, in <module>
+    assert 'This is my cool Site!' in browser.title
+AssertionError
+```
+test_welcome.py 
+```
+# Сначала были импортированы все основные необходимые модули. Модуль unittest встроен в Python и реализован на Java’s JUnit. Этот модуль предоставляет собой утилиту для организации тестов.
+
+from selenium import webdriver
+import unittest
+
+# Класс теста унаследован от unittest.TestCase. Наследование класса TestCase является способом сообщения модулю unittest, что это тест:
+
+class NewVisitorTest(unittest.TestCase):  
+
+    # setUp — это часть инициализации, этот метод будет вызываться перед каждым методом теста, который вы собираетесь написать внутри класса теста. Здесь мы создаем элемент класса Firefox WebDriver.
+
+    def setUp(self):  
+        self.browser = webdriver.Firefox()
+
+    # Метод tearDown будет вызван после каждого метода теста. Это метод для действий чистки. В текущем методе реализовано закрытие окна браузера. Вы можете также вызывать метод quit вместо close. Метод quit закроет браузер полностью, в то время как close закроет одну вкладку. Однако, в случае, когда открыта только одна вкладка, по умолчанию большинство браузеров закрывается полностью.:
+
+    def tearDown(self):  
+        self.browser.quit()
+
+    # Метод теста всегда должен начинаться с фразы test. Первая строка метода создает локальную ссылку на объект драйвера, созданный методом setUp.
+    
+    def test_can_start_a_list_and_retrieve_it_later(self):  
+        
+        # Метод driver.get перенаправляет к странице URL в параметре. WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. 
+
+        self.browser.get('http://localhost:8000')
+        
+        # утверждение, что заголовок содержит слово “This is my cool Site!”:
+        self.assertIn('This is my cool Site!', self.browser.title)  
+        
+        # self.fail ничего не получилось, генерирует сообщение об ошибке. Используется в качестве напоминания, чтобы закончить тест.
+
+        self.fail('Finish the test!')  
+            
+# Завершающий код — это стандартная вставка кода для запуска набора тестов [Сравнение __name__ с "__main__" означает, что модуль (файл программы) запущен как отдельная программа («main» — «основная», «главная») (а не импортирован из другого модуля). Если вы импортируете модуль, атрибут модуля __name__ будет равен имени файла без каталога и расширения.]:
+
+if __name__ == '__main__':  
+    unittest.main(warnings='ignore')  
+```
+warnings='ignore' подавляет избыточные предупреждения ResourceWarning,  которые генерируются в момент выполнения. 
+
+
+python test_welcome.py 
+```
+F
+======================================================================
+FAIL: test_can_start_a_list_and_retrieve_it_later (__main__.NewVisitorTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_welcome.py", line 30, in test_can_start_a_list_and_retrieve_it_later
+    self.assertIn('This is my cool Site!', self.browser.title)
+AssertionError: 'This is my cool Site!' not found in 'Welcome to Django'
+
+----------------------------------------------------------------------
+Ran 1 test in 6.324s
+
+FAILED (failures=1)
+
+```
+# Implicit waits - Неявные ожидания
+добавить implicitly_wait в настройки setUp:
+
+```
+    def setUp(self):  
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(3)
+
+```
+all_users.py
+-------------
+```
+# -*- coding: utf-8 -*-
+from selenium import webdriver
+import unittest
+ 
+class NewVisitorTest(unittest.TestCase):
+ 
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(3)
+ 
+    def tearDown(self):
+        self.browser.quit()
+ 
+    def test_it_worked(self):
+        self.browser.get('http://localhost:8000')
+        self.assertIn('Welcome to Django', self.browser.title)
+ 
+if __name__ == '__main__':
+    unittest.main(warnings='ignore')
+```
+python all_users.py 
+-------------------
+```
+.
+----------------------------------------------------------------------
+Ran 1 test in 6.368s
+OK
+```
+
+./manage.py startapp home
+--------------------------
+```
+mysite/
+├── db.sqlite3
+├── f_tests.py
+├── home
+│   ├── admin.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── tests.py
+│   └── views.py
+├── manage.py
+└── mysite
+    ├── __init__.py
+    ├── __pycache__
+    ├── settings.py
+    ├── urls.py
+    └── wsgi.py
+```
+
+## Unit Tests
+
+Основное различие между юнит-тестами и функциональными тестами является то, что функциональные тесты используются для тестирования приложения с точки зрения пользователя. Модульные тесты используются для тестирования приложения с точки зрения программиста.
+
+TDD подход будет выглядеть так:
+-------------------------------
+- Начнем с написания функциональных тестов, описывая новые возможности с точки зрения пользователя.
+- После того, как у нас есть функциональный тест, который не удается, мы начинаем думать о том, как написать код, который может заставить его пройти (или по крайней мере пройти его нынешнем недостаточности). Сейчас мы используем один или несколько юнит-тестов, чтобы определить, как должен вести себя наш код.
+- После того, как у нас есть модульный тест и он не проходит, мы пишем некоторое количество кода приложения, достаточное чтобы пройти модульный тест. Мы можем повторять шаги 2 и 3 несколько раз, пока не получим желаемое.
+Теперь мы можем повторно вызвать наши функциональные тесты и посмотреть, проходят ли они. 
+
+# Unit Testing in Django
+
+home/test.py
+
+```
+from django.test import TestCase
+
+# Create your tests here.
+```
+home/test.py
+------------
+```
+from django.test import TestCase
+
+# Create your tests here.
+class EqualTest(TestCase):
+
+    def test_bad_maths(self):
+        self.assertEqual(1 + 1, 3)
+```
+./manage.py test      
+```
+Creating test database for alias 'default'...
+F
+======================================================================
+FAIL: test_bad_maths (home.tests.EqualTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/tests.py", line 7, in test_bad_maths
+    self.assertEqual(1 + 1, 3)
+AssertionError: 2 != 3
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'..
+
+```
+Static Files Settings
+=====================
+Settings file (settings.py)
+---------------------------
+```
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    ...
+    
+    'django.contrib.staticfiles',
+]
+```
+
+Static files (CSS, JavaScript, Images)
 ---------------------------------------
 ```
-lssitepackages
+# https://docs.djangoproject.com/en/1.9/howto/static-files/
+
+STATIC_URL = '/static/'
 ```
-# autoenv
-При входе в каталог, содержащий .env, autoenv автоматически активирует окружение.
 
-Установка в Mac OS X с помощью brew:
+STATICFILES DIR
+---------------
+```
+mkdir static
 ```
-$ brew install autoenv
+
+settings.py:
+------------
 ```
-Установка в Linux:
+import os
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ```
-$ git clone git://github.com/kennethreitz/autoenv.git ~/.autoenv
-$ echo 'source ~/.autoenv/activate.sh' >> ~/.bashrc
+
+STATICFILES_DIRS:
+-----------------
 ```
+STATIC_URL = '/static/'
 
-Install Django & Virtualenv on Mac OS X / Linux with PIP
---------------------------------------------------------
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
 ```
-cd ~/Desktop
+Templates Settings
+------------------
+```
+mkdir templates
+```
+Templates files
+---------------
+```
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, "templates")],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                 django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+```
 
-mkdir Development
+Initializr: HTML5 Boilerplate and Twitter Bootstrap
+---------------------------------------------------
+http://www.initializr.com/
 
-cd Development
+После загрузки и распаковки:
+----------------------------
+- Переместить index.html, 404.html, humans.txt и robots.txt в templates folder.
+- Переименовать index.html в base.html. 
+- Остальные файлы переместить в static
+- Создайте свой favicon.ico.
+- Можно удалить файлы apple-touch-icon.png, browserconfig.xml, tile-wide.png и tile.png.
 
-Create a new virtualenv:
 
-virtualenv env3dj -p python3
+# Django MVC, URLs, and View Functions
 
-Activate virtualenv:
+### Рабочий процесс в Django:
 
-source bin/activate
+- HTTP-запрос приходит на определенной URL.
+- Django использует некоторые правила и решает, какой метод контроллера должен откликнуться на запрос (это называется разрешением URL).
+- Метод контроллера обрабатывает запрос и возвращает ответ HTTP.
 
-The result in Terminal should be something like:
+Проверим две идеи:
+------------------
+- Можем ли мы разрешить URL для корня сайта ("/") и в каком методе это сделать?
+- Может ли метод вернуть некоторый HTML, который получит функциональный тест?
 
-(env3dj):~$
-```
-Install Django:
-----------------
-```
-pip install django==1.9.4
+home/tests.py. 
+--------------
 ```
+from django.core.urlresolvers import resolve
+from django.test import TestCase
+from home.views import home_page
 
-# Основы Version Control
-Распределённая система управления версиями файлов. Проект был создан Линусом Торвальдсом для управления разработкой ядра Linux, первая версия выпущена 7 апреля 2005 года.
+class HomePageTest(TestCase):
 
-## Установка GIT
+    def test_root_url_resolves_to_home_page_view(self):
+        found = resolve('/')  
+        self.assertEqual(found.func, home_page)  
 
-### Установка в Linux
-Fedora:
 ```
-$ yum install git-core
-```
-Debian, Ubuntu:
-```
-$ apt-get install git
-```
-### Установка на Mac
 
-Есть два простых способа установить Git на Mac. Самый простой — использовать графический инсталлятор Git'а, который вы можете скачать со страницы на SourceForge:
+При вызове "/"(корень сайта), Django находит метод с именем home_page.
 
-http://sourceforge.net/projects/git-osx-installer/
+Этот метод мы напишем позже. Мы планируем сохранить его в home/views.py.
 
-Другой распространённый способ установки Git'а — через MacPorts (http://www.macports.org). Если у вас установлен MacPorts, установите Git так:
+home/views.py. 
 ```
-$ sudo port install git-core +svn +doc +bash_completion +gitweb
-```
+from django.shortcuts import render
+
+# Create your views here.
+home_page = None
 
-### Установка в Windows
-Просто скачайте exe-файл инсталлятора со страницы проекта на GitHub'е и запустите его:
 ```
-http://msysgit.github.com/
+./manage.py test
 ```
-После установки у вас будет как консольная версия (включающая SSH-клиент), так и стандартная графическая.
+Creating test database for alias 'default'...
+FE
+======================================================================
+ERROR: test_root_url_resolves_to_home_page_view (home.tests.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/tests.py", line 9, in test_root_url_resolves_to_home_page_view
+    found = resolve('/')
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 534, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 404, in resolve
+    raise Resolver404({'tried': tried, 'path': new_path})
+django.core.urlresolvers.Resolver404: {'tried': [[<RegexURLResolver <RegexURLPattern list> (admin:admin) ^admin/>]], 'path': ''}
 
-Пожалуйста, используйте Git только из командой оболочки, входящей в состав msysGit.
-
-## Основы Git
-### Первоначальная настройка Git
+```
+## urls.py
 
-В состав Git'а входит утилита git config, которая позволяет просматривать и устанавливать параметры, контролирующие все аспекты работы Git'а и его внешний вид. Эти параметры могут быть сохранены в трёх местах:
+mysite/urls.py. 
+```
+"""mysite URL Configuration
 
-- Файл /etc/gitconfig содержит значения, общие для всех пользователей системы и для всех их репозиториев. Если при запуске git config указать параметр --system, то параметры будут читаться и сохраняться именно в этот файл.
-- Файл ~/.gitconfig хранит настройки конкретного пользователя. Этот файл используется при указании параметра --global.
-- Конфигурационный файл в каталоге Git'а (.git/config) в том репозитории, где вы находитесь в данный момент. Эти параметры действуют только для данного конкретного репозитория. Настройки на каждом следующем уровне подменяют настройки из предыдущих уровней, то есть значения в .git/config перекрывают соответствующие значения в /etc/gitconfig.
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/1.8/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
+Including another URLconf
+    1. Add an import:  from blog import urls as blog_urls
+    2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
+"""
+from django.conf.urls import include, url
+from django.contrib import admin
 
-В системах семейства Windows Git ищет файл .gitconfig в каталоге $HOME (C:\Documents and Settings\$USER или C:\Users\$USER). Кроме того Git ищет файл /etc/gitconfig, но уже относительно корневого каталога MSys, который находится там, куда вы решили установить Git, когда запускали инсталлятор.
+urlpatterns = [
+    url(r'^admin/', include(admin.site.urls)),
+]
 
-## Имя пользователя
-Первое, что вам следует сделать после установки Git'а, — указать ваше имя и адрес электронной почты. Это важно, потому что каждый коммит в Git'е содержит эту информацию, и она включена в коммиты, передаваемые вами, и не может быть далее изменена:
-```
-$ git config --global user.name "John Doe"
-$ git config --global user.email johndoe@example.com
-```
-если указана опция --global, то эти настройки достаточно сделать только один раз, поскольку в этом случае Git будет использовать эти данные для всего, что вы делаете в этой системе. Если для каких-то отдельных проектов вы хотите указать другое имя или электронную почту, можно выполнить эту же команду без параметра --global в каталоге с нужным проектом.
 
-## Выбор редактора
-По умолчанию Git использует стандартный редактор вашей системы, обычно это Vi или Vim. Если вы хотите использовать другой текстовый редактор, например, Emacs, можно сделать следующее:
-```
-$ git config --global core.editor emacs
 ```
-## Утилита сравнения
-встроенная diff-утилита - для разрешения конфликтов слияния. Например, если вы хотите использовать vimdiff:
+mysite/urls.py. 
 ```
-$ git config --global merge.tool vimdiff
-````
-Git умеет делать слияния при помощи kdiff3, tkdiff, meld, xxdiff, emerge, vimdiff, gvimdiff, ecmerge и opendiff, но вы можете настроить и другую утилиту.
+from django.conf.urls import include, url
+from django.contrib import admin
 
-## Проверка настроек
+from home import views
 
+urlpatterns = [
+    url(r'^$', views.home_page, name='home'),
+    url(r'^admin/', include(admin.site.urls)),
+]
 ```
-$ git config --list
+./manage.py test
 ```
-Некоторые ключи настроек могут появиться несколько раз, потому что Git читает один и тот же ключ из разных файлов (например из /etc/gitconfig и ~/.gitconfig). В этом случае Git использует последнее значение для каждого ключа.
+Creating test database for alias 'default'...
+FE
+======================================================================
+ERROR: test_root_url_resolves_to_home_page_view (home.tests.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/tests.py", line 9, in test_root_url_resolves_to_home_page_view
+    found = resolve('/')
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 534, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 376, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 248, in resolve
+    return ResolverMatch(self.callback, args, kwargs, self.name)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 255, in callback
+    self._callback = get_callable(self._callback_str)
+  File "/home/janus/Envs/dj21/lib/python3.4/functools.py", line 448, in wrapper
+    result = user_function(*args, **kwds)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 102, in get_callable
+    "'%s' is not a callable or a dot-notation path" % lookup_view
+django.core.exceptions.ViewDoesNotExist: 'None' is not a callable or a dot-notation path
 
-проверить значение конкретного ключа, выполнив git config {ключ}:
 ```
-$ git config user.name
-```
-Если вам нужна помощь при использовании Git'а, есть три способа открыть страницу руководства по любой команде Git'а:
-```
-$ git help <команда>
-$ git <команда> --help
-$ man git-<команда>
-```
-открыть руководство по команде config:
-```
-$ git help config
-```
 
-## Создание Git-репозитория
-
-### Создание репозитория в существующем каталоге
-Если вы собираетесь начать использовать Git для существующего проекта, то вам необходимо перейти в проектный каталог и в командной строке ввести
-
-$ git init
-Эта команда создаёт в текущем каталоге новый подкаталог с именем .git содержащий все необходимые файлы репозитория — основу Git-репозитория. На этом этапе ваш проект ещё не находится под версионным контролем.
-
-Если вы хотите добавить под версионный контроль существующие файлы (в отличие от пустого каталога), вам стоит проиндексировать эти файлы и осуществить первую фиксацию изменений. Осуществить это вы можете с помощью нескольких команд git add указывающих индексируемые файлы, а затем commit:
+home/views.py. 
+--------------
 ```
-$ git add *.c
-$ git add README
-$ git commit -m 'initial project version'
-```
-## Клонирование существующего репозитория
+from django.shortcuts import render
 
-Клонирование репозитория осуществляется командой git clone [url]:
+# Create your views here.
+def home_page():
+    pass
 ```
-$ git clone https://github.com/janusnic/tdd-django
-```
-Эта команда создаёт каталог с именем grit, инициализирует в нём каталог .git, скачивает все данные для этого репозитория и создаёт (checks out) рабочую копию последней версии. Если вы зайдёте в новый каталог grit, вы увидите в нём проектные файлы, пригодные для работы и использования. Если вы хотите клонировать репозиторий в каталог, отличный от grit, можно это указать в следующем параметре командной строки:
+
+./manage.py test
 ```
-$ git clone  https://github.com/janusnic/tdd-django mygrit
+Creating test database for alias 'default'...
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.002s
+
+OK
+Destroying test database for alias 'default'...
 ```
 
-В Git'е реализовано несколько транспортных протоколов, которые вы можете использовать. В предыдущем примере использовался протокол git://, вы также можете встретить http(s):// или user@server:/path.git, использующий протокол передачи SSH. 
+## Unit Test метод
 
-## Запись изменений в репозиторий
-каждый файл в вашем рабочем каталоге может находиться в одном из двух состояний: под версионным контролем (отслеживаемые) и нет (неотслеживаемые). Отслеживаемые файлы — это те файлы, которые были в последнем слепке состояния проекта (snapshot); они могут быть неизменёнными, изменёнными или подготовленными к коммиту (staged). Неотслеживаемые файлы — это всё остальное, любые файлы в вашем рабочем каталоге, которые не входили в ваш последний слепок состояния и не подготовлены к коммиту. Когда вы впервые клонируете репозиторий, все файлы будут отслеживаемыми и неизменёнными, потому что вы только взяли их из хранилища (checked them out) и ничего пока не редактировали.
+home/test_1.py. 
+```
+from django.core.urlresolvers import resolve
+from django.test import TestCase
+from django.http import HttpRequest
 
-Как только вы отредактируете файлы, Git будет рассматривать их как изменённые, т.к. вы изменили их с момента последнего коммита. Вы индексируете (stage) эти изменения и затем фиксируете все индексированные изменения, а затем цикл повторяется. 
+from home.views import home_page 
 
-## Определение состояния файлов
-Основной инструмент, используемый для определения, какие файлы в каком состоянии находятся — это команда git status. Если вы выполните эту команду сразу после клонирования, вы увидите что-то вроде этого:
-```
-$ git status
-git status
-В ветке master
-Your branch is up-to-date with 'origin/master'.
+class HomePageTest(TestCase):
 
-Changes not staged for commit:
-  (используйте "git add <file>..." чтобы обновить данные для закрепления)
-  (используйте "git checkout -- <file>..." чтобы отменить изменения в рабочей директории)
+    def test_root_url_resolves_to_home_page_view(self):
+        found = resolve('/') 
+        self.assertEqual(found.func, home_page) 
 
-    modified:   README.md
+    def test_home_page_returns_correct_html(self):
 
-Несопровождаемые файлы:
-  (используйте "git add <file>..." чтобы включить то, что должно быть закреплено)
+        # создали HttpRequest object, который использует Django когда пользователь запрашивает страницу.
 
-    unit_01/
+        request = HttpRequest()  
+        
+        # перенаправляем запрос на метод home_page view, который формирует response - экземпляр класса HttpResponse. Далее проверяем является ли .content в response HTML-текстом который мы отдаем пользователю.
 
-нет изменений, добавленных в коммит (используйте "git add" и/или "git commit -a")
+        response = home_page(request)  
+        
+        # HTML-текст должен начинаться с html тега, который должен закрываться вконце. response.content является сырым литералом (raw bytes), а не Python-строкой, поэтому мы используем b'' синтаксис.
 
-```
-Это означает, что у вас чистый рабочий каталог — в нём нет отслеживаемых изменённых файлов. Git также не обнаружил неотслеживаемых файлов, в противном случае они бы были перечислены здесь. И наконец, команда сообщает вам на какой ветке (branch) вы сейчас находитесь. Пока что это всегда ветка master — это ветка по умолчанию
+        self.assertTrue(response.content.startswith(b'<html>'))  
+        
+        # Мы хотим поместить тег title, содержащий наш заголовок.
 
-Предположим, вы добавили в свой проект новый файл, простой файл README. Если этого файла раньше не было, и вы выполните git status, вы увидите свой неотслеживаемый файл вот так:
-```
-Несопровождаемые файлы:
-  (используйте "git add <file>..." чтобы включить то, что должно быть закреплено)
+        self.assertIn(b'<title>Welcome to Django. This is my cool Site!</title>', response.content)  
+        self.assertTrue(response.content.endswith(b'</html>'))  
 
-    unit_01/
 
-нет изменений, добавленных в коммит (используйте "git add" и/или "git commit -a")
+class EqualTest(TestCase):
+
+    def test_bad_maths(self):
+        self.assertEqual(1 + 1, 2)
 ```
-Понять, что новый файл README неотслеживаемый можно по тому, что он находится в секции "Untracked files" в выводе команды status. Статус "неотслеживаемый файл", по сути, означает, что Git видит файл, отсутствующий в предыдущем снимке состояния (коммите); Git не станет добавлять его в ваши коммиты, пока вы его явно об этом не попросите. Это предохранит вас от случайного добавления в репозиторий сгенерированных бинарных файлов или каких-либо других, которые вы и не думали добавлять. 
 
+./manage.py test
 
-## Отслеживание новых файлов
-Для того чтобы начать отслеживать (добавить под версионный контроль) новый файл, используется команда git add. Чтобы начать отслеживание файла README, вы можете выполнить следующее:
 ```
-$ git add README
+Creating test database for alias 'default'...
+ERROR: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 22, in test_home_page_returns_correct_html
+    response = home_page(request)
+TypeError: home_page() takes 0 positional arguments but 1 was given
 ```
-Если вы снова выполните команду status, то увидите, что файл README теперь отслеживаемый и индексированный:
-```
-git add unit_01
-$ git status
-В ветке master
-Your branch is up-to-date with 'origin/master'.
-
-Изменения для закрепления:
-  (используйте "git reset HEAD <file>..."  чтобы убрать из буфера)
 
-    new file:   unit_01/README.md
-    new file:   unit_01/benchmarks.py
-    new file:   unit_01/get-pip.py
-
+home/views.py. 
+--------------
 ```
-Вы можете видеть, что файл проиндексирован по тому, что он находится в секции “Changes to be committed”. Если вы выполните коммит в этот момент, то версия файла, существовавшая на момент выполнения вами команды git add, будет добавлена в историю снимков состояния. Команда git add принимает параметром путь к файлу или каталогу, если это каталог, команда рекурсивно добавляет (индексирует) все файлы в данном каталоге.
-
-### Индексация изменённых файлов
-Давайте модифицируем файл, уже находящийся под версионным контролем. Если вы измените отслеживаемый файл README.md и после этого снова выполните команду status, то результат будет примерно следующим:
+def home_page(request):
+    pass
 ```
-$ git status
-Changes not staged for commit:
-  (используйте "git add <file>..." чтобы обновить данные для закрепления)
-  (используйте "git checkout -- <file>..." чтобы отменить изменения в рабочей директории)
-
-    modified:   README.md
+./manage.py test
 ```
-Файл README.md находится в секции “Changes not staged for commit” — это означает, что отслеживаемый файл был изменён в рабочем каталоге, но пока не проиндексирован. Чтобы проиндексировать его, необходимо выполнить команду git add (это многофункциональная команда, она используется для добавления под версионный контроль новых файлов, для индексации изменений, а также для других целей, например для указания файлов с исправленным конфликтом слияния). Выполним git add, чтобы проиндексировать README.md, а затем снова выполним git status:
+ERROR: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 26, in test_home_page_returns_correct_html
+    self.assertTrue(response.content.startswith(b'<html>'))
+AttributeError: 'NoneType' object has no attribute 'content'
 ```
-git add unit_01/benchmarks.py 
-$ git status
-В ветке master
-Your branch is up-to-date with 'origin/master'.
-
-Изменения для закрепления:
-  (используйте "git reset HEAD <file>..."  чтобы убрать из буфера)
+home/views.py. 
+```
+from django.http import HttpResponse
 
-    new file:   unit_01/README.md
+# Create your views here.
 
+def home_page(request):
+    return HttpResponse()
 ```
 
-Если вы изменили файл после выполнения git add, вам придётся снова выполнить git add, чтобы проиндексировать последнюю версию файла:
+./manage.py test
 ```
-git status
-В ветке master
-Your branch is up-to-date with 'origin/master'.
+FAIL: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 26, in test_home_page_returns_correct_html
+    self.assertTrue(response.content.startswith(b'<html>'))
+AssertionError: False is not true
 
-Изменения для закрепления:
-  (используйте "git reset HEAD <file>..."  чтобы убрать из буфера)
-
-    new file:   unit_01/README.md
-    
-Changes not staged for commit:
-  (используйте "git add <file>..." чтобы обновить данные для закрепления)
-  (используйте "git checkout -- <file>..." чтобы отменить изменения в рабочей директории)
-
-    modified:   README.md
-    
-```
-## Игнорирование файлов
-Зачастую, у вас имеется группа файлов, которые вы не только не хотите автоматически добавлять в репозиторий, но и видеть в списках неотслеживаемых. К таким файлам обычно относятся автоматически генерируемые файлы (различные логи, результаты сборки программ и т.п.). В таком случае, вы можете создать файл .gitignore с перечислением шаблонов соответствующих таким файлам. Вот пример файла .gitignore:
 ```
-$ cat .gitignore
-*.pyo
-*.pyc
-*~
-```
-Первая строка предписывает Git'у игнорировать любые файлы заканчивающиеся на .pyo или .pyc — файлы, которые могут появиться во время сборки кода. Вторая строка предписывает игнорировать все файлы заканчивающиеся на тильду (~), которая используется во многих текстовых редакторах, например Emacs, для обозначения временных файлов. Вы можете также включить каталоги log, tmp или pid; автоматически создаваемую документацию; и т.д. и т.п. Хорошая практика заключается в настройке файла .gitignore до того, как начать серьёзно работать, это защитит вас от случайного добавления в репозиторий файлов, которых вы там видеть не хотите.
 
-К шаблонам в файле .gitignore применяются следующие правила:
-------------------------------------------------------------
-- Пустые строки, а также строки, начинающиеся с #, игнорируются.
-- Можно использовать стандартные glob шаблоны.
-- Можно заканчивать шаблон символом слэша (/) для указания каталога.
-- Можно инвертировать шаблон, использовав восклицательный знак (!) в качестве первого символа.
-Glob-шаблоны представляют собой упрощённые регулярные выражения используемые командными интерпретаторами. Символ * соответствует 0 или более символам; последовательность [abc] — любому символу из указанных в скобках (в данном примере p, y или c); знак вопроса (?) соответствует одному символу; [0-9] соответствует любому символу из интервала (в данном случае от 0 до 9).
+home/views.py. 
 
-Вот ещё один пример файла .gitignore:
 ```
-# комментарий — эта строка игнорируется
-# не обрабатывать файлы, имя которых заканчивается на
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
+from django.shortcuts import render
+from django.http import HttpResponse
 
-# НО отслеживать файл lib.a, несмотря на то, что мы игнорируем все .a файлы с помощью предыдущего правила
-!lib.a
-# C extensions
-*.so
+def home_page(request):
 
-# игнорировать файл TODO находящийся в корневом каталоге, не относится к файлам вида subdir/TODO
-/TODO
-# игнорировать все файлы в каталоге
-# Distribution / packaging
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
+    return HttpResponse("<html><title>Welcome to Django. This is my cool Site!</title>")
 
-# игнорировать doc/notes.txt, но не doc/server/arch.txt
-doc/*.txt
-# игнорировать все .txt файлы в каталоге doc/
-doc/**/*.txt
+```
 
+./manage.py test
+```
+FAIL: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 31, in test_home_page_returns_correct_html
+    self.assertTrue(response.content.endswith(b'</html>'))
+AssertionError: False is not true
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+```
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+home/views.py. 
+--------------
+```
+from django.shortcuts import render
+from django.http import HttpResponse
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*,cover
+def home_page(request):
 
-# Translations
-*.mo
-*.pot
+    return HttpResponse("<html><title>Welcome to Django. This is my cool Site!</title></html>")
 
-# Django stuff:
-*.log
+```
+./manage.py test
+```
+Creating test database for alias 'default'...
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
 
-# Sphinx documentation
-docs/_build/
+OK
+Destroying test database for alias 'default'...
+```
+functional tests
+-----------------
+```
+touch f_tests/__init__.py
+```
+- Все файлы тестов должны начинаться с test, например test_all_users.py.
 
-# PyBuilder
-target/
+- Тестируем заголовок на совпадение с “My Cool Django Site”
+- Тестируем цвет h1 header в home page на совпадение с rgba(200, 50, 255, 1) ~ pink color.
 
+test_all_users.py:
+-------------------
 ```
-
-git status
+# -*- coding: utf-8 -*-
+from selenium import webdriver
+from django.core.urlresolvers import reverse
+from django.contrib.staticfiles.testing import LiveServerTestCase  
+ 
+ 
+class HomeNewVisitorTest(LiveServerTestCase): 
+ 
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(3)
+ 
+    def tearDown(self):
+        self.browser.quit()
+ 
+    def get_full_url(self, namespace):
+        return self.live_server_url + reverse(namespace)
+ 
+    def test_home_title(self):
+        self.browser.get(self.get_full_url("home"))
+        self.assertIn("My Cool Django Site", self.browser.title)
+ 
+    def test_h1_css(self):
+        self.browser.get(self.get_full_url("home"))
+        h1 = self.browser.find_element_by_tag_name("h1")
+        self.assertEqual(h1.value_of_css_property("color"), 
+                         "rgba(200, 50, 255, 1)")
 ```
-В ветке master
-Your branch is up-to-date with 'origin/master'.
 
-Изменения для закрепления:
-  (используйте "git reset HEAD <file>..."  чтобы убрать из буфера)
+Шаг за шагом:
+--------------
+1. Определили function named get_full_url, принимающую 1 аргумент - namespace
+namespace определен в url. 
+2. self.live_server_url определяет local host url. Нужно из-за того, что server использует другой url (обычно http://127.0.0.1:8021).
+3. reverse дает похлдящий url для указанного namespace, именно - /
+4. test_home_title  method проверяет что home page title содержит "My Cool Django Site".
+5. test_h1_css method тестирут color. 
 
-    modified:   README.md
-    new file:   unit_01/README.md
-    new file:   unit_01/benchmarks.py
-    new file:   unit_01/get-pip.py
 
+./manage.py test f_test
+------------------------
 ```
-## Просмотр индексированных и неиндексированных изменений
-Если результат работы команды git status недостаточно информативен для вас — вам хочется знать, что конкретно поменялось, а не только какие файлы были изменены — вы можете использовать команду git diff. 
-git diff показывает вам непосредственно добавленные и удалённые строки — собственно заплатку (patch).
+E.F
+======================================================================
+ERROR: test_h1_css (f_test.test_all_users.HomeNewVisitorTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/f_test/test_all_users.py", line 25, in test_h1_css
+    h1 = self.browser.find_element_by_tag_name("h1")
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 354, in find_element_by_tag_name
+    return self.find_element(by=By.TAG_NAME, value=name)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 712, in find_element
+    {'using': by, 'value': value})['value']
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 201, in execute
+    self.error_handler.check_response(response)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/errorhandler.py", line 188, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.NoSuchElementException: Message: Unable to locate element: {"method":"tag name","selector":"h1"}
 
-Допустим, вы снова изменили и проиндексировали файл README, а затем изменили файл benchmarks.py без индексирования. Если вы выполните команду status, вы опять увидите что-то вроде:
-
 ```
-git status
-В ветке master
-Your branch is up-to-date with 'origin/master'.
+Цикл TDD:
+---------
 
-Изменения для закрепления:
-  (используйте "git reset HEAD <file>..."  чтобы убрать из буфера)
+home/test.py:
+-------------
+```
+# -*- coding: utf-8 -*-
+from django.test import TestCase
+from django.core.urlresolvers import reverse
+ 
+ 
+class TestHomePage(TestCase):
+ 
+    def test_uses_index_template(self):
+        response = self.client.get(reverse("home"))
+        self.assertTemplateUsed(response, "home/index.html")
+ 
+    def test_uses_base_template(self):
+        response = self.client.get(reverse("home"))
+        self.assertTemplateUsed(response, "base.html")
 
-    modified:   README.md
-    new file:   unit_01/README.md
-    new file:   unit_01/benchmarks.py
-    new file:   unit_01/get-pip.py
+``` 
+ 
+./manage.py test home.test
+----------------------------
+```
+FAIL: test_uses_base_template (home.test.TestHomePage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/test.py", line 14, in test_uses_base_template
+    self.assertTemplateUsed(response, "base.html")
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/test/testcases.py", line 579, in assertTemplateUsed
+    self.fail(msg_prefix + "No templates used to render the response")
+AssertionError: No templates used to render the response
 
-Changes not staged for commit:
-  (используйте "git add <file>..." чтобы обновить данные для закрепления)
-  (используйте "git checkout -- <file>..." чтобы отменить изменения в рабочей директории)
+======================================================================
+FAIL: test_uses_index_template (home.test.TestHomePage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_02/mysite/home/test.py", line 10, in test_uses_index_template
+    self.assertTemplateUsed(response, "home/index.html")
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/test/testcases.py", line 579, in assertTemplateUsed
+    self.fail(msg_prefix + "No templates used to render the response")
+AssertionError: No templates used to render the response
 
-    modified:   unit_01/benchmarks.py
+----------------------------------------------------------------------
+```
 
+urls.py
+--------
 ```
-Чтобы увидеть, что же вы изменили, но пока не проиндексировали, наберите git diff без аргументов:
+rlpatterns = [
 
+    url(r'^$', views.home, name='home'),
+    url(r'^admin/', admin.site.urls),
+]
 ```
-git diff
-diff --git a/unit_01/benchmarks.py b/unit_01/benchmarks.py
-index 52bdb68..a0f3889 100644
---- a/unit_01/benchmarks.py
-+++ b/unit_01/benchmarks.py
-@@ -1,2 +1,3 @@
- # -*- coding:utf-8 -*-
--print "Hello"
-\ No newline at end of file
-+print "Hello"
-+print "World"
-\ No newline at end of file
+home/views.py
+-------------
 ```
-Эта команда сравнивает содержимое вашего рабочего каталога с содержимым индекса. Результат показывает ещё не проиндексированные изменения.
-
-Если вы хотите посмотреть, что вы проиндексировали и что войдёт в следующий коммит, вы можете выполнить git diff --cached. (В Git'е версии 1.6.1 и выше, вы также можете использовать git diff --staged, которая легче запоминается.) Эта команда сравнивает ваши индексированные изменения с последним коммитом:
+ 
+def home(request):
+    return render(request, "home/index.html", {})
 ```
-git diff --staged
-diff --git a/README.md b/README.md
-index 7ab9346..b93ac2c 100644
---- a/README.md
-+++ b/README.md
-@@ -1 +1,81 @@
- # p21v-django
-+
-+# Django
-+https://www.djangoproject.com/
-
+templates/home
+---------------
 ```
-Важно отметить, что git diff сама по себе не показывает все изменения сделанные с последнего коммита — только те, что ещё не проиндексированы. 
-
-Другой пример: вы проиндексировали файл benchmarks.py и затем изменили его, вы можете использовать git diff для просмотра как индексированных изменений в этом файле, так и тех, что пока не проиндексированы:
+mkdir templates/home
+touch templates/home/index.html
 ```
-$ git add benchmarks.py
-$ git status
-git status
-В ветке master
-Your branch is up-to-date with 'origin/master'.
-
-Изменения для закрепления:
-  (используйте "git reset HEAD <file>..."  чтобы убрать из буфера)
-
-    modified:   README.md
-    new file:   unit_01/README.md
-    new file:   unit_01/benchmarks.py
-    new file:   unit_01/get-pip.py
-
-Changes not staged for commit:
-  (используйте "git add <file>..." чтобы обновить данные для закрепления)
-  (используйте "git checkout -- <file>..." чтобы отменить изменения в рабочей директории)
+base.html
+----------
+```
+<title>{% block head_title %}{% endblock %}</title>
 
-    modified:   unit_01/benchmarks.py
 ```
-Теперь вы можете используя git diff посмотреть непроиндексированные изменения
+home/index.html
+---------------
 ```
-$ git diff
-iff --git a/unit_01/benchmarks.py b/unit_01/benchmarks.py
-index a0f3889..7afc8ab 100644
---- a/unit_01/benchmarks.py
-+++ b/unit_01/benchmarks.py
-@@ -1,3 +1,5 @@
- # -*- coding:utf-8 -*-
- print "Hello"
--print "World"
-\ No newline at end of file
-+print "World"
-+
-+print ''
-\ No newline at end of file
+{% extends "base.html" %}
+{% block head_title %}My Cook Django Site{% endblock %}
 ```
+./manage.py test home.test
+---------------------------
+```
+Creating test database for alias 'default'...
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.033s
 
-а также уже проиндексированные, используя git diff --cached:
+OK
+Destroying test database for alias 'default'...
 ```
-$ git diff --cached
-diff --git a/README.md b/README.md
-index 7ab9346..b93ac2c 100644
---- a/README.md
-+++ b/README.md
-@@ -1 +1,81 @@
- # p21v-django
+static/css/main.css
+-------------------
 ```
-
-## Фиксация изменений
+.jumbotron h1 {
+    color: rgba(200, 50, 255, 1);
+}
 ```
-$ git commit
+base.html:
+----------
 ```
-Эта команда откроет выбранный вами текстовый редактор. (Редактор устанавливается системной переменной $EDITOR — обычно это vim или emacs, хотя вы можете установить ваш любимый с помощью команды git config --global core.editor).
-
-В редакторе будет отображён следующий текст (это пример окна Vim'а):
+{% load staticfiles %}
+<!DOCTIPE html> 
 ```
-# Please enter the commit message for your changes. Lines starting
-# with '#' will be ignored, and an empty message aborts the commit.
-# On branch master
-# Changes to be committed:
-#   (use "git reset HEAD <file>..." to unstage)
-#
-#       new file:   README
-#       modified:   benchmarks.py
-~
-~
-~
-".git/COMMIT_EDITMSG" 10L, 283C
+static files
+------------
+Заменить
 ```
-Вы можете видеть, что комментарий по умолчанию для коммита содержит закомментированный результат работы ("выхлоп") команды git status и ещё одну пустую строку сверху. Вы можете удалить эти комментарии и набрать своё сообщение или же оставить их для напоминания о том, что вы фиксируете. (Для ещё более подробного напоминания, что же именно вы поменяли, можете передать аргумент -v в команду git commit. Это приведёт к тому, что в комментарий будет также помещена дельта/diff изменений, таким образом вы сможете точно увидеть всё, что сделано.) Когда вы выходите из редактора, Git создаёт для вас коммит с этим сообщением (удаляя комментарии и вывод diff'а).
-
-Есть и другой способ — вы можете набрать свой комментарий к коммиту в командной строке вместе с командой commit, указав его после параметра -m, как в следующем примере:
+    <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/main.css">
 ```
-git commit -m 'Story Fix benchmarks for speed'
-[master 55b0cfc] Story Fix benchmarks for speed
- 4 files changed, 18543 insertions(+)
- create mode 100644 unit_01/README.md
- create mode 100644 unit_01/benchmarks.py
- create mode 100644 unit_01/get-pip.py
-
+на
 ```
-
-коммит сохраняет снимок состояния вашего индекса. Всё, что вы не проиндексировали, так и торчит в рабочем каталоге как изменённое; вы можете сделать ещё один коммит, чтобы добавить эти изменения в репозиторий. Каждый раз, когда вы делаете коммит, вы сохраняете снимок состояния вашего проекта, который позже вы можете восстановить или с которым можно сравнить текущее состояние.
-
-## Игнорирование индексации
-Если у вас есть желание пропустить этап индексирования, Git предоставляет простой способ. Добавление параметра -a в команду git commit заставляет Git автоматически индексировать каждый уже отслеживаемый на момент коммита файл, позволяя вам обойтись без git add:
-
+    <link rel="stylesheet" href="{% static 'css/bootstrap-theme.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
 ```
-$ git commit -a -m 'added new benchmarks'
+Заменить
 ```
-
-## Удаление файлов
-Для того чтобы удалить файл из Git'а, вам необходимо удалить его из отслеживаемых файлов (точнее, удалить его из вашего индекса) а затем выполнить коммит. Это позволяет сделать команда git rm, которая также удаляет файл из вашего рабочего каталога, так что вы в следующий раз не увидите его как “неотслеживаемый”.
-
-Если вы просто удалите файл из своего рабочего каталога, он будет показан в секции “Changes not staged for commit” (“Изменённые но не обновлённые”
-
-удалить файл из индекса, оставив его при этом в рабочем каталоге. Чтобы сделать это, используйте опцию --cached:
+    <script src="js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
 ```
-$ git rm --cached readme.txt
+на
 ```
-В команду git rm можно передавать файлы, каталоги или glob-шаблоны. Это означает, что вы можете вытворять что-то вроде:
+    <script src="{% static 'js/vendor/modernizr-2.8.3-respond-1.4.2.min.js' %}">
 ```
-$ git rm log/\*.log
+Заменить
 ```
-
-## Перемещение файлов
-
-Если вам хочется переименовать файл в Git'е, вы можете сделать что-то вроде:
+    <script src="js/main.js"></script>
+    <script src="js/plugins.js"></script>
+```
+на
+```
+    <script src="{% static 'js/main.js' %}">
+    <script src="{% static 'js/plugins.js' %}">
+```
+Заменить
+```
+    <script src="js/vendor/bootstrap.min.js"></script>
+```
+на
 ```
-$ git mv file_from file_to
+    <script src="{% static 'js/vendor/bootstrap.min.js' %}">
 ```
-и это отлично сработает. На самом деле, если вы выполните что-то вроде этого и посмотрите на статус, вы увидите, что Git считает, что произошло переименование файла:
+Но
+--
 ```
-$ git mv README.txt README
-$ git status
-# On branch master
-# Your branch is ahead of 'origin/master' by 1 commit.
-#
-# Changes to be committed:
-#   (use "git reset HEAD <file>..." to unstage)
-#
-#       renamed:    README.txt -> README
-#
+document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
 ```
-Однако, это эквивалентно выполнению следующих команд:
+заменить на
 ```
-$ mv README.txt README
-$ git rm README.txt
-$ git add README
+document.write('<script src="static/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
 ```
-Git неявно определяет, что произошло переименование, поэтому неважно, переименуете вы файл так или используя команду mv. Единственное отличие состоит лишь в том, что mv — это одна команда вместо трёх — это функция для удобства. 
 
