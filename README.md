@@ -311,6 +311,16 @@ OK
 ```
 тест завершился успешно
 
+git add
+--------
+        git add --all
+        git commit -m 'added selenium functional tests'
+        [unit_02 5d99404] added selenium functional tests
+         4 files changed, 1371 insertions(+), 841 deletions(-)
+         rewrite README.md (97%)
+         create mode 100644 functional_tests/py_search_tests.py
+         create mode 100644 functional_tests/search_tests.py
+         create mode 100644 functional_tests/tests.py
 
 Setup Project
 =============
@@ -331,30 +341,37 @@ django-admin startproject mysite
 
 ```
 cd mysite
-mkdir f_test
-cd f_test/
-touch test0.py
+mkdir functional_tests
+cd functional_tests/
+touch test_1.py
 ```
 
-test0.py
---------
-```
-from selenium import webdriver
+test_1.py
+----------
 
-browser = webdriver.Firefox()
-browser.get('http://localhost:8000')
+        # -*- coding: utf-8 -*-
 
-assert 'Django' in browser.title
+        from selenium import webdriver
 
+        browser = webdriver.Firefox()
+        browser.get('http://localhost:8000')
+
+        assert 'Django' in browser.title
+
+
+
+python test_1.py 
+-----------------
 ```
-python test0.py 
----------------
-```
+Попытка соединения не удалась
+
 Traceback (most recent call last):
-  File "test0.py", line 7, in <module>
+  File "test_1.py", line 8, in <module>
     assert 'Django' in browser.title
 AssertionError
+
 ```
+
 python manage.py runserver
 --------------------------
 ```
@@ -363,19 +380,23 @@ python manage.py runserver
 Performing system checks...
 
 System check identified no issues (0 silenced).
-January 20, 2016 - 11:05:08
-Django version 1.9.1, using settings 'mysite.settings'
+
+You have unapplied migrations; your app may not work properly until they are applied.
+Run 'python manage.py migrate' to apply them.
+
+March 18, 2016 - 16:42:09
+Django version 1.9.4, using settings 'mysite.settings'
 Starting development server at http://127.0.0.1:8000/
 Quit the server with CONTROL-C.
 
-
 ```
-python test0.py 
----------------
+python test_1.py 
+-----------------
+
 ## Наш первый functional test для нашего сайта: 
 
-test1.py
---------
+test_2.py
+---------
 ```
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -399,8 +420,9 @@ try:
 finally:
     browser.quit()
 ```
-python test1.py 
----------------
+
+python test_2.py 
+----------------
 ```
 Welcome to Django
 Welcome to Django  This is my cool Site!
@@ -457,7 +479,8 @@ driver.quit()
 
 # Functional Test == Acceptance Test == End-to-End Test
 
-test_hello.py
+test_3.py
+---------
 ```
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -481,14 +504,15 @@ finally:
     browser.quit()
 
 ```
-python test_hello.py 
+python test_3.py 
 ```
 Traceback (most recent call last):
-  File "test_hello.py", line 9, in <module>
+  File "test_3.py", line 11, in <module>
     assert 'This is my cool Site!' in browser.title
 AssertionError
 ```
 test_welcome.py 
+
 ```
 # Сначала были импортированы все основные необходимые модули. Модуль unittest встроен в Python и реализован на Java’s JUnit. Этот модуль предоставляет собой утилиту для организации тестов.
 
@@ -539,12 +563,12 @@ F
 FAIL: test_can_start_a_list_and_retrieve_it_later (__main__.NewVisitorTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "test_welcome.py", line 30, in test_can_start_a_list_and_retrieve_it_later
+  File "test_welcome.py", line 29, in test_can_start_a_list_and_retrieve_it_later
     self.assertIn('This is my cool Site!', self.browser.title)
 AssertionError: 'This is my cool Site!' not found in 'Welcome to Django'
 
 ----------------------------------------------------------------------
-Ran 1 test in 6.324s
+Ran 1 test in 5.304s
 
 FAILED (failures=1)
 
@@ -558,36 +582,52 @@ FAILED (failures=1)
         self.browser.implicitly_wait(3)
 
 ```
-all_users.py
--------------
+test_welcome.py
+---------------
 ```
 # -*- coding: utf-8 -*-
+
 from selenium import webdriver
 import unittest
- 
-class NewVisitorTest(unittest.TestCase):
- 
-    def setUp(self):
+
+class NewVisitorTest(unittest.TestCase):  
+
+    def setUp(self):  
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(3)
- 
-    def tearDown(self):
-        self.browser.quit()
- 
+        self.browser.implicitly_wait(3) # Implicit waits - Неявные ожидания
+
     def test_it_worked(self):
         self.browser.get('http://localhost:8000')
         self.assertIn('Welcome to Django', self.browser.title)
- 
-if __name__ == '__main__':
+        
+    def tearDown(self):  
+        self.browser.quit()
+
+    def test_can_start_a_list_and_retrieve_it_later(self):  
+        self.browser.get('http://localhost:8000')
+        self.assertIn('This is my cool Site!', self.browser.title)  
+        self.fail('Finish the test!')  
+
+if __name__ == '__main__':  
     unittest.main(warnings='ignore')
 ```
-python all_users.py 
--------------------
+python test_welcome.py
+----------------------
 ```
-.
+F.
+======================================================================
+FAIL: test_can_start_a_list_and_retrieve_it_later (__main__.NewVisitorTest)
 ----------------------------------------------------------------------
-Ran 1 test in 6.368s
-OK
+Traceback (most recent call last):
+  File "test_welcome.py", line 34, in test_can_start_a_list_and_retrieve_it_later
+    self.assertIn('This is my cool Site!', self.browser.title)
+AssertionError: 'This is my cool Site!' not found in 'Welcome to Django'
+
+----------------------------------------------------------------------
+Ran 2 tests in 10.223s
+
+FAILED (failures=1)
+
 ```
 
 ./manage.py startapp home
@@ -595,12 +635,13 @@ OK
 ```
 mysite/
 ├── db.sqlite3
-├── f_tests.py
+├── functional_tests
 ├── home
 │   ├── admin.py
 │   ├── __init__.py
 │   ├── migrations
 │   │   └── __init__.py
+│   ├── apps.py
 │   ├── models.py
 │   ├── tests.py
 │   └── views.py
@@ -620,20 +661,20 @@ mysite/
 TDD подход будет выглядеть так:
 -------------------------------
 - Начнем с написания функциональных тестов, описывая новые возможности с точки зрения пользователя.
-- После того, как у нас есть функциональный тест, который не удается, мы начинаем думать о том, как написать код, который может заставить его пройти (или по крайней мере пройти его нынешнем недостаточности). Сейчас мы используем один или несколько юнит-тестов, чтобы определить, как должен вести себя наш код.
-- После того, как у нас есть модульный тест и он не проходит, мы пишем некоторое количество кода приложения, достаточное чтобы пройти модульный тест. Мы можем повторять шаги 2 и 3 несколько раз, пока не получим желаемое.
-Теперь мы можем повторно вызвать наши функциональные тесты и посмотреть, проходят ли они. 
+- После того, как у нас есть функциональный тест, который не удается, мы начинаем думать о том, как написать код, который может заставить его пройти. Сейчас мы используем один или несколько юнит-тестов, чтобы определить, как должен вести себя наш код.
+- После того, как у нас есть юнит-тестов и он не проходит, мы пишем некоторое количество кода приложения, достаточное чтобы пройти наш тест. Мы можем повторять шаги 2 и 3 несколько раз, пока не получим желаемое.
+- Теперь мы можем повторно вызвать наши функциональные тесты и посмотреть, проходят ли они. 
 
 # Unit Testing in Django
 
-home/test.py
+home/tests.py
 
 ```
 from django.test import TestCase
 
 # Create your tests here.
 ```
-home/test.py
+home/tests.py
 ------------
 ```
 from django.test import TestCase
