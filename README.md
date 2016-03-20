@@ -74,12 +74,12 @@ Selenium WebDriver – это программная библиотека для
 
 ## В виртуальное окружение ставим Selenium
 
-        $ workon dj21
+        $ workon venv
 
-        (dj21)$ pip install django==1.9.4 
-        (dj21)$ pip install -U selenium
+        (venv)$ pip install django==1.9.4 
+        (venv)$ pip install -U selenium
 
-        # (dj21)$ pip install unittest2 # (only if using Python 2.6)
+        # (venv)$ pip install unittest2 # (only if using Python 2.6)
 
 
 # Подробная инструкция для пользователей Windows
@@ -119,6 +119,52 @@ pip list
         touch tests.py
 
         subl tests.py 
+
+# Python. Модули и пакеты
+Программное обеспечение (приложение или библиотека) на Python оформляется в виде модулей, которые в свою очередь могут быть собраны в пакеты. Модули могут располагаться как в каталогах, так и в ZIP-архивах. Модули могут быть двух типов по своему происхождению: модули, написанные на «чистом» Python, и модули расширения (extension modules), написанные на других языках программирования. Например, в стандартной библиотеке есть «чистый» модуль pickle и его аналог на Си: cPickle. Модуль оформляется в виде отдельного файла, а пакет — в виде отдельного каталога. Подключение модуля к программе осуществляется оператором import. После импорта модуль представлен отдельным объектом, дающим доступ к пространству имён модуля. В ходе выполнения программы модуль можно перезагрузить функцией reload().
+
+# Подключение модуля из стандартной библиотеки
+
+Подключить модуль можно с помощью инструкции import:
+```
+import os # модуль os для получения текущей директории
+os.getcwd() # 'C:\\Python33'
+```
+Одной инструкцией можно подключить несколько модулей.
+```
+import time, random
+time.time() # 1376047104.056417
+random.random() # 0.9874550833306869
+```
+После импортирования модуля его название становится переменной, через которую можно получить доступ к атрибутам модуля. 
+```
+import math
+math.e # 2.718281828459045
+```
+если указанный атрибут модуля не будет найден, возбудится исключение AttributeError. А если не удастся найти модуль для импортирования, то ImportError.
+```
+import notexist
+```
+# Функция dir()
+Встроенная функция dir() используется для получения имён, определённых в модуле.
+
+# Использование псевдонимов
+Если название модуля слишком длинное, то для него можно создать псевдоним, с помощью ключевого слова as.
+```
+import math as m
+
+from math import e, ceil as c
+e # 2.718281828459045
+c(4.6) # 5
+```
+Импортируемые атрибуты можно разместить на нескольких строках, если их много:
+```
+from math import (sin, cos,
+          tan, atan)
+
+from позволяет подключить все переменные из модуля. 
+from sys import *
+```
 
 tests.py
 --------
@@ -175,7 +221,518 @@ tests.py
 
         browser.quit()
 
-Пошук Google
+
+# Errors
+Существует (как минимум) два различимых вида ошибок: синтаксические ошибки (syntax errors) и исключения (exceptions).
+
+# Синтаксические ошибки
+```
+while True print 'Hello world'
+  File "<stdin>", line 1, in ?
+    while True print 'Hello world'
+                   ^
+SyntaxError: invalid syntax
+```
+
+Даже, если ваша программа работает правильно, неверные данные и ошибки ввода могут привести к непредсказуемым результатам. 
+Перехват ошибок - что мы с ними после перехвата можем сделать. 
+--------------------------------------------------------------
+```
+import sys
+C = float(sys.argv[1])
+
+if C < -273.15:
+    print '%g degrees Celsius is non-physical!' % C
+    print 'The Fahrenheit temperature will not be computed.'
+else:
+    F = 9.0/5*C + 32
+    print F
+print 'end of program'
+```
+
+мы забыли передать аргумент:
+```
+prog.py Traceback (most recent call last):
+File "prog.py", line 2, in
+C = float(sys.argv[1])
+IndexError: list index out of range
+```
+Python прервал выполнение программы, показал что ошибка находится во второй строке и указал на тип ошибки — IndexError и краткое объяснение что не так. 
+Из этой информации, просмотрев код программы, можно сделать вывод, что индекс 1 выходит за пределы списка (index out of range) - и это правильно, ведь в списке sys.argv только нулевой элемент, название программы. Значит есть всего один возможный индекс 0.
+
+как эту ошибку обработать? 
+--------------------------
+Предварительно проверять длину списка:
+
+```
+if len(sys.argv) < 2:
+    print 'You failed to provide Celsius degrees as input '\
+        'on  the  command  line!'
+    sys.exit(1)   #  прекращаем ввиду ошибки
+F = 9.0*C/5 + 32
+print '%gC is %.1fF' % (C, F)
+```
+Для преднамеренного прекращения программы используется функция exit модуля sys. В случае прекращения программы без ошибок функции передается 0, в случае наличия ошибки любое отличное от нуля значение (например, 1). 
+
+# Исключения
+Исключения согласуются с философией Python (10-й пункт «дзена Python» — «Ошибки никогда не должны умалчиваться») и являются одним из средств поддержки «утиной типизации».
+
+Исключения свидетельствуют об ошибках и прерывают нормальный ход выполнения программы. 
+
+Исключения возбуждаются с помощью инструкции raise. В общем случае инструкция raise имеет следующий вид:
+
+raise Exception([value]), где Exception – тип исключения, а value – необязательное значение с дополнительной информацией об исключении.
+
+Например:
+```
+raise RuntimeError(“Неустранимая ошибка”)
+
+```
+
+# Обработка исключений
+
+Обработка исключений поддерживается в Python посредством операторов try, except, else, finally, raise, образующих блок обработки исключения.
+```
+try:
+    # Здесь код, который может вызвать исключение
+    raise Exception("message")  # Exception, это один из стандартных типов исключения (всего лишь класс),
+    # может использоваться любой другой, в том числе свой
+
+except (Тип исключения1, Тип исключения2, …) as Переменная:
+    # Код в блоке выполняется, если тип исключения совпадает с одним из типов
+    # (Тип исключения1, Тип исключения2, …) или является наследником одного
+    # из этих типов.
+    # Полученное исключение доступно в необязательной Переменной.
+
+except (Тип исключения3, Тип исключения4, …) as Переменная:
+    # Количество блоков except не ограничено
+    raise  # Сгенерировать исключение "поверх" полученного; без параметров - повторно сгенерировать полученное
+
+except:
+    # Будет выполнено при любом исключении, не обработанном типизированными блоками except
+
+else:
+    # Код блока выполняется, если не было поймано исключений.
+
+finally:
+    # Будет исполнено в любом случае, возможно после соответствующего
+    # блока except или else
+```
+
+Иногда вместо явной обработки исключений удобнее использовать блок with (доступен, начиная с Python 2.5).
+
+# Перехватить исключение с помощью инструкций try и except:
+
+Исключения из обоих мест попадут в except OSError, где можно будет что-то сделать с ошибкой.
+Питон делает явный выбор в пользу исключений перед возвратом кода ошибки в своём ядре и стандартной библиотеке.
+```
+import sys
+try:
+    C = float(sys.argv[1])
+except:
+    print 'You failed to provide Celsius degrees as input '\
+          'on the command line!'
+    sys.exit(1)
+
+F = 9.0*C/5 + 32
+print '%gC is %.1fF' % (C, F)
+```
+Теперь, если мы не передадим аргументов, то найти sys.argv[1] невозможно, значит возникло исключение и мы отправляемся в блок except. Если же передать аргумент, то выполняется только блок try. Проверим:
+```
+prog.py
+You failed to provide Celsius degrees as input on the command line!
+
+prog.py 21
+21C is 69.8F
+```
+## Особые исключения
+
+В Python есть удобная возможность разделять инструкции для ошибок различного рода:
+```
+import sys
+try:
+    C = float(sys.argv[1])
+except IndexError:
+    print 'Celsius degrees must be supplied on the command line'
+    sys.exit(1)
+except ValueError:
+    print 'Celsius degrees must be a pure number, '\
+          'not  "%s"' % sys.argv[1]
+    sys.exit(1)
+
+F = 9.0*C/5 + 32
+print '%gC is %.1fF' % (C, F)
+```
+Теперь в зависимости от ошибки совершенной пользователем, мы и сами можем сказать пользователю, что он сделал не так и как это исправить.
+
+Возбуждение исключений полезно, когда мы хотим уточнить какую-то ошибку, например понятную нам из физического смысла или каких-то других соображений. Пусть для ввода температуры и подойдет аргумент в виде числа, но мы помним про абсолютный ноль и предостерегаем пользователя:
+```
+def read_C():
+    try:
+        C = float(sys.argv[1])
+    except IndexError:
+        raise IndexError('Celsius degrees must be supplied on the command line')
+    except  ValueError:
+        raise ValueError('Celsius  degrees must be a pure number, '\
+                         'not "%s"' % sys.argv[1])
+    if C < -273.15:
+        raise ValueError('C=%g is a non-physical value!' % C)
+    return C
+```
+Далее имеются две возможности использовать функцию read_C(). Простой:
+```
+C = read_C()
+```
+Неправильный ввод приведет к:
+```
+prog.py
+Traceback (most recent call last):
+File "prog.py", line 5, in ?
+raise IndexError
+IndexError: Celsius degrees must be supplied on the command line.
+```
+Для людей, незнакомых с Python, возникающие на экране слова Traceback, raise, IndexError могут вызвать недоумение. Самая важная информация для человека, работающего с вашей программой расположена в самом конце. Существует возможность выводить только эту строку. В этом случае функцию мы вызываем так:
+```
+try:
+    C = read_C()
+except Exception, e:
+    print e
+    sys.exit(1)
+```
+Exception это имена всех возможных исключений, e — сообщение исключения. В нашем случае у нас в функции записаны два типа исключений, поэтому:
+```
+try:
+    C = read_C()
+except  (ValueError, IndexError), e:
+    print e
+    sys.exit(1)
+```
+После блока определения функции и блока try-except пишем блок вычислений и проверяем программу:
+```
+import sys
+
+def read_C():
+    try:
+        C = float(sys.argv[1])
+    except IndexError:
+        raise IndexError\
+        ('Celsius degrees must be supplied on the command line')
+    except ValueError:
+        raise ValueError\
+        ('Celsius degrees must be a pure number, '\
+         'not "%s"' % sys.argv[1])
+    # C is read correctly as a number, but can have wrong value:
+    if C < -273.15:
+        raise ValueError('C=%g is a non-physical value!' % C)
+    return C
+
+try:
+    C = read_C()
+except (IndexError, ValueError), e:
+    print e
+    sys.exit(1)
+    
+F = 9.0*C/5 + 32
+print '%gC is %.1fF' % (C, F)
+
+prog.py
+Celsius degrees must be supplied on the command line
+prog.py 21C
+Celsius degrees must be a pure number, not "21C"
+prog.py -500
+C=-500 is a non-physical value!
+prog.py 21
+21C is 69.8F
+```
+программа теперь не только обрабатывает получаемые данные и выдает ответ, но может работать и с неверными данными, определяя ошибку и выдавая информативное сообщение без лишней раздражающей информации.
+
+# Типы исключений
+```
+BaseException
+ +-- SystemExit
+ +-- KeyboardInterrupt
+ +-- GeneratorExit
+ +-- Exception
+      +-- StopIteration
+      +-- AssertionError
+      +-- AttributeError
+      +-- BufferError
+  ```
+- Самый базовый класс — BaseException. Он и его простые потомки (SystemExit, KeyboardInterrupt,GeneratorExit) не предназначены для перехвата обыкновенным программистом — только Питон и редкие библиотеки должны работать с этими типами. Нарушение правила ведет, например, к тому что программу невозможно корректно завершить.
+
+Использование индекса, выходящего за пределы списка, приводит к ошибке IndexError:
+```
+>>> data = [1.0/i for i in range(1,10)]
+>>> data[9]
+...
+IndexError: list index out of range
+```
+Python всегда останавливает программу, когда встречает неправильный индекс.
+
+В случае, если содержимое строки не представляет собой только число, конвертирование заканчивается неудачей и ошибкой ValueError:
+```
+>>> C = float('21 C')
+...
+ValueError: invalid literal for float(): 21 C
+```
+В случае, если вызывается переменная, которой не задано значение, возникает ошибка NameError:
+```
+>>> print a
+...
+NameError: name 'a' is not defined
+```
+Деление на ноль:
+```
+>>> 3.0/0
+...
+ZeroDivisionError: float division
+```
+В случае, если вы ошибаетесь в написании ключевых слов языка, возникает SyntaxError:
+```
+>>> forr d in data:
+...
+    forr d in data:
+         ^
+SyntaxError: invalid syntax
+```
+Если мы захотим перемножить число на строку:
+```
+>>> 'a  string'*3.14
+...
+TypeError: can’t multiply sequence by non-int of type 'float'
+```
+Исключение TypeError возникает, поскольку объекты таких типов не могут быть перемножены (str и float). Но, вообще говоря, это не значит что число и строка не могут быть перемножены.
+
+Перемножение возможно, если число целое (int). Под операцией умножения здесь понимается повторение строки указанное число раз. Это же правило действует и на списки:
+```
+>>> '--'*10     #  десять двойных дефисов = 20 дефисов
+'--------------------'
+>>> n  = 4
+>>> [1, 2, 3]*n
+[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]
+>>> [0]*n
+[0, 0, 0, 0]
+
+```
+Также не нужно перехватывать все исключения:
+```
+try:
+    ...
+except:
+    ...
+```
+работает как
+```
+try:
+    ...
+except BaseException:
+    ...
+```
+# используем операторы try и except, чтобы корректно и красиво завершить скрипт
+
+```
+'''функция диалога.
+Первым аргументом принимаем ответ пользователя,
+вторым - выдаём сообщение при неверном вводе'''
+
+def answer(prompt, choice='Только Yes или no!'):
+        while True:
+                result = raw_input(prompt)
+                if result in ('y', 'Y', 'yes', 'Yes'):
+                        print '\nВы выбрали "YES" - заканчиваем\n'
+                        '''тут можно использовать оператор break вместо return
+                        так же и в ответе No'''
+                        return False
+
+                elif result in ('n', 'N', 'no', 'No'):
+                        print "\nВы выбрали NO - Я продолжаю работу...\n"
+
+                        print_menu()
+                        return True
+                else:
+
+                        print(choice)
+```
+
+- при Ctrl+C (KeyboardInterrupt - SIGINT)
+- или Ctrl+D (EOFError - SIGQUIT) команда
+
+```
+elif menu_choice == '7':
+    try:
+        if  (answer("\nВы уверены, что хотите закончить работу? ('y' или 'n', Ctrl+C для выхода) ")==False):
+            break
+    except (KeyboardInterrupt, EOFError):
+        exit('\nВыход\n')
+```
+
+# Проиерка обязательных параметров
+
+```
+first_name = input("Имя сотрудника: ")
+#validate
+while first_name == '':
+    print('\n Имя сотрудника required.  Try again.')
+    first_name = input("Имя сотрудника: ")
+last_name = input("Фамилия сотрудника: ")
+#validate
+while last_name == '':
+    print('\n Фамилия сотрудника required.  Try again.')
+    last_name = input("Фамилия сотрудника: ")
+
+```
+
+# Проверка допустимых значений параметров
+
+```
+ID_valid = False
+
+      ID = input("Идентификатор сотрудника: ")
+
+      while ID_valid == False:
+
+          try:
+              ID = float(ID)
+              if ID > 0:
+                  ID_valid = True
+              else:
+                  print("\nID должен быть > 0.  Пробуем еще.")
+                  ID = input("Идентификатор сотрудника: ")
+          except ValueError:
+              print("\nID должен быть числом.  Пробуем еще..")
+              ID = input("Идентификатор сотрудника:: ")
+```
+
+- Всё, что может быть нужно программисту — это Exception и унаследованные от него классы.
+
+лучше ловить как можно более конкретные классы исключений
+```
+import os
+
+filename = 'file.txt'
+try:
+    f = open (filename, 'r')
+    try:
+        print f.read()
+    finally:
+        f.close()
+except (os.error, IOError) as ex:
+    print "Cannot process file", filename, ": Error is", ex
+```
+нструкция finally служит для реализации завершающих действий, сопутствующих операциям, выполняемым в блоке try. Например:
+
+```
+
+try:
+    # Выполнить некоторые действия
+
+finally:
+
+def print_staff():
+    try:
+        n = 0
+        for emp in mystaff.employee_list:
+            n += 1
+            print(emp)
+
+        if n==0 :
+            raise MyError(2)
+    except MyError as e:
+        print '\nНет данных о сотрудниках :', e.value
+    else:
+        print  'Хранилище содержит ', n, ' строк'
+    finally:
+        print  'Дата проверки состояния записей ', datetime.now()
+
+```
+Блок finally не используется для обработки ошибок. Он используется для реализации действий, которые должны выполняться всегда, независимо от того, возникла ошибка или нет. Если в блоке try исключений не возникло, блок finally будет выполнен сразу же вcлед за ним. Если возникло исключение, управление сначала будет передано первой инструкции в блоке finally, а затем это исключение будет возбуждено повторно, чтобы обеспечить возможность его обработки в другом обработчике.
+
+```
+def fetcher(obj, index):
+    return obj[index]
+
+x = 'spam'
+fetcher(x, 3)           # Like x[3] 'm'
+
+try:
+    fetcher(x, 3)
+finally:
+    print 'after fetch'
+
+fetcher(x, 3)
+print 'after fetch'
+
+# KeyboardInterrupt.
+
+while True:
+    try:
+        x = int(input("Введите, пожалуйста, число: "))
+        break
+    except ValueError:
+        print("Ой!  Это некорректное число.  Попробуйте ещё раз...")
+```
+
+# Оператор try работает следующим образом:
+
+- В начале исполняется блок try (операторы между ключевыми словами try и except).
+
+- Если при этом не появляется исключений, блок except не выполняется и оператор try заканчивает работу.
+
+- Если во время выполнения блока try было возбуждено какое-либо исключение, оставшаяся часть блока не выполняется.
+
+- Затем, если тип этого исключения совпадает с исключением, указанным после ключевого слова except, выполняется блок except, а по его завершению выполнение продолжается сразу после оператора try-except.
+
+- Если порождается исключение, не совпадающее по типу с указанным в блоке except — оно передаётся внешним операторам try; 
+
+- если ни одного обработчика не найдено, исключение считается необработанным (unhandled exception), и выполнение полностью останавливается и выводится сообщение.
+
+# Оператор try может иметь более одного блока except
+```
+except (RuntimeError, TypeError, NameError):
+    pass
+
+```
+# необязательный блок else
+```
+def print_staff():
+    try:
+        n = 0
+        for emp in mystaff.employee_list:
+            n += 1
+            print(emp)
+
+        if n==0 :
+            raise MyError(2)
+    except MyError as e:
+        print '\nНет данных о сотрудниках :', e.value
+    else:
+        print  'Хранилище содержит ', n, ' строк'
+
+```
+
+# Семейство OSError
+
+Полный список наследников OSError:
+```
+OSError
+ +-- BlockingIOError
+ +-- ChildProcessError
+ +-- ConnectionError
+ |    +-- BrokenPipeError
+ |    +-- ConnectionAbortedError
+ |    +-- ConnectionRefusedError
+ |    +-- ConnectionResetError
+ +-- FileExistsError
+ +-- FileNotFoundError
+ +-- InterruptedError
+ +-- IsADirectoryError
+ +-- NotADirectoryError
+ +-- PermissionError
+ +-- ProcessLookupError
+ +-- TimeoutError
+```
+
+Поиск Google
 ------------
 search_tests.py
 ```
@@ -357,8 +914,6 @@ test_1.py
         browser.get('http://localhost:8000')
 
         assert 'Django' in browser.title
-
-
 
 python test_1.py 
 -----------------
@@ -632,27 +1187,45 @@ FAILED (failures=1)
 
 ./manage.py startapp home
 --------------------------
-```
-mysite/
-├── db.sqlite3
-├── functional_tests
-├── home
-│   ├── admin.py
-│   ├── __init__.py
-│   ├── migrations
-│   │   └── __init__.py
-│   ├── apps.py
-│   ├── models.py
-│   ├── tests.py
-│   └── views.py
-├── manage.py
-└── mysite
-    ├── __init__.py
-    ├── __pycache__
-    ├── settings.py
-    ├── urls.py
-    └── wsgi.py
-```
+
+        mysite/
+        ├── db.sqlite3
+        ├── functional_tests
+        ├── home
+        │   ├── admin.py
+        │   ├── __init__.py
+        │   ├── migrations
+        │   │   └── __init__.py
+        │   ├── apps.py
+        │   ├── models.py
+        │   ├── tests.py
+        │   └── views.py
+        ├── manage.py
+        └── mysite
+            ├── __init__.py
+            ├── __pycache__
+            ├── settings.py
+            ├── urls.py
+            └── wsgi.py
+
+git commit -m 'Added home app'
+-----------------------------
+        git add --all :/
+        git rm -r mysite/mysite/__pycache__
+
+        $ git status
+
+        echo "__pycache__" >> .gitignore
+        echo "*.pyc" >> .gitignore
+
+        git status
+
+        git add .gitignore
+
+        git commit -m 'added gitignore and home app'
+
+        $ git status
+
 
 ## Unit Tests
 
@@ -662,7 +1235,7 @@ TDD подход будет выглядеть так:
 -------------------------------
 - Начнем с написания функциональных тестов, описывая новые возможности с точки зрения пользователя.
 - После того, как у нас есть функциональный тест, который не удается, мы начинаем думать о том, как написать код, который может заставить его пройти. Сейчас мы используем один или несколько юнит-тестов, чтобы определить, как должен вести себя наш код.
-- После того, как у нас есть юнит-тестов и он не проходит, мы пишем некоторое количество кода приложения, достаточное чтобы пройти наш тест. Мы можем повторять шаги 2 и 3 несколько раз, пока не получим желаемое.
+- После того, как у нас есть юнит-тест и он не проходит, мы пишем некоторое количество кода приложения, достаточное чтобы пройти наш тест. Мы можем повторять шаги 2 и 3 несколько раз, пока не получим желаемое.
 - Теперь мы можем повторно вызвать наши функциональные тесты и посмотреть, проходят ли они. 
 
 # Unit Testing in Django
@@ -675,7 +1248,7 @@ from django.test import TestCase
 # Create your tests here.
 ```
 home/tests.py
-------------
+-------------
 ```
 from django.test import TestCase
 
@@ -685,15 +1258,17 @@ class EqualTest(TestCase):
     def test_bad_maths(self):
         self.assertEqual(1 + 1, 3)
 ```
+
 ./manage.py test      
 ```
+ ./manage.py test
 Creating test database for alias 'default'...
 F
 ======================================================================
 FAIL: test_bad_maths (home.tests.EqualTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/tests.py", line 7, in test_bad_maths
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 8, in test_bad_maths
     self.assertEqual(1 + 1, 3)
 AssertionError: 2 != 3
 
@@ -701,93 +1276,9 @@ AssertionError: 2 != 3
 Ran 1 test in 0.001s
 
 FAILED (failures=1)
-Destroying test database for alias 'default'..
+Destroying test database for alias 'default'...
 
 ```
-Static Files Settings
-=====================
-Settings file (settings.py)
----------------------------
-```
-# Application definition
-
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    ...
-    
-    'django.contrib.staticfiles',
-]
-```
-
-Static files (CSS, JavaScript, Images)
----------------------------------------
-```
-# https://docs.djangoproject.com/en/1.9/howto/static-files/
-
-STATIC_URL = '/static/'
-```
-
-STATICFILES DIR
----------------
-```
-mkdir static
-```
-
-settings.py:
-------------
-```
-import os
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-```
-
-STATICFILES_DIRS:
------------------
-```
-STATIC_URL = '/static/'
-
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
-)
-```
-Templates Settings
-------------------
-```
-mkdir templates
-```
-Templates files
----------------
-```
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "templates")],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                 django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-```
-
-Initializr: HTML5 Boilerplate and Twitter Bootstrap
----------------------------------------------------
-http://www.initializr.com/
-
-После загрузки и распаковки:
-----------------------------
-- Переместить index.html, 404.html, humans.txt и robots.txt в templates folder.
-- Переименовать index.html в base.html. 
-- Остальные файлы переместить в static
-- Создайте свой favicon.ico.
-- Можно удалить файлы apple-touch-icon.png, browserconfig.xml, tile-wide.png и tile.png.
-
 
 # Django MVC, URLs, and View Functions
 
@@ -819,7 +1310,7 @@ class HomePageTest(TestCase):
 
 При вызове "/"(корень сайта), Django находит метод с именем home_page.
 
-Этот метод мы напишем позже. Мы планируем сохранить его в home/views.py.
+Этот метод мы и напишем. Мы планируем сохранить его в home/views.py.
 
 home/views.py. 
 ```
@@ -837,13 +1328,13 @@ FE
 ERROR: test_root_url_resolves_to_home_page_view (home.tests.HomePageTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/tests.py", line 9, in test_root_url_resolves_to_home_page_view
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 11, in test_root_url_resolves_to_home_page_view
     found = resolve('/')
   File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 534, in resolve
     return get_resolver(urlconf).resolve(path)
   File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 404, in resolve
     raise Resolver404({'tried': tried, 'path': new_path})
-django.core.urlresolvers.Resolver404: {'tried': [[<RegexURLResolver <RegexURLPattern list> (admin:admin) ^admin/>]], 'path': ''}
+django.core.urlresolvers.Resolver404: {'path': '', 'tried': [[<RegexURLResolver <RegexURLPattern list> (admin:admin) ^admin/>]]}
 
 ```
 ## urls.py
@@ -885,16 +1376,15 @@ urlpatterns = [
     url(r'^$', views.home_page, name='home'),
     url(r'^admin/', include(admin.site.urls)),
 ]
+
 ```
+
 ./manage.py test
 ```
-Creating test database for alias 'default'...
-FE
-======================================================================
 ERROR: test_root_url_resolves_to_home_page_view (home.tests.HomePageTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/tests.py", line 9, in test_root_url_resolves_to_home_page_view
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 11, in test_root_url_resolves_to_home_page_view
     found = resolve('/')
   File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 534, in resolve
     return get_resolver(urlconf).resolve(path)
@@ -930,12 +1420,12 @@ Creating test database for alias 'default'...
 Ran 2 tests in 0.002s
 
 OK
-Destroying test database for alias 'default'...
+
 ```
 
 ## Unit Test метод
 
-home/test_1.py. 
+home/tests.py. 
 ```
 from django.core.urlresolvers import resolve
 from django.test import TestCase
@@ -968,7 +1458,6 @@ class HomePageTest(TestCase):
         self.assertIn(b'<title>Welcome to Django. This is my cool Site!</title>', response.content)  
         self.assertTrue(response.content.endswith(b'</html>'))  
 
-
 class EqualTest(TestCase):
 
     def test_bad_maths(self):
@@ -978,13 +1467,17 @@ class EqualTest(TestCase):
 ./manage.py test
 
 ```
-Creating test database for alias 'default'...
-ERROR: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+
+ERROR: test_home_page_returns_correct_html (home.tests.HomePageTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 22, in test_home_page_returns_correct_html
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 34, in test_home_page_returns_correct_html
     response = home_page(request)
 TypeError: home_page() takes 0 positional arguments but 1 was given
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.036s
+
 ```
 
 home/views.py. 
@@ -995,12 +1488,13 @@ def home_page(request):
 ```
 ./manage.py test
 ```
-ERROR: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+ERROR: test_home_page_returns_correct_html (home.tests.HomePageTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 26, in test_home_page_returns_correct_html
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 38, in test_home_page_returns_correct_html
     self.assertTrue(response.content.startswith(b'<html>'))
 AttributeError: 'NoneType' object has no attribute 'content'
+
 ```
 home/views.py. 
 ```
@@ -1014,38 +1508,14 @@ def home_page(request):
 
 ./manage.py test
 ```
-FAIL: test_home_page_returns_correct_html (home.test_1.HomePageTest)
+FAIL: test_home_page_returns_correct_html (home.tests.HomePageTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 26, in test_home_page_returns_correct_html
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 38, in test_home_page_returns_correct_html
     self.assertTrue(response.content.startswith(b'<html>'))
 AssertionError: False is not true
 
 ```
-
-home/views.py. 
-
-```
-from django.shortcuts import render
-from django.http import HttpResponse
-
-def home_page(request):
-
-    return HttpResponse("<html><title>Welcome to Django. This is my cool Site!</title>")
-
-```
-
-./manage.py test
-```
-FAIL: test_home_page_returns_correct_html (home.test_1.HomePageTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/test_1.py", line 31, in test_home_page_returns_correct_html
-    self.assertTrue(response.content.endswith(b'</html>'))
-AssertionError: False is not true
-
-```
-
 home/views.py. 
 --------------
 ```
@@ -1059,23 +1529,22 @@ def home_page(request):
 ```
 ./manage.py test
 ```
-Creating test database for alias 'default'...
-.....
 ----------------------------------------------------------------------
-Ran 5 tests in 0.003s
+Ran 3 tests in 0.002s
 
 OK
-Destroying test database for alias 'default'...
+
 ```
+
 functional tests
 -----------------
 ```
-touch f_tests/__init__.py
+touch functional_tests/__init__.py
 ```
 - Все файлы тестов должны начинаться с test, например test_all_users.py.
 
 - Тестируем заголовок на совпадение с “My Cool Django Site”
-- Тестируем цвет h1 header в home page на совпадение с rgba(200, 50, 255, 1) ~ pink color.
+- Тестируем цвет h1 header в home page на совпадение с rgba(0, 0, 0, 1).
 
 test_all_users.py:
 -------------------
@@ -1084,7 +1553,6 @@ test_all_users.py:
 from selenium import webdriver
 from django.core.urlresolvers import reverse
 from django.contrib.staticfiles.testing import LiveServerTestCase  
- 
  
 class HomeNewVisitorTest(LiveServerTestCase): 
  
@@ -1106,97 +1574,198 @@ class HomeNewVisitorTest(LiveServerTestCase):
         self.browser.get(self.get_full_url("home"))
         h1 = self.browser.find_element_by_tag_name("h1")
         self.assertEqual(h1.value_of_css_property("color"), 
-                         "rgba(200, 50, 255, 1)")
+                         "rgba(0, 0, 1, 1)")
 ```
 
 Шаг за шагом:
 --------------
-1. Определили function named get_full_url, принимающую 1 аргумент - namespace
-namespace определен в url. 
+1. Определили function get_full_url, принимающую 1 аргумент - namespace (namespace определен в url). 
 2. self.live_server_url определяет local host url. Нужно из-за того, что server использует другой url (обычно http://127.0.0.1:8021).
-3. reverse дает похлдящий url для указанного namespace, именно - /
+3. reverse дает подходящий url для указанного namespace, именно - /
 4. test_home_title  method проверяет что home page title содержит "My Cool Django Site".
 5. test_h1_css method тестирут color. 
 
 
-./manage.py test f_test
-------------------------
+./manage.py test functional_tests.test_all_users
+------------------------------------------------
 ```
 E.F
 ======================================================================
-ERROR: test_h1_css (f_test.test_all_users.HomeNewVisitorTest)
+ERROR: test_h1_css (functional_tests.test_all_users.HomeNewVisitorTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/f_test/test_all_users.py", line 25, in test_h1_css
+  File "/home/janus/github/tdd-django/mysite/functional_tests/test_all_users.py", line 24, in test_h1_css
     h1 = self.browser.find_element_by_tag_name("h1")
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 354, in find_element_by_tag_name
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 386, in find_element_by_tag_name
     return self.find_element(by=By.TAG_NAME, value=name)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 712, in find_element
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 744, in find_element
     {'using': by, 'value': value})['value']
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 201, in execute
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 233, in execute
     self.error_handler.check_response(response)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/errorhandler.py", line 188, in check_response
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/errorhandler.py", line 194, in check_response
     raise exception_class(message, screen, stacktrace)
 selenium.common.exceptions.NoSuchElementException: Message: Unable to locate element: {"method":"tag name","selector":"h1"}
+Stacktrace:
+    at FirefoxDriver.prototype.findElementInternal_ (file:///tmp/tmp2byp9iy3/extensions/fxdriver@googlecode.com/components/driver-component.js:10770)
+    at fxdriver.Timer.prototype.setTimeout/<.notify (file:///tmp/tmp2byp9iy3/extensions/fxdriver@googlecode.com/components/driver-component.js:625)
+
+======================================================================
+FAIL: test_home_title (functional_tests.test_all_users.HomeNewVisitorTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/janus/github/tdd-django/mysite/functional_tests/test_all_users.py", line 20, in test_home_title
+    self.assertIn("My Cool Django Site", self.browser.title)
+AssertionError: 'My Cool Django Site' not found in 'Welcome to Django. This is my cool Site!'
 
 ```
 Цикл TDD:
 ---------
 
-home/test.py:
--------------
+home/tests.py:
+--------------
 ```
 # -*- coding: utf-8 -*-
 from django.test import TestCase
 from django.core.urlresolvers import reverse
  
- 
-class TestHomePage(TestCase):
+class TestAllUsers(TestCase):
  
     def test_uses_index_template(self):
-        response = self.client.get(reverse("home"))
+        response = self.client.get(reverse("main"))
         self.assertTemplateUsed(response, "home/index.html")
  
     def test_uses_base_template(self):
-        response = self.client.get(reverse("home"))
+        response = self.client.get(reverse("main"))
         self.assertTemplateUsed(response, "base.html")
 
 ``` 
  
-./manage.py test home.test
+./manage.py test home.tests
 ----------------------------
 ```
-FAIL: test_uses_base_template (home.test.TestHomePage)
+FAIL: test_uses_base_template (home.tests.TestAllUsers)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/test.py", line 14, in test_uses_base_template
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 55, in test_uses_base_template
     self.assertTemplateUsed(response, "base.html")
   File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/test/testcases.py", line 579, in assertTemplateUsed
     self.fail(msg_prefix + "No templates used to render the response")
 AssertionError: No templates used to render the response
 
 ======================================================================
-FAIL: test_uses_index_template (home.test.TestHomePage)
+FAIL: test_uses_index_template (home.tests.TestAllUsers)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/home/janus/github/dj-21v/unit_02/mysite/home/test.py", line 10, in test_uses_index_template
+  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 51, in test_uses_index_template
     self.assertTemplateUsed(response, "home/index.html")
   File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/test/testcases.py", line 579, in assertTemplateUsed
     self.fail(msg_prefix + "No templates used to render the response")
 AssertionError: No templates used to render the response
 
 ----------------------------------------------------------------------
+
 ```
+
+Static Files Settings
+=====================
+
+Settings file (settings.py)
+---------------------------
+```
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    ...
+    
+    'django.contrib.staticfiles',
+]
+```
+
+Static files (CSS, JavaScript, Images)
+---------------------------------------
+https://docs.djangoproject.com/en/1.9/howto/static-files/
+
+STATIC_URL
+----------
+        STATIC_URL = '/static/'
+
+
+STATICFILES DIR
+---------------
+```
+mkdir static
+```
+
+settings.py:
+------------
+```
+import os
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+```
+
+STATICFILES_DIRS:
+-----------------
+```
+STATIC_URL = '/static/'
+
+STATIC_ROOT = (
+    os.path.join(BASE_DIR, "static"),
+)
+
+```
+
+Templates Settings
+------------------
+```
+mkdir templates
+```
+
+Templates files
+---------------
+```
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, "templates")],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                 django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+```
+
+Initializr: HTML5 Boilerplate and Twitter Bootstrap
+---------------------------------------------------
+http://www.initializr.com/
+
+После загрузки и распаковки:
+----------------------------
+- Переместить index.html, 404.html, humans.txt и robots.txt в templates folder.
+- Переименовать index.html в base.html. 
+- Остальные файлы переместить в static
+- Создайте свой favicon.ico.
+- Можно удалить файлы apple-touch-icon.png, browserconfig.xml, tile-wide.png и tile.png.
+
 
 urls.py
 --------
 ```
-rlpatterns = [
+urlpatterns = [
 
-    url(r'^$', views.home, name='home'),
+    url(r'^$', views.home, name='main'),
     url(r'^admin/', admin.site.urls),
 ]
 ```
+
 home/views.py
 -------------
 ```
@@ -1209,43 +1778,44 @@ templates/home
 ```
 mkdir templates/home
 touch templates/home/index.html
+
 ```
+
 base.html
 ----------
 ```
-<title>{% block head_title %}{% endblock %}</title>
+<title>{% block title %}{% endblock %}</title>
 
 ```
 home/index.html
 ---------------
 ```
 {% extends "base.html" %}
-{% block head_title %}My Cook Django Site{% endblock %}
+{% block title %}My Cool Django Site{% endblock %}
 ```
 ./manage.py test home.test
 ---------------------------
 ```
-Creating test database for alias 'default'...
-..
 ----------------------------------------------------------------------
 Ran 2 tests in 0.033s
 
 OK
-Destroying test database for alias 'default'...
 ```
+
 static/css/main.css
 -------------------
-```
-.jumbotron h1 {
-    color: rgba(200, 50, 255, 1);
-}
-```
+
+        .jumbotron h1 {
+            color: rgba(0, 0, 1, 1);
+        }
+
 base.html:
 ----------
-```
-{% load staticfiles %}
-<!DOCTIPE html> 
-```
+
+        {% load staticfiles %}
+        <!DOCTIPE html> 
+
+
 static files
 ------------
 Заменить
@@ -1293,4 +1863,22 @@ document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</scrip
 ```
 document.write('<script src="static/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
 ```
+functional_tests.test_all_users --liveserver=localhost:8082
+-----------------------------------------------------------
+    Ran 2 tests in 12.785s
 
+    OK
+
+settings.py
+-----------
+
+        os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
+
+
+Selenium: http://docs.seleniumhq.org/
+Selenium WebDriver: http://selenium-python.readthedocs.org/en/latest/api.html
+WebDriver for Chrome: https://sites.google.com/a/chromium.org/chromedriver/getting-started
+urlpatterns: https://docs.djangoproject.com/en/1.8/topics/http/urls/
+Static files: https://docs.djangoproject.com/en/1.9/howto/static-files/
+HTML5 Boilerplate: http://www.initializr.com/
+liveserver: https://docs.djangoproject.com/ja/1.9/topics/testing/tools/
