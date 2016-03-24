@@ -21,5 +21,6 @@ from home import views
 urlpatterns = [
     url(r'^home/$', views.home_page, name='home'),
     url(r'^$', views.home, name='main'),
+    url(r'^req/', views.req_test, name='req_test'),
     url(r'^admin/', admin.site.urls),
 ]

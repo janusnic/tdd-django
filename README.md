@@ -1,1884 +1,3016 @@
-# tdd-django unit_02
+# tdd-django unit_03
 
-# Selenium
+Объекты ответа и запроса (Response/Request)
+===========================================
 
-http://docs.seleniumhq.org/
+Django использует объекты ответа (Response) и запроса (Request), чтобы передавать состояние в системе.
 
-Selenium – это проект, в рамках которого разрабатывается серия программных продуктов с открытым исходным кодом (open source):
+Когда запрашивает страница, Django создает объект HttpRequest, который содержит различные данные о запросе. Потом Django определяет и загружает необходимое представление и вызывает его передавая объект HttpRequest первым аргументом. Каждое представление должно вернуть объект HttpResponse.
 
-- Selenium WebDriver,
-- Selenium RC,
-- Selenium Server,
-- Selenium Grid,
-- Selenium IDE.
+Код состояния HTTP (HTTP status code)
+======================================
+часть первой строки ответа сервера при запросах по протоколу HTTP. Он представляет собой целое число из трёх десятичных цифр. Первая цифра указывает на класс состояния. За кодом ответа обычно следует отделённая пробелом поясняющая фраза на английском языке, которая разъясняет человеку причину именно такого ответа. 
 
-Называть просто словом Selenium любой из этих пяти продуктов, вообще говоря, неправильно, хотя так часто делают, если из контекста понятно, о каком именно из продуктов идёт речь, или если речь идёт о нескольких продуктах одновременно, или обо всех сразу.
+Клиент узнаёт по коду ответа о результатах его запроса и определяет какие действия ему предпринимать дальше. Набор кодов состояния является стандартом, и они описаны в соответствующих документах RFC. 
 
-## Selenium RC
-
-Selenium RC – это предыдущая версия библиотеки для управления браузерами. Аббревиатура RC в названии этого продукта расшифровывается как Remote Control, то есть это средство для «удалённого» управления браузером.
-
-## Selenium Server
-
-Selenium Server – это сервер, который позволяет управлять браузером с удалённой машины, по сети. 
-
-## Selenium Grid
-
-Selenium Grid – это кластер, состоящий из нескольких Selenium-серверов. 
-
-## Selenium IDE
-
-Selenium IDE – плагин к браузеру Firefox, который может записывать действия пользователя, воспроизводить их, а также генерировать код для WebDriver или Selenium RC, в котором выполняются те же самые действия.
-
-# Selenium WebDriver
-
-http://selenium-python.readthedocs.org/en/latest/api.html
-
-Selenium WebDriver – это программная библиотека для управления браузерами. WebDriver представляет собой драйверы для различных браузеров и клиентские библиотеки на разных языках программирования, предназначенные для управления этими драйверами.
-
-Часто употребляется также более короткое название WebDriver.
-
-использование такого веб-драйвера сводится к созданию бота, выполняющего всю ручную работу с браузером автоматизированно.
-
-Библиотеки WebDriver доступны на языках Java, .Net (C#), Python, Ruby, JavaScript, драйверы реализованы для браузеров Firefox, InternetExplorer, Safari, Andriod, iOS, Chrome и Opera.
-
-Чаще всего Selenium WebDriver используется для тестирования функционала веб-сайтов/веб-ориентированных приложений. Автоматизированное тестирование удобно, потому что позволяет многократно запускать повторяющиеся тесты. Регрессионное тестирование, то есть, проверка, что старый код не перестал работать правильно после внесения новых изменений, является типичным примером, когда необходима автоматизация. WebDriver предоставляет все необходимые методы, обеспечивает высокую скорость теста и гарантирует корректность проверки (поскольку человеский фактор исключен). В официальной документации Selenium приводятся следующие плюсы автоматизированного тестирования веб-приложений:
-
-- возможность проводить чаще регрессионное тестирование;
-- быстрое предоставление разработчикам отчета о состоянии продукта;
-- получение потенциально бесконечного числа прогонов тестов;
-- обеспечение поддержки Agile и экстремальным методам разработки;
-- сохранение строгой документации тестов;
-- обнаружение ошибок, которые были пропущены на стадии ручного тестирования.
-
-Привязка Python-Selenium предоставляет удобный API для доступа к таким веб-драйверам Selenium как Firefox, Ie, Chrome, Remote и других. На данный момент поддерживаются версии Python 2.7, 3.2, 3.3, 3.4 и 3.5.
-
-Загрузка Selenium для Python
------------------------------
-        pip install -U selenium
-
-        Collecting selenium
-          Downloading selenium-2.53.1.tar.gz (815kB)
-            100% |████████████████████████████████| 819kB 1.2MB/s 
-        Building wheels for collected packages: selenium
-          Running setup.py bdist_wheel for selenium ... done
-          Stored in directory: /home/janus/.cache/pip/wheels/6e/46/f4/1636b1ae525c3bfba962e767bfc02ce7695007a4b2e454a9b7
-        Successfully built selenium
-        Installing collected packages: selenium
-          Found existing installation: selenium 2.49.2
-            Uninstalling selenium-2.49.2:
-              Successfully uninstalled selenium-2.49.2
-        Successfully installed selenium-2.53.1
-
-
-
-## В виртуальное окружение ставим Selenium
-
-        $ workon venv
-
-        (venv)$ pip install django==1.9.4 
-        (venv)$ pip install -U selenium
-
-        # (venv)$ pip install unittest2 # (only if using Python 2.6)
-
-
-# Подробная инструкция для пользователей Windows
-
-1. Установите Python 3.4 через файл MSI, доступный на странице загрузок сайта python.org.
-2. Запустите командную строку через программу cmd.exe и запустите команду pip установки selenium.
-```
-C:\Python34\Scripts\pip.exe install selenium
-```
-Теперь вы можете запускать свои тестовые скрипты, используя Python:
-```
-C:\Python34\python.exe C:\my_selenium_script.py
-```
-
-pip list
----------
-
-        alabaster (0.7.7)
-        Babel (2.2.0)
-        Django (1.9.4)
-        pip (8.1.0)
-        Pygments (2.1)
-        pytz (2015.7)
-        selenium (2.53.1)
-        setuptools (19.7)
-        six (1.10.0)
-        snowballstemmer (1.2.1)
-        Sphinx (1.3.4)
-        sphinx-rtd-theme (0.1.9)
-        wheel (0.24.0)
-
-Проверка работы selenium
-========================
-        
-        mkdir functional_tests
-        cd functional_tests/
-        touch tests.py
-
-        subl tests.py 
-
-# Python. Модули и пакеты
-Программное обеспечение (приложение или библиотека) на Python оформляется в виде модулей, которые в свою очередь могут быть собраны в пакеты. Модули могут располагаться как в каталогах, так и в ZIP-архивах. Модули могут быть двух типов по своему происхождению: модули, написанные на «чистом» Python, и модули расширения (extension modules), написанные на других языках программирования. Например, в стандартной библиотеке есть «чистый» модуль pickle и его аналог на Си: cPickle. Модуль оформляется в виде отдельного файла, а пакет — в виде отдельного каталога. Подключение модуля к программе осуществляется оператором import. После импорта модуль представлен отдельным объектом, дающим доступ к пространству имён модуля. В ходе выполнения программы модуль можно перезагрузить функцией reload().
-
-# Подключение модуля из стандартной библиотеки
-
-Подключить модуль можно с помощью инструкции import:
-```
-import os # модуль os для получения текущей директории
-os.getcwd() # 'C:\\Python33'
-```
-Одной инструкцией можно подключить несколько модулей.
-```
-import time, random
-time.time() # 1376047104.056417
-random.random() # 0.9874550833306869
-```
-После импортирования модуля его название становится переменной, через которую можно получить доступ к атрибутам модуля. 
-```
-import math
-math.e # 2.718281828459045
-```
-если указанный атрибут модуля не будет найден, возбудится исключение AttributeError. А если не удастся найти модуль для импортирования, то ImportError.
-```
-import notexist
-```
-# Функция dir()
-Встроенная функция dir() используется для получения имён, определённых в модуле.
-
-# Использование псевдонимов
-Если название модуля слишком длинное, то для него можно создать псевдоним, с помощью ключевого слова as.
-```
-import math as m
-
-from math import e, ceil as c
-e # 2.718281828459045
-c(4.6) # 5
-```
-Импортируемые атрибуты можно разместить на нескольких строках, если их много:
-```
-from math import (sin, cos,
-          tan, atan)
-
-from позволяет подключить все переменные из модуля. 
-from sys import *
-```
-
-tests.py
---------
-
-        # -*- coding: utf-8 -*-
-        from selenium import webdriver
-
-        # Создаем новый instance от Firefox driver
-        driver = webdriver.Firefox()
-
-        # идем на страницу google
-        # Метод driver.get перенаправляет к странице URL. 
-        # WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. Стоит отметить, что если страница использует много AJAX-кода при загрузке, то WebDriver может не распознать, загрузилась ли она полностью:
-        
-        driver.get("http://www.google.com")
-
-        # найдем элемент body
-
-        body = browser.find_element_by_tag_name('body')
-
-        # это утверждение (assertion), что body.text содержит слово “Google” 
-        
-        assert 'Google' in body.text
-
-        # В завершение, окно браузера закрывается.
-
-        browser.quit()
-
-
-tests.py
---------
-
-        # -*- coding: utf-8 -*-
-        from selenium import webdriver
-
-        browser = webdriver.Firefox()
-        browser.get('http://google.com/')
-
-        # найдем элемент body
-
-        body = browser.find_element_by_tag_name('body')
-
-        # assert позволяет проверять предположения о значениях произвольных данных в произвольном месте программы. По своей сути assert напоминает констатацию факта, расположенную посреди кода программы. 
-        
-        # В случаях, когда произнесенное утверждение не верно, assert возбуждает исключение. 
-
-        # Такое поведение позволяет контролировать выполнение программы в строго определенном русле. 
-
-        # Отличие assert от условий заключается в том, что программа с assert не приемлет иного хода событий, считая дальнейшее выполнение программы или функции бессмысленным.
-
-        assert 'Google' in body.text
-          
-        print('Hello Google')
-
-        browser.quit()
-
-
-# Errors
-Существует (как минимум) два различимых вида ошибок: синтаксические ошибки (syntax errors) и исключения (exceptions).
-
-# Синтаксические ошибки
-```
-while True print 'Hello world'
-  File "<stdin>", line 1, in ?
-    while True print 'Hello world'
-                   ^
-SyntaxError: invalid syntax
-```
-
-Даже, если ваша программа работает правильно, неверные данные и ошибки ввода могут привести к непредсказуемым результатам. 
-Перехват ошибок - что мы с ними после перехвата можем сделать. 
---------------------------------------------------------------
-```
-import sys
-C = float(sys.argv[1])
-
-if C < -273.15:
-    print '%g degrees Celsius is non-physical!' % C
-    print 'The Fahrenheit temperature will not be computed.'
-else:
-    F = 9.0/5*C + 32
-    print F
-print 'end of program'
-```
-
-мы забыли передать аргумент:
-```
-prog.py Traceback (most recent call last):
-File "prog.py", line 2, in
-C = float(sys.argv[1])
-IndexError: list index out of range
-```
-Python прервал выполнение программы, показал что ошибка находится во второй строке и указал на тип ошибки — IndexError и краткое объяснение что не так. 
-Из этой информации, просмотрев код программы, можно сделать вывод, что индекс 1 выходит за пределы списка (index out of range) - и это правильно, ведь в списке sys.argv только нулевой элемент, название программы. Значит есть всего один возможный индекс 0.
-
-как эту ошибку обработать? 
---------------------------
-Предварительно проверять длину списка:
-
-```
-if len(sys.argv) < 2:
-    print 'You failed to provide Celsius degrees as input '\
-        'on  the  command  line!'
-    sys.exit(1)   #  прекращаем ввиду ошибки
-F = 9.0*C/5 + 32
-print '%gC is %.1fF' % (C, F)
-```
-Для преднамеренного прекращения программы используется функция exit модуля sys. В случае прекращения программы без ошибок функции передается 0, в случае наличия ошибки любое отличное от нуля значение (например, 1). 
-
-# Исключения
-Исключения согласуются с философией Python (10-й пункт «дзена Python» — «Ошибки никогда не должны умалчиваться») и являются одним из средств поддержки «утиной типизации».
-
-Исключения свидетельствуют об ошибках и прерывают нормальный ход выполнения программы. 
-
-Исключения возбуждаются с помощью инструкции raise. В общем случае инструкция raise имеет следующий вид:
-
-raise Exception([value]), где Exception – тип исключения, а value – необязательное значение с дополнительной информацией об исключении.
-
-Например:
-```
-raise RuntimeError(“Неустранимая ошибка”)
-
-```
-
-# Обработка исключений
-
-Обработка исключений поддерживается в Python посредством операторов try, except, else, finally, raise, образующих блок обработки исключения.
-```
-try:
-    # Здесь код, который может вызвать исключение
-    raise Exception("message")  # Exception, это один из стандартных типов исключения (всего лишь класс),
-    # может использоваться любой другой, в том числе свой
-
-except (Тип исключения1, Тип исключения2, …) as Переменная:
-    # Код в блоке выполняется, если тип исключения совпадает с одним из типов
-    # (Тип исключения1, Тип исключения2, …) или является наследником одного
-    # из этих типов.
-    # Полученное исключение доступно в необязательной Переменной.
-
-except (Тип исключения3, Тип исключения4, …) as Переменная:
-    # Количество блоков except не ограничено
-    raise  # Сгенерировать исключение "поверх" полученного; без параметров - повторно сгенерировать полученное
-
-except:
-    # Будет выполнено при любом исключении, не обработанном типизированными блоками except
-
-else:
-    # Код блока выполняется, если не было поймано исключений.
-
-finally:
-    # Будет исполнено в любом случае, возможно после соответствующего
-    # блока except или else
-```
-
-Иногда вместо явной обработки исключений удобнее использовать блок with (доступен, начиная с Python 2.5).
-
-# Перехватить исключение с помощью инструкций try и except:
-
-Исключения из обоих мест попадут в except OSError, где можно будет что-то сделать с ошибкой.
-Питон делает явный выбор в пользу исключений перед возвратом кода ошибки в своём ядре и стандартной библиотеке.
-```
-import sys
-try:
-    C = float(sys.argv[1])
-except:
-    print 'You failed to provide Celsius degrees as input '\
-          'on the command line!'
-    sys.exit(1)
-
-F = 9.0*C/5 + 32
-print '%gC is %.1fF' % (C, F)
-```
-Теперь, если мы не передадим аргументов, то найти sys.argv[1] невозможно, значит возникло исключение и мы отправляемся в блок except. Если же передать аргумент, то выполняется только блок try. Проверим:
-```
-prog.py
-You failed to provide Celsius degrees as input on the command line!
-
-prog.py 21
-21C is 69.8F
-```
-## Особые исключения
-
-В Python есть удобная возможность разделять инструкции для ошибок различного рода:
-```
-import sys
-try:
-    C = float(sys.argv[1])
-except IndexError:
-    print 'Celsius degrees must be supplied on the command line'
-    sys.exit(1)
-except ValueError:
-    print 'Celsius degrees must be a pure number, '\
-          'not  "%s"' % sys.argv[1]
-    sys.exit(1)
-
-F = 9.0*C/5 + 32
-print '%gC is %.1fF' % (C, F)
-```
-Теперь в зависимости от ошибки совершенной пользователем, мы и сами можем сказать пользователю, что он сделал не так и как это исправить.
-
-Возбуждение исключений полезно, когда мы хотим уточнить какую-то ошибку, например понятную нам из физического смысла или каких-то других соображений. Пусть для ввода температуры и подойдет аргумент в виде числа, но мы помним про абсолютный ноль и предостерегаем пользователя:
-```
-def read_C():
-    try:
-        C = float(sys.argv[1])
-    except IndexError:
-        raise IndexError('Celsius degrees must be supplied on the command line')
-    except  ValueError:
-        raise ValueError('Celsius  degrees must be a pure number, '\
-                         'not "%s"' % sys.argv[1])
-    if C < -273.15:
-        raise ValueError('C=%g is a non-physical value!' % C)
-    return C
-```
-Далее имеются две возможности использовать функцию read_C(). Простой:
-```
-C = read_C()
-```
-Неправильный ввод приведет к:
-```
-prog.py
-Traceback (most recent call last):
-File "prog.py", line 5, in ?
-raise IndexError
-IndexError: Celsius degrees must be supplied on the command line.
-```
-Для людей, незнакомых с Python, возникающие на экране слова Traceback, raise, IndexError могут вызвать недоумение. Самая важная информация для человека, работающего с вашей программой расположена в самом конце. Существует возможность выводить только эту строку. В этом случае функцию мы вызываем так:
-```
-try:
-    C = read_C()
-except Exception, e:
-    print e
-    sys.exit(1)
-```
-Exception это имена всех возможных исключений, e — сообщение исключения. В нашем случае у нас в функции записаны два типа исключений, поэтому:
-```
-try:
-    C = read_C()
-except  (ValueError, IndexError), e:
-    print e
-    sys.exit(1)
-```
-После блока определения функции и блока try-except пишем блок вычислений и проверяем программу:
-```
-import sys
-
-def read_C():
-    try:
-        C = float(sys.argv[1])
-    except IndexError:
-        raise IndexError\
-        ('Celsius degrees must be supplied on the command line')
-    except ValueError:
-        raise ValueError\
-        ('Celsius degrees must be a pure number, '\
-         'not "%s"' % sys.argv[1])
-    # C is read correctly as a number, but can have wrong value:
-    if C < -273.15:
-        raise ValueError('C=%g is a non-physical value!' % C)
-    return C
-
-try:
-    C = read_C()
-except (IndexError, ValueError), e:
-    print e
-    sys.exit(1)
-    
-F = 9.0*C/5 + 32
-print '%gC is %.1fF' % (C, F)
-
-prog.py
-Celsius degrees must be supplied on the command line
-prog.py 21C
-Celsius degrees must be a pure number, not "21C"
-prog.py -500
-C=-500 is a non-physical value!
-prog.py 21
-21C is 69.8F
-```
-программа теперь не только обрабатывает получаемые данные и выдает ответ, но может работать и с неверными данными, определяя ошибку и выдавая информативное сообщение без лишней раздражающей информации.
-
-# Типы исключений
-```
-BaseException
- +-- SystemExit
- +-- KeyboardInterrupt
- +-- GeneratorExit
- +-- Exception
-      +-- StopIteration
-      +-- AssertionError
-      +-- AttributeError
-      +-- BufferError
-  ```
-- Самый базовый класс — BaseException. Он и его простые потомки (SystemExit, KeyboardInterrupt,GeneratorExit) не предназначены для перехвата обыкновенным программистом — только Питон и редкие библиотеки должны работать с этими типами. Нарушение правила ведет, например, к тому что программу невозможно корректно завершить.
-
-Использование индекса, выходящего за пределы списка, приводит к ошибке IndexError:
-```
->>> data = [1.0/i for i in range(1,10)]
->>> data[9]
-...
-IndexError: list index out of range
-```
-Python всегда останавливает программу, когда встречает неправильный индекс.
-
-В случае, если содержимое строки не представляет собой только число, конвертирование заканчивается неудачей и ошибкой ValueError:
-```
->>> C = float('21 C')
-...
-ValueError: invalid literal for float(): 21 C
-```
-В случае, если вызывается переменная, которой не задано значение, возникает ошибка NameError:
-```
->>> print a
-...
-NameError: name 'a' is not defined
-```
-Деление на ноль:
-```
->>> 3.0/0
-...
-ZeroDivisionError: float division
-```
-В случае, если вы ошибаетесь в написании ключевых слов языка, возникает SyntaxError:
-```
->>> forr d in data:
-...
-    forr d in data:
-         ^
-SyntaxError: invalid syntax
-```
-Если мы захотим перемножить число на строку:
-```
->>> 'a  string'*3.14
-...
-TypeError: can’t multiply sequence by non-int of type 'float'
-```
-Исключение TypeError возникает, поскольку объекты таких типов не могут быть перемножены (str и float). Но, вообще говоря, это не значит что число и строка не могут быть перемножены.
-
-Перемножение возможно, если число целое (int). Под операцией умножения здесь понимается повторение строки указанное число раз. Это же правило действует и на списки:
-```
->>> '--'*10     #  десять двойных дефисов = 20 дефисов
-'--------------------'
->>> n  = 4
->>> [1, 2, 3]*n
-[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]
->>> [0]*n
-[0, 0, 0, 0]
-
-```
-Также не нужно перехватывать все исключения:
-```
-try:
-    ...
-except:
-    ...
-```
-работает как
-```
-try:
-    ...
-except BaseException:
-    ...
-```
-# используем операторы try и except, чтобы корректно и красиво завершить скрипт
-
-```
-'''функция диалога.
-Первым аргументом принимаем ответ пользователя,
-вторым - выдаём сообщение при неверном вводе'''
-
-def answer(prompt, choice='Только Yes или no!'):
-        while True:
-                result = raw_input(prompt)
-                if result in ('y', 'Y', 'yes', 'Yes'):
-                        print '\nВы выбрали "YES" - заканчиваем\n'
-                        '''тут можно использовать оператор break вместо return
-                        так же и в ответе No'''
-                        return False
-
-                elif result in ('n', 'N', 'no', 'No'):
-                        print "\nВы выбрали NO - Я продолжаю работу...\n"
-
-                        print_menu()
-                        return True
-                else:
-
-                        print(choice)
-```
-
-- при Ctrl+C (KeyboardInterrupt - SIGINT)
-- или Ctrl+D (EOFError - SIGQUIT) команда
-
-```
-elif menu_choice == '7':
-    try:
-        if  (answer("\nВы уверены, что хотите закончить работу? ('y' или 'n', Ctrl+C для выхода) ")==False):
-            break
-    except (KeyboardInterrupt, EOFError):
-        exit('\nВыход\n')
-```
-
-# Проиерка обязательных параметров
-
-```
-first_name = input("Имя сотрудника: ")
-#validate
-while first_name == '':
-    print('\n Имя сотрудника required.  Try again.')
-    first_name = input("Имя сотрудника: ")
-last_name = input("Фамилия сотрудника: ")
-#validate
-while last_name == '':
-    print('\n Фамилия сотрудника required.  Try again.')
-    last_name = input("Фамилия сотрудника: ")
-
-```
-
-# Проверка допустимых значений параметров
-
-```
-ID_valid = False
-
-      ID = input("Идентификатор сотрудника: ")
-
-      while ID_valid == False:
-
-          try:
-              ID = float(ID)
-              if ID > 0:
-                  ID_valid = True
-              else:
-                  print("\nID должен быть > 0.  Пробуем еще.")
-                  ID = input("Идентификатор сотрудника: ")
-          except ValueError:
-              print("\nID должен быть числом.  Пробуем еще..")
-              ID = input("Идентификатор сотрудника:: ")
-```
-
-- Всё, что может быть нужно программисту — это Exception и унаследованные от него классы.
-
-лучше ловить как можно более конкретные классы исключений
-```
-import os
-
-filename = 'file.txt'
-try:
-    f = open (filename, 'r')
-    try:
-        print f.read()
-    finally:
-        f.close()
-except (os.error, IOError) as ex:
-    print "Cannot process file", filename, ": Error is", ex
-```
-нструкция finally служит для реализации завершающих действий, сопутствующих операциям, выполняемым в блоке try. Например:
-
-```
-
-try:
-    # Выполнить некоторые действия
-
-finally:
-
-def print_staff():
-    try:
-        n = 0
-        for emp in mystaff.employee_list:
-            n += 1
-            print(emp)
-
-        if n==0 :
-            raise MyError(2)
-    except MyError as e:
-        print '\nНет данных о сотрудниках :', e.value
-    else:
-        print  'Хранилище содержит ', n, ' строк'
-    finally:
-        print  'Дата проверки состояния записей ', datetime.now()
-
-```
-Блок finally не используется для обработки ошибок. Он используется для реализации действий, которые должны выполняться всегда, независимо от того, возникла ошибка или нет. Если в блоке try исключений не возникло, блок finally будет выполнен сразу же вcлед за ним. Если возникло исключение, управление сначала будет передано первой инструкции в блоке finally, а затем это исключение будет возбуждено повторно, чтобы обеспечить возможность его обработки в другом обработчике.
-
-```
-def fetcher(obj, index):
-    return obj[index]
-
-x = 'spam'
-fetcher(x, 3)           # Like x[3] 'm'
-
-try:
-    fetcher(x, 3)
-finally:
-    print 'after fetch'
-
-fetcher(x, 3)
-print 'after fetch'
-
-# KeyboardInterrupt.
-
-while True:
-    try:
-        x = int(input("Введите, пожалуйста, число: "))
-        break
-    except ValueError:
-        print("Ой!  Это некорректное число.  Попробуйте ещё раз...")
-```
-
-# Оператор try работает следующим образом:
-
-- В начале исполняется блок try (операторы между ключевыми словами try и except).
-
-- Если при этом не появляется исключений, блок except не выполняется и оператор try заканчивает работу.
-
-- Если во время выполнения блока try было возбуждено какое-либо исключение, оставшаяся часть блока не выполняется.
-
-- Затем, если тип этого исключения совпадает с исключением, указанным после ключевого слова except, выполняется блок except, а по его завершению выполнение продолжается сразу после оператора try-except.
-
-- Если порождается исключение, не совпадающее по типу с указанным в блоке except — оно передаётся внешним операторам try; 
-
-- если ни одного обработчика не найдено, исключение считается необработанным (unhandled exception), и выполнение полностью останавливается и выводится сообщение.
-
-# Оператор try может иметь более одного блока except
-```
-except (RuntimeError, TypeError, NameError):
-    pass
-
-```
-# необязательный блок else
-```
-def print_staff():
-    try:
-        n = 0
-        for emp in mystaff.employee_list:
-            n += 1
-            print(emp)
-
-        if n==0 :
-            raise MyError(2)
-    except MyError as e:
-        print '\nНет данных о сотрудниках :', e.value
-    else:
-        print  'Хранилище содержит ', n, ' строк'
-
-```
-
-# Семейство OSError
-
-Полный список наследников OSError:
-```
-OSError
- +-- BlockingIOError
- +-- ChildProcessError
- +-- ConnectionError
- |    +-- BrokenPipeError
- |    +-- ConnectionAbortedError
- |    +-- ConnectionRefusedError
- |    +-- ConnectionResetError
- +-- FileExistsError
- +-- FileNotFoundError
- +-- InterruptedError
- +-- IsADirectoryError
- +-- NotADirectoryError
- +-- PermissionError
- +-- ProcessLookupError
- +-- TimeoutError
-```
-
-Поиск Google
-------------
-search_tests.py
-```
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait # начиная с версии 2.4.0
-from selenium.webdriver.support import expected_conditions as EC # начиная с версии 2.26.0
-
-# Создаем новый instance от Firefox driver
-driver = webdriver.Firefox()
-
-# идем на страницу google
-# Метод driver.get перенаправляет к странице URL. 
-# WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. Стоит отметить, что если страница использует много AJAX-кода при загрузке, то WebDriver может не распознать, загрузилась ли она полностью:
-driver.get("http://www.google.com")
-
-# страница динамическая, поэтому title найдем здесь:
-print (driver.title)
-
-# Google
-
-assert "Google" in driver.title
-
-# это утверждение (assertion), что заголовок содержит слово “Google” [assert позволяет проверять предположения о значениях произвольных данных в произвольном месте программы. По своей сути assert напоминает констатацию факта, расположенную посреди кода программы. В случаях, когда произнесенное утверждение не верно, assert возбуждает исключение. Такое поведение позволяет контролировать выполнение программы в строго определенном русле. Отличие assert от условий заключается в том, что программа с assert не приемлет иного хода событий, считая дальнейшее выполнение программы или функции бессмысленным.]
-
-# WebDriver предоставляет ряд способов получения элементов с помощью методов find_element_by_*. Для примера, элемент ввода текста input может быть найден по его атрибуту name методом find_element_by_name. 
-
-# найдем элемент с атрибутом name = q (google search box)
-inputElement = driver.find_element_by_name("q")
-
-# После этого мы посылаем нажатия клавиш (аналогично введению клавиш с клавиатуры). Специальные команды могут быть переданы с помощью класса Keys импортированного из selenium.webdriver.common.keys
-# inputElement.send_keys(Keys.RETURN)
-
-# набираем строку поиска
-inputElement.send_keys("cheese!")
-
-# сабмитим форму (обычно google автоматически выполняет поиск без submitting)
-inputElement.submit()
-
-# После ответа страницы, вы получите результат, если таковой ожидается. Чтобы удостовериться, что мы получили какой-либо результат, добавим утверждение:
-
-# assert "No results found." not in driver.page_source
-
-try:
-    # ждем обновления страницы, ждем обновления title
-    WebDriverWait(driver, 10).until(EC.title_contains("cheese!"))
-
-    # Должны увидеть "cheese! - Поиск в Google"
-    print (driver.title)
-
-# В завершение, окно браузера закрывается. Вы можете также вызывать метод quit вместо close. Метод quit закроет браузер полностью, в то время как close закроет одну вкладку. Однако, в случае, когда открыта только одна вкладка, по умолчанию большинство браузеров закрывается полностью:
-finally:
-    driver.quit()
-```
-
-python search_tests.py 
-----------------------
-```
-Google
-cheese! - Пошук Google
-
-```
-
-## Selenium для написания тестов
-Selenium чаще всего используется для написания тестовых ситуаций. Сам пакет selenium не предоставляет никаких тестовых утилит или инструментов разработки. Вы можете писать тесты с помощью модуля Python unittest, py.test или nose.
-
-### тесты с помощью модуля Python unittest
-Данный скрипт тестирует функциональность поиска на сайте www.google.com:
-
-py_search_tests.py
-```
-import unittest
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-
-# Сначала были импортированы все основные необходимые модули. Модуль unittest встроен в Python и реализован на Java’s JUnit. Этот модуль предоставляет собой утилиту для организации тестов.
-
-# Класс теста унаследован от unittest.TestCase. Наследование класса TestCase является способом сообщения модулю unittest, что это тест:
-
-class PythonOrgSearch(unittest.TestCase):
-
-# setUp — это часть инициализации, этот метод будет вызываться перед каждым методом теста, который вы собираетесь написать внутри класса теста. Здесь мы создаем элемент класса Firefox WebDriver.
-
-    def setUp(self):
-        self.driver = webdriver.Firefox()
-
-# Метод теста всегда должен начинаться с фразы test. Первая строка метода создает локальную ссылку на объект драйвера, созданный методом setUp.
-
-    def test_search_in_python_org(self):
-        driver = self.driver
-
-        # Метод driver.get перенаправляет к странице URL в параметре. WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. 
-
-        driver.get("http://www.google.com")
-
-        # утверждение, что заголовок содержит слово “Google”:
-
-        self.assertIn("Google", driver.title)
-        
-        # WebDriver предоставляет ряд способов получения элементов с помощью методов find_element_by_*. Для примера, элемент ввода текста input может быть найден по его атрибуту name методом find_element_by_name. 
-
-        elem = driver.find_element_by_name("q")
-
-        # После этого мы посылаем нажатия клавиш (аналогично введению клавиш с клавиатуры). Специальные команды могут быть переданы с помощью класса Keys импортированного из selenium.webdriver.common.keys:
-
-        elem.send_keys("django")
-
-        # После ответа страницы, вы получите результат, если таковой ожидается. Чтобы удостовериться, что мы получили какой-либо результат, добавим утверждение:
-
-        assert "No results found." not in driver.page_source
-        elem.send_keys(Keys.RETURN)
-
-    # Метод tearDown будет вызван после каждого метода теста. Это метод для действий чистки. В текущем методе реализовано закрытие окна браузера. Вы можете также вызывать метод quit вместо close. Метод quit закроет браузер полностью, в то время как close закроет одну вкладку. Однако, в случае, когда открыта только одна вкладка, по умолчанию большинство браузеров закрывается полностью.:
-
-    def tearDown(self):
-        self.driver.close()
-
-# Завершающий код — это стандартная вставка кода для запуска набора тестов [Сравнение __name__ с "__main__" означает, что модуль (файл программы) запущен как отдельная программа («main» — «основная», «главная») (а не импортирован из другого модуля). Если вы импортируете модуль, атрибут модуля __name__ будет равен имени файла без каталога и расширения.]:
-
-if __name__ == "__main__":
-    unittest.main()
-```
-
-запустить тест python py_search_tests.py 
-------------------------------------
-```
-python py_search_tests.py 
-.
-----------------------------------------------------------------------
-Ran 1 test in 9.733s
-
-OK
-```
-тест завершился успешно
-
-git add
---------
-        git add --all
-        git commit -m 'added selenium functional tests'
-        [unit_02 5d99404] added selenium functional tests
-         4 files changed, 1371 insertions(+), 841 deletions(-)
-         rewrite README.md (97%)
-         create mode 100644 functional_tests/py_search_tests.py
-         create mode 100644 functional_tests/search_tests.py
-         create mode 100644 functional_tests/tests.py
-
-Setup Project
-=============
-
-```
-django-admin startproject mysite
-
--- mysite
-    |-- manage.py
-    `-- mysite
-        |-- __init__.py
-        |-- settings.py
-        |-- urls.py
-        `-- wsgi.py
-```
-
-## Наш первый functional test:
-
-```
-cd mysite
-mkdir functional_tests
-cd functional_tests/
-touch test_1.py
-```
-
-test_1.py
-----------
-
-        # -*- coding: utf-8 -*-
-
-        from selenium import webdriver
-
-        browser = webdriver.Firefox()
-        browser.get('http://localhost:8000')
-
-        assert 'Django' in browser.title
-
-python test_1.py 
------------------
-```
-Попытка соединения не удалась
-
-Traceback (most recent call last):
-  File "test_1.py", line 8, in <module>
-    assert 'Django' in browser.title
-AssertionError
-
-```
-
-python manage.py runserver
---------------------------
-```
-./manage.py runserver
-
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have unapplied migrations; your app may not work properly until they are applied.
-Run 'python manage.py migrate' to apply them.
-
-March 18, 2016 - 16:42:09
-Django version 1.9.4, using settings 'mysite.settings'
-Starting development server at http://127.0.0.1:8000/
-Quit the server with CONTROL-C.
-
-```
-python test_1.py 
------------------
-
-## Наш первый functional test для нашего сайта: 
-
-test_2.py
----------
-```
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
-from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
-
-browser = webdriver.Firefox()
-browser.get('http://localhost:8000')
-
-assert 'Django' in browser.title
-
-print (browser.title)
-
-try:
-    
-    WebDriverWait(browser, 10).until(EC.title_contains("Welcome"))
-
-    # You should see "Welcome to Django This is my cool Site!"
-    print (browser.title,' This is my cool Site!')
-
-finally:
-    browser.quit()
-```
-
-python test_2.py 
-----------------
-```
-Welcome to Django
-Welcome to Django  This is my cool Site!
-
-```
-Selenium WebDriver – это спецификация интерфейса для управления браузером
---------------------------------------------------------------------------
-WebDriver – это драйвер браузера, то есть не имеющая пользовательского интерфейса программная библиотека, которая позволяет различным другим программам взаимодействовать с браузером, управлять его поведением, получать от браузера какие-то данные и заставлять браузер выполнять какие-то команды.
-
-Исходя из этого определения, ясно, что WebDriver не имеет прямого отношения к тестированию. Он всего лишь предоставляет автотестам доступ к браузеру. 
-
-Самое главное отличие WebDriver от всех остальных драйверов заключается в том, что это «стандартный» драйвер, а все остальные – «нестандартные».
-
-Организация W3C действительно приняла WebDriver за основу при разработке стандарта интерфейса для управления браузером.
-
-реализация интерфейса WebDriver возложена на производителей браузеров.
-
-В рамках проекта Selenium было разработано несколько референсных реализаций для различных браузеров, но постепенно эта деятельность переходит в ведение производителей браузеров. Драйвер для браузера Chrome разрабатывается в рамках проекта Chromium, его делает та же команда, которая занимается разработкой самого браузера. Драйвер для браузера Opera разрабатывается в компании Opera Software. Драйвер для браузера Firefox разрабатывается участниками проекта Selenium, но в недрах компании Mozilla уже готовится ему замена, которая носит кодовое название Marionette. Этот новый драйвер для Firefox уже доступен в девелоперских сборках браузера. На очереди Internet Explorer и Safari, к их разработке сотрудники соответствующих компаний пока не подключились.
-
-В общем, можно сказать, что Selenium это единственный проект по созданию средств автоматизации управления браузерами, в котором участвуют непосредственно компании, разрабатывающие браузеры. 
-
-ChromeDriver - WebDriver for Chrome
+2xx: Success - кодо состояния Успех
 -----------------------------------
-https://sites.google.com/a/chromium.org/chromedriver/getting-started
-```
-import time
-from selenium import webdriver
+Сообщения данного класса информируют о случаях успешного принятия и обработки запроса клиента. В зависимости от статуса сервер может ещё передать заголовки и тело сообщения.
 
-driver = webdriver.Chrome('/path/to/chromedriver')  # Optional argument, if not specified will search path.
-driver.get('http://www.google.com/xhtml');
-time.sleep(5) # Let the user actually see something!
-search_box = driver.find_element_by_name('q')
-search_box.send_keys('ChromeDriver')
-search_box.submit()
-time.sleep(5) # Let the user actually see something!
-driver.quit()
-```
-Controlling ChromeDriver's lifetime
------------------------------------
-```
-import time
+- 200 OK — успешный запрос. Если клиентом были запрошены какие-либо данные, то они находятся в заголовке и/или теле сообщения.
+- 201 Created — в результате успешного выполнения запроса был создан новый ресурс. Сервер может указать адреса созданного ресурса в теле ответа, при этом предпочтительный адрес указывается в заголовке Location. Серверу рекомендуется указывать в теле ответа характеристики созданного ресурса и его адреса, формат тела ответа определяется заголовком Content-Type. При обработке запроса, новый ресурс должен быть создан до отправки ответа клиенту, иначе следует использовать ответ с кодом 202.
+- 202 Accepted — запрос был принят на обработку, но она не завершена. Клиенту не обязательно дожидаться окончательной передачи сообщения, так как может быть начат очень долгий процесс. 
+- 203 Non-Authoritative Information — аналогично ответу 200, но в этом случае передаваемая информация была взята не из первичного источника (резервной копии, другого сервера и т. д.) и поэтому может быть неактуальной.
+- 204 No Content — сервер успешно обработал запрос, но в ответе были переданы только заголовки без тела сообщения. Клиент не должен обновлять содержимое документа, но может применить к нему полученные метаданные.
+ - 205 Reset Content — сервер обязывает клиента сбросить введённые пользователем данные. Тела сообщения сервер при этом не передаёт и документ обновлять не обязательно.
+ - 206 Partial Content — сервер удачно выполнил частичный GET-запрос, возвратив только часть сообщения. В заголовке Content-Range сервер указывает байтовые диапазоны содержимого. Особое внимание при работе с подобными ответами следует уделить кэшированию.
+ - 207 Multi-Status — сервер передаёт результаты выполнения сразу нескольких независимых операций. Они помещаются в само тело сообщения в виде XML-документа с объектом multistatus. Не рекомендуется размещать в этом объекте статусы из серии 1xx из-за бессмысленности и избыточности.
+ - 226 IM Used — заголовок A-IM от клиента был успешно принят и сервер возвращает содержимое с учётом указанных параметров. Введено в RFC 3229 для дополнения протокола HTTP поддержкой дельта-кодирования.
 
-from selenium import webdriver
-import selenium.webdriver.chrome.service as service
-
-service = service.Service('/path/to/chromedriver')
-service.start()
-capabilities = {'chrome.binary': '/path/to/custom/chrome'}
-driver = webdriver.Remote(service.service_url, capabilities)
-driver.get('http://www.google.com/xhtml');
-time.sleep(5) # Let the user actually see something!
-driver.quit()
-```
-
-# Functional Test == Acceptance Test == End-to-End Test
-
-test_3.py
----------
-```
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
-from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
-
-browser = webdriver.Firefox()
-browser.get('http://localhost:8000')
-
-assert 'This is my cool Site!' in browser.title
-
-print (browser.title)
-
-try:
-    
-    WebDriverWait(browser, 10).until(EC.title_contains("Site"))
- 
-    print (browser.title)
-
-finally:
-    browser.quit()
-
-```
-python test_3.py 
-```
-Traceback (most recent call last):
-  File "test_3.py", line 11, in <module>
-    assert 'This is my cool Site!' in browser.title
-AssertionError
-```
-test_welcome.py 
-
-```
-# Сначала были импортированы все основные необходимые модули. Модуль unittest встроен в Python и реализован на Java’s JUnit. Этот модуль предоставляет собой утилиту для организации тестов.
-
-from selenium import webdriver
-import unittest
-
-# Класс теста унаследован от unittest.TestCase. Наследование класса TestCase является способом сообщения модулю unittest, что это тест:
-
-class NewVisitorTest(unittest.TestCase):  
-
-    # setUp — это часть инициализации, этот метод будет вызываться перед каждым методом теста, который вы собираетесь написать внутри класса теста. Здесь мы создаем элемент класса Firefox WebDriver.
-
-    def setUp(self):  
-        self.browser = webdriver.Firefox()
-
-    # Метод tearDown будет вызван после каждого метода теста. Это метод для действий чистки. В текущем методе реализовано закрытие окна браузера. Вы можете также вызывать метод quit вместо close. Метод quit закроет браузер полностью, в то время как close закроет одну вкладку. Однако, в случае, когда открыта только одна вкладка, по умолчанию большинство браузеров закрывается полностью.:
-
-    def tearDown(self):  
-        self.browser.quit()
-
-    # Метод теста всегда должен начинаться с фразы test. Первая строка метода создает локальную ссылку на объект драйвера, созданный методом setUp.
-    
-    def test_can_start_a_list_and_retrieve_it_later(self):  
-        
-        # Метод driver.get перенаправляет к странице URL в параметре. WebDriver будет ждать пока страница не загрузится полностью (то есть, событие “onload” игнорируется), прежде чем передать контроль вашему тесту или скрипту. 
-
-        self.browser.get('http://localhost:8000')
-        
-        # утверждение, что заголовок содержит слово “This is my cool Site!”:
-        self.assertIn('This is my cool Site!', self.browser.title)  
-        
-        # self.fail ничего не получилось, генерирует сообщение об ошибке. Используется в качестве напоминания, чтобы закончить тест.
-
-        self.fail('Finish the test!')  
-            
-# Завершающий код — это стандартная вставка кода для запуска набора тестов [Сравнение __name__ с "__main__" означает, что модуль (файл программы) запущен как отдельная программа («main» — «основная», «главная») (а не импортирован из другого модуля). Если вы импортируете модуль, атрибут модуля __name__ будет равен имени файла без каталога и расширения.]:
-
-if __name__ == '__main__':  
-    unittest.main(warnings='ignore')  
-```
-warnings='ignore' подавляет избыточные предупреждения ResourceWarning,  которые генерируются в момент выполнения. 
-
-
-python test_welcome.py 
-```
-F
-======================================================================
-FAIL: test_can_start_a_list_and_retrieve_it_later (__main__.NewVisitorTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "test_welcome.py", line 29, in test_can_start_a_list_and_retrieve_it_later
-    self.assertIn('This is my cool Site!', self.browser.title)
-AssertionError: 'This is my cool Site!' not found in 'Welcome to Django'
-
-----------------------------------------------------------------------
-Ran 1 test in 5.304s
-
-FAILED (failures=1)
-
-```
-# Implicit waits - Неявные ожидания
-добавить implicitly_wait в настройки setUp:
-
-```
-    def setUp(self):  
-        self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(3)
-
-```
-test_welcome.py
----------------
-```
-# -*- coding: utf-8 -*-
-
-from selenium import webdriver
-import unittest
-
-class NewVisitorTest(unittest.TestCase):  
-
-    def setUp(self):  
-        self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(3) # Implicit waits - Неявные ожидания
-
-    def test_it_worked(self):
-        self.browser.get('http://localhost:8000')
-        self.assertIn('Welcome to Django', self.browser.title)
-        
-    def tearDown(self):  
-        self.browser.quit()
-
-    def test_can_start_a_list_and_retrieve_it_later(self):  
-        self.browser.get('http://localhost:8000')
-        self.assertIn('This is my cool Site!', self.browser.title)  
-        self.fail('Finish the test!')  
-
-if __name__ == '__main__':  
-    unittest.main(warnings='ignore')
-```
-python test_welcome.py
-----------------------
-```
-F.
-======================================================================
-FAIL: test_can_start_a_list_and_retrieve_it_later (__main__.NewVisitorTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "test_welcome.py", line 34, in test_can_start_a_list_and_retrieve_it_later
-    self.assertIn('This is my cool Site!', self.browser.title)
-AssertionError: 'This is my cool Site!' not found in 'Welcome to Django'
-
-----------------------------------------------------------------------
-Ran 2 tests in 10.223s
-
-FAILED (failures=1)
-
-```
-
-./manage.py startapp home
---------------------------
-
-        mysite/
-        ├── db.sqlite3
-        ├── functional_tests
-        ├── home
-        │   ├── admin.py
-        │   ├── __init__.py
-        │   ├── migrations
-        │   │   └── __init__.py
-        │   ├── apps.py
-        │   ├── models.py
-        │   ├── tests.py
-        │   └── views.py
-        ├── manage.py
-        └── mysite
-            ├── __init__.py
-            ├── __pycache__
-            ├── settings.py
-            ├── urls.py
-            └── wsgi.py
-
-git commit -m 'Added home app'
------------------------------
-        git add --all :/
-        git rm -r mysite/mysite/__pycache__
-
-        $ git status
-
-        echo "__pycache__" >> .gitignore
-        echo "*.pyc" >> .gitignore
-
-        git status
-
-        git add .gitignore
-
-        git commit -m 'added gitignore and home app'
-
-        $ git status
-
-
-## Unit Tests
-
-Основное различие между юнит-тестами и функциональными тестами является то, что функциональные тесты используются для тестирования приложения с точки зрения пользователя. Модульные тесты используются для тестирования приложения с точки зрения программиста.
-
-TDD подход будет выглядеть так:
--------------------------------
-- Начнем с написания функциональных тестов, описывая новые возможности с точки зрения пользователя.
-- После того, как у нас есть функциональный тест, который не удается, мы начинаем думать о том, как написать код, который может заставить его пройти. Сейчас мы используем один или несколько юнит-тестов, чтобы определить, как должен вести себя наш код.
-- После того, как у нас есть юнит-тест и он не проходит, мы пишем некоторое количество кода приложения, достаточное чтобы пройти наш тест. Мы можем повторять шаги 2 и 3 несколько раз, пока не получим желаемое.
-- Теперь мы можем повторно вызвать наши функциональные тесты и посмотреть, проходят ли они. 
-
-# Unit Testing in Django
 
 home/tests.py
-
-```
-from django.test import TestCase
-
-# Create your tests here.
-```
-home/tests.py
--------------
-```
-from django.test import TestCase
-
-# Create your tests here.
-class EqualTest(TestCase):
-
-    def test_bad_maths(self):
-        self.assertEqual(1 + 1, 3)
-```
-
-./manage.py test      
-```
- ./manage.py test
-Creating test database for alias 'default'...
-F
-======================================================================
-FAIL: test_bad_maths (home.tests.EqualTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 8, in test_bad_maths
-    self.assertEqual(1 + 1, 3)
-AssertionError: 2 != 3
-
-----------------------------------------------------------------------
-Ran 1 test in 0.001s
-
-FAILED (failures=1)
-Destroying test database for alias 'default'...
-
-```
-
-# Django MVC, URLs, and View Functions
-
-### Рабочий процесс в Django:
-
-- HTTP-запрос приходит на определенной URL.
-- Django использует некоторые правила и решает, какой метод контроллера должен откликнуться на запрос (это называется разрешением URL).
-- Метод контроллера обрабатывает запрос и возвращает ответ HTTP.
-
-Проверим две идеи:
-------------------
-- Можем ли мы разрешить URL для корня сайта ("/") и в каком методе это сделать?
-- Может ли метод вернуть некоторый HTML, который получит функциональный тест?
-
-home/tests.py. 
 --------------
-```
-from django.core.urlresolvers import resolve
-from django.test import TestCase
-from home.views import home_page
 
-class HomePageTest(TestCase):
+        # -*- coding: utf-8 -*-
+        from django.test import TestCase
 
-    def test_root_url_resolves_to_home_page_view(self):
-        found = resolve('/')  
-        self.assertEqual(found.func, home_page)  
+        class HomePageTest(TestCase):
 
-```
+            def test_homepage(self):
+                response = self.client.get('/')
+                self.assertEqual(response.status_code, 200)
 
-При вызове "/"(корень сайта), Django находит метод с именем home_page.
-
-Этот метод мы и напишем. Мы планируем сохранить его в home/views.py.
-
-home/views.py. 
-```
-from django.shortcuts import render
-
-# Create your views here.
-home_page = None
-
-```
-./manage.py test
-```
-Creating test database for alias 'default'...
-FE
-======================================================================
-ERROR: test_root_url_resolves_to_home_page_view (home.tests.HomePageTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 11, in test_root_url_resolves_to_home_page_view
-    found = resolve('/')
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 534, in resolve
-    return get_resolver(urlconf).resolve(path)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 404, in resolve
-    raise Resolver404({'tried': tried, 'path': new_path})
-django.core.urlresolvers.Resolver404: {'path': '', 'tried': [[<RegexURLResolver <RegexURLPattern list> (admin:admin) ^admin/>]]}
-
-```
-## urls.py
-
-mysite/urls.py. 
-```
-"""mysite URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/1.8/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-Including another URLconf
-    1. Add an import:  from blog import urls as blog_urls
-    2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
-"""
-from django.conf.urls import include, url
-from django.contrib import admin
-
-urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
-]
-
-
-```
-mysite/urls.py. 
-```
-from django.conf.urls import include, url
-from django.contrib import admin
-
-from home import views
-
-urlpatterns = [
-    url(r'^$', views.home_page, name='home'),
-    url(r'^admin/', include(admin.site.urls)),
-]
-
-```
-
-./manage.py test
-```
-ERROR: test_root_url_resolves_to_home_page_view (home.tests.HomePageTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 11, in test_root_url_resolves_to_home_page_view
-    found = resolve('/')
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 534, in resolve
-    return get_resolver(urlconf).resolve(path)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 376, in resolve
-    sub_match = pattern.resolve(new_path)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 248, in resolve
-    return ResolverMatch(self.callback, args, kwargs, self.name)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 255, in callback
-    self._callback = get_callable(self._callback_str)
-  File "/home/janus/Envs/dj21/lib/python3.4/functools.py", line 448, in wrapper
-    result = user_function(*args, **kwds)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/core/urlresolvers.py", line 102, in get_callable
-    "'%s' is not a callable or a dot-notation path" % lookup_view
-django.core.exceptions.ViewDoesNotExist: 'None' is not a callable or a dot-notation path
-
-```
-
-home/views.py. 
---------------
-```
-from django.shortcuts import render
-
-# Create your views here.
-def home_page():
-    pass
-```
-
-./manage.py test
-```
-Creating test database for alias 'default'...
-..
-----------------------------------------------------------------------
-Ran 2 tests in 0.002s
-
-OK
-
-```
-
-## Unit Test метод
-
-home/tests.py. 
-```
-from django.core.urlresolvers import resolve
-from django.test import TestCase
-from django.http import HttpRequest
-
-from home.views import home_page 
-
-class HomePageTest(TestCase):
-
-    def test_root_url_resolves_to_home_page_view(self):
-        found = resolve('/') 
-        self.assertEqual(found.func, home_page) 
-
-    def test_home_page_returns_correct_html(self):
-
-        # создали HttpRequest object, который использует Django когда пользователь запрашивает страницу.
-
-        request = HttpRequest()  
-        
-        # перенаправляем запрос на метод home_page view, который формирует response - экземпляр класса HttpResponse. Далее проверяем является ли .content в response HTML-текстом который мы отдаем пользователю.
-
-        response = home_page(request)  
-        
-        # HTML-текст должен начинаться с html тега, который должен закрываться вконце. response.content является сырым литералом (raw bytes), а не Python-строкой, поэтому мы используем b'' синтаксис.
-
-        self.assertTrue(response.content.startswith(b'<html>'))  
-        
-        # Мы хотим поместить тег title, содержащий наш заголовок.
-
-        self.assertIn(b'<title>Welcome to Django. This is my cool Site!</title>', response.content)  
-        self.assertTrue(response.content.endswith(b'</html>'))  
-
-class EqualTest(TestCase):
-
-    def test_bad_maths(self):
-        self.assertEqual(1 + 1, 2)
-```
-
-./manage.py test
-
-```
-
-ERROR: test_home_page_returns_correct_html (home.tests.HomePageTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 34, in test_home_page_returns_correct_html
-    response = home_page(request)
-TypeError: home_page() takes 0 positional arguments but 1 was given
-
-----------------------------------------------------------------------
-Ran 3 tests in 0.036s
-
-```
-
-home/views.py. 
---------------
-```
-def home_page(request):
-    pass
-```
-./manage.py test
-```
-ERROR: test_home_page_returns_correct_html (home.tests.HomePageTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 38, in test_home_page_returns_correct_html
-    self.assertTrue(response.content.startswith(b'<html>'))
-AttributeError: 'NoneType' object has no attribute 'content'
-
-```
-home/views.py. 
-```
-from django.http import HttpResponse
-
-# Create your views here.
-
-def home_page(request):
-    return HttpResponse()
-```
-
-./manage.py test
-```
-FAIL: test_home_page_returns_correct_html (home.tests.HomePageTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 38, in test_home_page_returns_correct_html
-    self.assertTrue(response.content.startswith(b'<html>'))
-AssertionError: False is not true
-
-```
-home/views.py. 
---------------
-```
-from django.shortcuts import render
-from django.http import HttpResponse
-
-def home_page(request):
-
-    return HttpResponse("<html><title>Welcome to Django. This is my cool Site!</title></html>")
-
-```
-./manage.py test
-```
-----------------------------------------------------------------------
-Ran 3 tests in 0.002s
-
-OK
-
-```
-
-functional tests
------------------
-```
-touch functional_tests/__init__.py
-```
-- Все файлы тестов должны начинаться с test, например test_all_users.py.
-
-- Тестируем заголовок на совпадение с “My Cool Django Site”
-- Тестируем цвет h1 header в home page на совпадение с rgba(0, 0, 0, 1).
-
-test_all_users.py:
--------------------
-```
-# -*- coding: utf-8 -*-
-from selenium import webdriver
-from django.core.urlresolvers import reverse
-from django.contrib.staticfiles.testing import LiveServerTestCase  
- 
-class HomeNewVisitorTest(LiveServerTestCase): 
- 
-    def setUp(self):
-        self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(3)
- 
-    def tearDown(self):
-        self.browser.quit()
- 
-    def get_full_url(self, namespace):
-        return self.live_server_url + reverse(namespace)
- 
-    def test_home_title(self):
-        self.browser.get(self.get_full_url("home"))
-        self.assertIn("My Cool Django Site", self.browser.title)
- 
-    def test_h1_css(self):
-        self.browser.get(self.get_full_url("home"))
-        h1 = self.browser.find_element_by_tag_name("h1")
-        self.assertEqual(h1.value_of_css_property("color"), 
-                         "rgba(0, 0, 1, 1)")
-```
-
-Шаг за шагом:
---------------
-1. Определили function get_full_url, принимающую 1 аргумент - namespace (namespace определен в url). 
-2. self.live_server_url определяет local host url. Нужно из-за того, что server использует другой url (обычно http://127.0.0.1:8021).
-3. reverse дает подходящий url для указанного namespace, именно - /
-4. test_home_title  method проверяет что home page title содержит "My Cool Django Site".
-5. test_h1_css method тестирут color. 
-
-
-./manage.py test functional_tests.test_all_users
-------------------------------------------------
-```
-E.F
-======================================================================
-ERROR: test_h1_css (functional_tests.test_all_users.HomeNewVisitorTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/functional_tests/test_all_users.py", line 24, in test_h1_css
-    h1 = self.browser.find_element_by_tag_name("h1")
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 386, in find_element_by_tag_name
-    return self.find_element(by=By.TAG_NAME, value=name)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 744, in find_element
-    {'using': by, 'value': value})['value']
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/webdriver.py", line 233, in execute
-    self.error_handler.check_response(response)
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/selenium/webdriver/remote/errorhandler.py", line 194, in check_response
-    raise exception_class(message, screen, stacktrace)
-selenium.common.exceptions.NoSuchElementException: Message: Unable to locate element: {"method":"tag name","selector":"h1"}
-Stacktrace:
-    at FirefoxDriver.prototype.findElementInternal_ (file:///tmp/tmp2byp9iy3/extensions/fxdriver@googlecode.com/components/driver-component.js:10770)
-    at fxdriver.Timer.prototype.setTimeout/<.notify (file:///tmp/tmp2byp9iy3/extensions/fxdriver@googlecode.com/components/driver-component.js:625)
-
-======================================================================
-FAIL: test_home_title (functional_tests.test_all_users.HomeNewVisitorTest)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/functional_tests/test_all_users.py", line 20, in test_home_title
-    self.assertIn("My Cool Django Site", self.browser.title)
-AssertionError: 'My Cool Django Site' not found in 'Welcome to Django. This is my cool Site!'
-
-```
-Цикл TDD:
----------
-
-home/tests.py:
---------------
-```
-# -*- coding: utf-8 -*-
-from django.test import TestCase
-from django.core.urlresolvers import reverse
- 
-class TestAllUsers(TestCase):
- 
-    def test_uses_index_template(self):
-        response = self.client.get(reverse("main"))
-        self.assertTemplateUsed(response, "home/index.html")
- 
-    def test_uses_base_template(self):
-        response = self.client.get(reverse("main"))
-        self.assertTemplateUsed(response, "base.html")
-
-``` 
- 
 ./manage.py test home.tests
 ----------------------------
-```
-FAIL: test_uses_base_template (home.tests.TestAllUsers)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 55, in test_uses_base_template
-    self.assertTemplateUsed(response, "base.html")
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/test/testcases.py", line 579, in assertTemplateUsed
-    self.fail(msg_prefix + "No templates used to render the response")
-AssertionError: No templates used to render the response
 
-======================================================================
-FAIL: test_uses_index_template (home.tests.TestAllUsers)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "/home/janus/github/tdd-django/mysite/home/tests.py", line 51, in test_uses_index_template
-    self.assertTemplateUsed(response, "home/index.html")
-  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/test/testcases.py", line 579, in assertTemplateUsed
-    self.fail(msg_prefix + "No templates used to render the response")
-AssertionError: No templates used to render the response
+        Creating test database for alias 'default'...
+        .
+        ----------------------------------------------------------------------
+        Ran 1 test in 0.165s
 
-----------------------------------------------------------------------
-
-```
-
-Static Files Settings
-=====================
-
-Settings file (settings.py)
----------------------------
-```
-# Application definition
-
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    ...
-    
-    'django.contrib.staticfiles',
-]
-```
-
-Static files (CSS, JavaScript, Images)
----------------------------------------
-https://docs.djangoproject.com/en/1.9/howto/static-files/
-
-STATIC_URL
-----------
-        STATIC_URL = '/static/'
+        OK
+        Destroying test database for alias 'default'...
 
 
-STATICFILES DIR
----------------
-```
-mkdir static
-```
+Представление
+==============
 
-settings.py:
-------------
-```
-import os
+В Django страницы и остальной контент отдается представлениями. Представление - это просто функция Python(или метод представления-класса). Django выбирает представление, анализируя запрошенный URL(точнее часть URL-а после домена).
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-```
+URL-шаблон - общая форма URL:
+-----------------------------
+    url(regex, view, kwargs=None, name=None, prefix='')
 
-STATICFILES_DIRS:
------------------
-```
-STATIC_URL = '/static/'
+Чтобы из URL-а получить представление, Django использует URLconf. URLconf определяет соответствие URL-шаблонов(являются регулярными выражениями) и представлений.
 
-STATIC_ROOT = (
-    os.path.join(BASE_DIR, "static"),
-)
+url() argument: regex
+---------------------
+Django проверяет соответствие запрошенного URL-а с регулярным выражением (первый элемент кортежа), начиная с первого и далее по списку, пока не будет найдено подходящее.
 
-```
+регулярные выражения не обрабатывают GET и POST параметры или название домена. Например, при запросе к http://www.example.com/myapp/, URLconf будет обрабатывать myapp/. При запросе к http://www.example.com/myapp/?page=3, URLconf также получит myapp/.
 
-Templates Settings
-------------------
-```
-mkdir templates
-```
+регулярные выражения компилируются при первой загрузке модуля URLconf. Они работают очень быстро.
 
-Templates files
----------------
-```
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "templates")],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                 django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-```
+url() argument: view
+--------------------
+При нахождении подходящего регулярного выражения, Django вызывает функцию Python передавая: первым аргументом объект HttpRequest, а потом все “распознанные” значения как позиционные или именованные аргументы.
 
-Initializr: HTML5 Boilerplate and Twitter Bootstrap
+Функция django.conf.urls.url() может принимать третий необязательный элемент. Этот элемент является словарем, который определяет дополнительные именованные аргументы для функции представления.
+
+Передача дополнительных аргументов в представление
 ---------------------------------------------------
-http://www.initializr.com/
+url() argument: kwargs
+----------------------
+Любое количество именованных аргументов может быть передано в представление через словарь.
 
-После загрузки и распаковки:
-----------------------------
-- Переместить index.html, 404.html, humans.txt и robots.txt в templates folder.
-- Переименовать index.html в base.html. 
-- Остальные файлы переместить в static
-- Создайте свой favicon.ico.
-- Можно удалить файлы apple-touch-icon.png, browserconfig.xml, tile-wide.png и tile.png.
+Конфигурация URL-ов позволяет определить дополнительные аргументы для функции представления, используя словарь Python.
+
+Например:
+
+from django.conf.urls import url
+from . import views
+
+urlpatterns = [
+    url(r'^blog/(?P<year>[0-9]{4})/$', views.year_archive, {'foo': 'bar'}),
+]
+Например, при запросе к /blog/2005/, Django вызовет views.year_archive(request, year='2005', foo='bar').
+
+Конфликты переменных
+--------------------
+Если регулярное выражение URL-шаблона выделяет из URL-а аргумент с названием, которое уже используется в дополнительных именованных аргументах, будет использован аргумент из словаря дополнительных аргументов, вместо значения из URL.
+
+url() argument: name
+---------------------
+Название URL-а позволяет однозначно указать на него в любом месте в Django, особенно полезно это в шаблонах. Это позволяет глобально изменять шаблоны URL-ов в одном месте.
+
+The prefix parameter has the same meaning as the first argument to patterns() and is only relevant when you’re passing a string as the view parameter.
+
+Каждое представление должно выполнить одно из двух действий: вернуть экземпляр HttpResponse с содержимым страницы, или вызвать исключения такое как Http404.
+
+Ваше представление может обращаться к базе данных или нет. Может использовать систему шаблонов Django – или любую другую – или не использовать. Может генерировать PDF файл, возвращать XML, создавать ZIP архив “на лету”, все что угодно, используя любые библиотеки Python.
+
+Все что нужно Django – это HttpResponse. Или исключение.
 
 
 urls.py
 --------
 ```
-urlpatterns = [
+from django.conf.urls import url
+from home import views
 
-    url(r'^$', views.home, name='main'),
-    url(r'^admin/', admin.site.urls),
+urlpatterns = [
+    url(r'^req/', views.req_test, name='req_test'),
 ]
 ```
+views.py
+---------
+```
+from django.http import HttpResponse
 
-home/views.py
--------------
+def req_test(request): 
+    return HttpResponse("<html><title>Welcome to Django.</title><body><p>This is Request Test!</p></body></html>")
+
 ```
- 
-def home(request):
-    return render(request, "home/index.html", {})
+
+Объект class HttpRequest
+========================
+Атрибуты
+--------
+Все атрибуты должны рассматриваться как неизменяемые, пока об обратном не будет сказано явно. Атрибут session является исключением из правила.
+
+HttpRequest.scheme
+------------------
+Строка, указывающая схему запроса (обычно http или https).
+
+HttpRequest.body
+----------------
+Тело запроса HTTP в байтовой строке. Он полезен для обработки данных различными способами, а не только традиционной HTML формой: передача изображений, загрузка XML и др. Для обработки данных обычной формы, используйте HttpRequest.POST.
+
+HttpRequest.path
+-----------------
+Содержит полный путь к запрашиваемой странице, не включая домен.
+
+    def test_homepage_request_path(self):
+        response = self.client.get('/')
+        request = response.wsgi_request
+        self.assertEqual(request.path, '/')
+
+HttpRequest.path_info
+---------------------
+часть URL-а после названия домена содержит префикс скрипта и “полезную” часть пути(path info portion). Атрибут path_info всегда содержит часть URL-а, которую использует Django, независимо от сервера. Использование этого атрибута вместо path сделает ваш код более надежным и независимым от настроек сервера.
+
+    def test_homepage_request_path_info(self):
+        response = self.client.get('/')
+        request = response.wsgi_request
+        self.assertEqual(request.path_info, '/')
+Например
+--------
 ```
-templates/home
+def req_test(request): 
+    output = "<html><title>Welcome to Django.</title><body><p>This is Request Test!</p>"
+    mess = request.scheme
+    output += 'scheme = '+ mess + '<br>'
+    mess = request.path
+    output += 'path = '+ mess + '<br>'
+    mess = request.path_info
+    output += 'path_info = '+ mess + '<br>'
+   
+    return HttpResponse(output)
+```
+
+HttpRequest.method
+-------------------
+Строка отображающая метод HTTP запроса. Значение всегда будет в верхнем регистре. 
+
+    def test_homepage_request_method(self):
+        response = self.client.get('/')
+        request = response.wsgi_request
+        self.assertEqual(request.method, 'GET')
+
+Например:
+---------
+```
+if request.method == 'GET':
+        mess = 'Method = '+'GET' + '<br>'
+    elif request.method == 'POST':
+        mess = 'Method = '+'POST' + '<br>'
+    output += mess
+    output += "</body></html>"
+```
+
+HttpRequest.encoding
+---------------------
+Кодировка, которая используется для декодирования данных формы (или None, что означает использовать значение настройки DEFAULT_CHARSET). Вы можете изменить значение этого атрибута. При последующих доступах к атрибутам (например, чтение с GET или POST) будет использоваться новое значение encoding. Полезен, если вы знаете, что данные формы не используют кодировку указанную DEFAULT_CHARSET.
+
+    def test_homepage_request_encoding(self):
+        response = self.client.get('/')
+        request = response.wsgi_request
+        self.assertEqual(request.encoding, 'utf-8')
+
+./manage.py home.tests
+----------------------
+
+    FAIL: test_homepage_request_encoding (home.tests.HomePageTest)
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "/home/janus/github/tdd-django/mysite/home/tests.py", line 35, in test_homepage_request_encoding
+        self.assertEqual(request.encoding, 'utf-8')
+    AssertionError: None != 'utf-8'
+
+DEFAULT_CHARSET
 ---------------
-```
-mkdir templates/home
-touch templates/home/index.html
+По умолчанию: 'utf-8'
+
+Кодировка, которая используется по умолчанию для объектов HttpResponse если MIME-тип не указан явно. Используется вместе с DEFAULT_CONTENT_TYPE при установке заголовка Content-Type.
+
+DEFAULT_CONTENT_TYPE
+--------------------
+По умолчанию: 'text/html'
+
+Тип содержимого(content type), который используется по умолчанию для объектов HttpResponse если MIME-тип не указан явно. Используется вместе с DEFAULT_CHARSET при установке заголовка Content-Type.
 
 ```
-
-base.html
-----------
+    request.encoding = 'utf-8'
+    mess = settings.DEFAULT_CHARSET
+    output += 'DEFAULT_CHARSET = '+ mess + '<br>'
+    mess = str(request.encoding)
+    output += 'encoding = '+ mess + '<br>'
 ```
-<title>{% block title %}{% endblock %}</title>
 
-```
-home/index.html
+HttpRequest.GET
 ---------------
+Объект с интерфейсом словаря, который содержит HTTP GET параметры.
+
+HttpRequest.POST
+----------------
+Объект-словарь содержащий все POST параметры, переданные формой. Если вам необходимо получить необработанные данные или данные переданные не через форму, используйте атрибут HttpRequest.body.
+
+Запрос может использовать метод POST, но содержать пустой словарь POST – например, форма была передана через POST HTTP метод, но не содержала никаких данных. Поэтому, вы не должны использовать if request.POST для проверки был ли использован метод POST; вместо этого используйте if request.method == "POST".
+
+POST не содержит информацию о загруженных файлах.
+-------------------------------------------------
+
+HttpRequest.COOKIES
+--------------------
+Словарь Python содержащий все “cookie”. Ключи и значения являются строками.
+
+HttpRequest.FILES
+-----------------
+Объект с интерфейсом словаря, который содержит все загруженные файлы. Каждый ключ в FILES это name из input type="file" name="". Каждое значение в FILES это объект UploadedFile.
+
+FILES содержит данные только, если метод запроса POST и form содержал enctype="multipart/form-data". В другом случае FILES будет содержать пустой словарь.
+
+HttpRequest.META
+----------------
+Словарь Python содержащий все доступные HTTP заголовки запроса. Доступные заголовки зависят от сервера и клиента. Вот список возможных:
+
+- CONTENT_LENGTH – размер содержимого запроса (содержимое учитывается как строка).
+
+- CONTENT_TYPE – MIME-тип содержимого запроса.
+
+- HTTP_ACCEPT_ENCODING – принимаемые кодировки ответа.
+
+- HTTP_ACCEPT_LANGUAGE – принимаемые языки ответа.
+
+- HTTP_HOST – заголовок HTTP Host отсылаемый клиентом.
+
+- HTTP_REFERER – Ссылающаяся страница, если определена.
+
+- HTTP_USER_AGENT – Строка “user-agent” клиента.
+
+- QUERY_STRING – Строка запроса, не обработанная.
+
+- REMOTE_ADDR – IP-адрес клиента.
+
+- REMOTE_HOST – имя хоста клиента.
+
+- REMOTE_USER – пользователь аутентифицированный Web-сервером, если определен.
+
+- REQUEST_METHOD – Метод запроса. Строка, например, "GET" или "POST".
+
+- SERVER_NAME – имя хоста сервера.
+
+- SERVER_PORT – Порт сервера(строка).
 ```
-{% extends "base.html" %}
-{% block title %}My Cool Django Site{% endblock %}
+    mess = request.META['HTTP_ACCEPT_ENCODING']
+    output += 'HTTP_ACCEPT_ENCODING = '+ mess + '<br>'
 ```
-./manage.py test home.test
+За исключением CONTENT_LENGTH и CONTENT_TYPE, любый HTTP заголовок запроса преобразуется в ключ атрибута META конвертированием всех символов в верхний регистр, заменой дефисов нижним подчеркиванием и добавлением префикса HTTP_ к названию. Например, заголовок X-Bender будет добавлен в META с ключом HTTP_X_BENDER.
+
+HttpRequest.user
+----------------
+Содержит объект AUTH_USER_MODEL представляющий текущего “залогиненного” пользователя. Если пользователь не авторизирован, атрибут user будет содержать django.contrib.auth.models.AnonymousUser. Вы можете различить их используя is_authenticated():
+
+```
+    if request.user.is_authenticated():
+        mess = 'Hi User'
+    else:
+        mess = 'Hi Anonimouse!'
+
+    output += 'User = '+ mess + '<br>'
+```
+Атрибут user доступен только если проект использует AuthenticationMiddleware. 
+
+HttpRequest.session
+-------------------
+Объект с интерфейсом словаря, который доступен для чтения и изменений, представляет текущую сессию. Доступен только, если настроена поддержка сессии.
+
+HttpRequest.urlconf
+-------------------
+Не определяется Django, но будет использован если другой код (например, собственный функциональный слой(middleware)) установит его. Если определен, значение будет использоваться как URLconf текущего запроса вместо значения настройки ROOT_URLCONF.
+
+HttpRequest.resolver_match
+--------------------------
+Экземпляр ResolverMatch представляющий запрошенный URL. Атрибут устанавливается при поиске подходящего URL-шаблона, это значит что middleware он не доступен т.к. они вызывается до обработки URL-а (в таком случае вместо process_request можно использовать process_view).
+
+Методы
+======
+HttpRequest.get_host()
+-----------------------
+Возвращает оригинальное имя хоста используя информацию из HTTP_X_FORWARDED_HOST (если включена настройка USE_X_FORWARDED_HOST) и HTTP_HOST заголовков, в соответствующем порядке. Если эти значения не определенны, метод использует комбинацию SERVER_NAME и SERVER_PORT как описано в PEP 3333.
+
+Например: 
+```
+output += 'Host = '+ request.get_host() + '<br>'
+```
+HttpRequest.get_full_path()
 ---------------------------
+Возвращает path, со строкой запроса, если она присутствует.
+
+HttpRequest.build_absolute_uri(location)
+----------------------------------------
+Возвращает абсолютный URI для аргумента location. Если location не указан, будет использовано значение request.get_full_path().
+
+Если location уже является абсолютным URI, значение останется не измененным. В другом случае абсолютный URI будет создан с использованием данных запроса.
+
+Например:
 ```
+output += 'Path = '+ request.get_full_path() + '<br>'
+```
+
+Объект HttpResponse
+===================
+class HttpResponse
+------------------
+В отличии от объекта HttpRequest, который создается Django, объект HttpResponse создаете вы. Каждое представление должно создать и вернуть объект HttpResponse.
+
+Класс HttpResponse находится в модуле django.http.
+
+Передача строки
+----------------
+Типичное использование заключается в передаче содержимого страницы в виде строки в конструктор HttpResponse:
+```
+from django.http import HttpResponse
+response = HttpResponse("Here's the text of the Web page.")
+response = HttpResponse("Text only, please.", content_type="text/plain")
+```
+Но если вам необходимо добавлять содержимое постепенно, вы можете использовать объект response как объект файла:
+
+```
+response = HttpResponse()
+response.write("<p>Here's the text of the Web page.</p>")
+response.write("<p>Here's another paragraph.</p>")
+```
+
+Передача итератора
+------------------
+Вы можете передать итератор в конструктор HttpResponse вместо строк. HttpResponse сразу выполнит итератор и сохранит результат как строку.
+
+Если необходимо отдавать данные из итератора в потоке, используйте экземпляр StreamingHttpResponse.
+
+Установка заголовков
+--------------------
+При установке или удалении заголовка в объекте ответа, рассматривайте его как словарь:
+```
+response = HttpResponse()
+response['Age'] = 120
+del response['Age']
+```
+в отличии от словаря, del не вызовет исключение KeyError если заголовок не определен.
+
+Для установки заголовков Cache-Control и Vary, лучше использовать функции patch_cache_control() и patch_vary_headers() из модуля django.utils.cache, так как эти поля могут содержать несколько значений, разделенных запятыми. Эти функции добавят новые значение не удаляя существующие.
+
+HTTP заголовки не могут содержать перенос строки. При попытке добавить заголовок содержащий символ переноса строки (CR или LF) будет вызвано исключение BadHeaderError
+
+Указываем браузеру воспринимать ответ как вложенный файл
+---------------------------------------------------------
+Для этого используйте аргумент content_type и установите заголовок Content-Disposition. Например, вот так вы можете вернуть таблицу Microsoft Excel:
+```
+response = HttpResponse(output, content_type='application/vnd.ms-excel')
+response['Content-Disposition'] = 'attachment; filename="foo.xls"'
+```
+HttpResponse.content
+--------------------
+Байтовое представление содержимого, закодированное с объекта Unicode при необходимости.
+
+HttpResponse.charset
+---------------------
+Кодировка, в которую будет закодирован ответ. Если не указана во время создания объекта HttpResponse, будет проверятся content_type, и если не будет найдена, будет использоваться значение настройки DEFAULT_CHARSET.
+```
+ print(response.charset)
+```
+HttpResponse.status_code
+------------------------
+Код HTTP состояния ответа.
+```
+print(response.status_code) # 200
+```
+HttpResponse.reason_phrase
+--------------------------
+Описание HTTP ответа(HTTP reason phrase).
+```
+    print(response.reason_phrase) # OK
+```
+HttpResponse.streaming
+-----------------------
+Всегда False.
+Указывает middleware, что этот ответ потоковый и его нужно обрабатывать не так, как обычные запросы.
+
+HttpResponse.closed
+--------------------
+True, если ответ был закрыт.
+
+Методы
+-------
+HttpResponse.__init__(content='', content_type=None, status=200, reason=None, charset=None)
+--------------------------------------------------------------------------------------------
+Создает экземпляр HttpResponse с переданным содержимым и MIME-типом.
+
+- content должен быть строкой или итератором. Если это итератор, он должен возвращать строки, которые будут объединены для формирования содержимого ответа. Если это не итератор и не строка, значение будет конвертировано в строковое представление.
+
+- content_type - MIME-тип, возможно с кодировкой, используется в HTTP заголовке Content-Type. Если не указан, используются настройки DEFAULT_CONTENT_TYPE и DEFAULT_CHARSET, по умолчанию: “text/html; charset=utf-8”.
+
+- status – это Код HTTP состояния ответа.
+
+- reason – это описание HTTP ответа. Если не указано, будет использоваться стандартное значение.
+
+- charset - кодировка, в которую будет закодирован ответ. Если не указана во время создания объекта HttpResponse, будет проверятся content_type, и если не будет найдена, будет использоваться значение настройки DEFAULT_CHARSET.
+
+HttpResponse.__setitem__(header, value)
+---------------------------------------
+Устанавливает заголовок ответа. header и value должны быть строками.
+
+HttpResponse.__delitem__(header)
+--------------------------------
+Удаляет заголовок ответа. Не вызывает исключения, если заголовок не существует. Регистронезависимый.
+
+HttpResponse.__getitem__(header)
+----------------------------------
+Возвращает значение заголовка. Регистрозависимый.
+
+HttpResponse.has_header(header)
+-------------------------------
+Возвращает True или False в результате регистронезависимого поиска заголовка по указанному названию.
+
+HttpResponse.setdefault(header, value)
+--------------------------------------
+Устанавливает заголовок, если он еще не был установлен.
+
+HttpResponse.write(content)
+----------------------------
+Метод для соблюдения интерфейса объекта файла.
+
+HttpResponse.flush()
+--------------------
+Метод для соблюдения интерфейса объекта файла.
+
+HttpResponse.tell()
+--------------------
+Метод для соблюдения интерфейса объекта файла.
+
+HttpResponse.getvalue()
+-----------------------
+Возвращает значение HttpResponse.content. Этот метод позволяет использовать HttpResponse как объект-файл.
+```
+print(response.content)
+print(response.getvalue())
+
+```
+HttpResponse.writable()
+-----------------------
+Всегда True. Этот метод позволяет использовать HttpResponse как объект-файл.
+
+HttpResponse.writelines(lines)
+------------------------------
+Записывает список строк в ответ. Разделители строк не добавляются. Этот метод позволяет использовать HttpResponse как объект-файл.
+
+Шаблоны
+========
+
+Настройка TEMPLATES указывает Django как загружать и выполнять шаблоны. По умолчанию используется бэкенд DjangoTemplates, с опцией APP_DIRS равной True. В этом случае бэкенд проверяет подкаталог “templates” в приложениях, указанных в INSTALLED_APPS - таким образом Django сможет найти наши шаблоны даже если мы не меняем DIRS.
+
+Организация шаблонов
+---------------------
+
+В каталоге templates, создайте каталог home, и в нем создайте файл index.html.
+
+Пространства имен для шаблонов
+------------------------------
+Django будет использовать первый найденный шаблон, и если существует шаблон с аналогичным названием в другом приложении, Django не сможет различить их. Чтобы этого избежать, мы будем использовать пространство имен.
+
+Django позволяет динамически генерировать HTML. Самый распространенный подход - использование шаблонов. Шаблоны содержат статический HTML и динамические данные, рендеринг которых описан специальным синтаксисом. 
+
+Django предоставляет бэкенд для собственной системы шаблонов, которая называется - язык шаблонов Django (Django template language, DTL), и популярного альтернативного шаблонизатора Jinja2. Сторонние приложения могут предоставлять бэкенд и для других систем шаблонов.
+
+Django предоставляет стандартный API для загрузки и рендеринга шаблонов, незавимисо от используемого бэкенда. Загрузка включает в себя поиск шаблона по названию и предварительную обработку, обычно выполняется загрузка шаблона в память. Рендеринг означает передачу данных контекста в шаблон и возвращение строки с результатом.
+
+Язык шаблонов Django – собственная система шаблонов Django. До Django 1.8 – это была единственная альтернатива. Встроенные шаблоны Django, которые содержат шаблоны, например django.contrib.admin, используют систему шаблонов Django.
+
+По историческим причинам поддержка шаблонов и встроенная система шаблонов Django находятся в одном пакете django.template.
+
+Поддержка систем шаблонов TEMPLATES.
+====================================
+Настройки
+---------
+Шаблоны можно настроить с помощью настройки TEMPLATES. Это список, который содержит настройки для систем шаблонов. По умолчанию настройка пустая. settings.py, сгенерированный командой startproject, содержит значение:
+```
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            # ... some options here ...
+        },
+    },
+]
+```
+BACKEND - путь для импорта Python к классу бэкенда шаблонов. Встроенные бэкенды это django.template.backends.django.DjangoTemplates и django.template.backends.jinja2.Jinja2.
+
+Т.к. большинство систем шаблонов загружают шаблоны с файлов, настройки содержат:
+
+- DIRS, которая содержим список каталогов с шаблонами. Бэкенд ищет в них шаблон в указанном порядке.
+
+- APP_DIRS указывает бэкенду искать ли шаблоны в установленных приложениях. Каждый бэкенд определяет определенное название для каталога с шаблонами в приложении.
+
+Загрузка шаблонов
+=================
+Обычно при разработке проекта шаблоны хранятся в файлах. Сохраняйте их в каталоге, который называют templates.
+
+Django ищет каталоги с шаблонами в соответствии с настройками загрузки шаблонов. Самый простой способ – указать каталоги с шаблонами в опции DIRS.
+
+Опция DIRS
+----------
+По умолчанию использует значение настройки TEMPLATE_DIRS.
+
+Настройка должна содержать список или кортеж полных путей к каталогам. Например:
+```
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            '/home/html/templates/lawrence.com',
+            '/home/html/templates/default',
+        ],
+    },
+]
+```
+Шаблоны могут находиться где угодно, главное, чтобы у Web-сервера были права на чтение. Расширение файла может быть любым, .html или .txt, или вообще без расширения.
+
+пути должны быть Unix-стиле, даже для Windows (то есть использовать /).
+
+Типы загрузчиков
+-----------------
+По умолчанию Django использует загрузчик шаблонов с файловой системы, но Django предоставляет и другие загрузчики шаблонов, которые позволяют загружать шаблоны с других источников.
+
+Некоторые из них выключены по умолчанию, но вы можете активировать их изменив опцию 'loaders' бэкенда DjangoTemplates в настройке TEMPLATES, или передав аргумент loaders в Engine. Опция loaders содержит кортеж строк, каждая из которых представляет класс загрузчика шаблонов. Вот список загрузчиков, которые предоставляет Django:
+```
+django.template.loaders.filesystem.Loader
+```
+class filesystem.Loader
+-----------------------
+Загружает шаблоны с файловой системы в соответствии с настройкой DIRS.
+
+Этот загрузчик включен по умолчанию. Однако, он не найдет ни один шаблон, пока вы не укажите список каталогов в DIRS:
+```
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [os.path.join(BASE_DIR, 'templates')],
+}]
+django.template.loaders.app_directories.Loader
+```
+class app_directories.Loader
+----------------------------
+Загружает шаблоны из каталога приложения Django. Для каждого приложения в INSTALLED_APPS загрузчик ищет под-каталог templates. Если под-каталог найден, Django ищет в нем шаблон.
+
+Это означает, что вы можете хранить шаблоны вместе с приложением. Таким образом легко распространять приложение Django с шаблонами по умолчанию.
+
+Например для следующих настроек:
+```
+INSTALLED_APPS = ('myproject.polls', 'myproject.music')
+```
+... get_template('foo.html') будет искать foo.html в таких каталогах в указанном порядке:
+```
+/path/to/myproject/polls/templates/
+/path/to/myproject/music/templates/
+```
+... и будет использовать первый найденный.
+
+Порядок INSTALLED_APPS – важен! Например, вы хотите переопределить шаблон админки Django, например admin/base_site.html из django.contrib.admin, заменив на admin/base_site.html из myproject.polls. Вы должны указать myproject.polls перед django.contrib.admin в INSTALLED_APPS, иначе шаблон из django.contrib.admin будет загружен первым, а ваш проигнорирован.
+
+загрузчик выполняет некоторую оптимизацию при первом импорте: он кеширует список приложений из INSTALLED_APPS, которые содержат под-каталог templates.
+
+Вы можете включить этот загрузчик, указав True в APP_DIRS:
+```
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'APP_DIRS': True,
+}]
+django.template.loaders.eggs.Loader
+```
+class eggs.Loader
+------------------
+Аналогичен app_directories, но загружает шаблоны из Python eggs, а не файловой системы.
+
+Загрузчик выключен по умолчанию.
+
+django.template.loaders.cached.Loader
+-------------------------------------
+class cached.Loader
+-------------------
+По умолчанию система шаблонов читает и компилирует ваш шаблон при каждом рендеринге шаблона. Хотя система шаблонов Django работает достаточно быстро, но общие накладные расходы на чтение и компилирование шаблонов могут быть существенны.
+
+Кеширующий загрузчик шаблонов принимает список загрузчиков Он будет использовать их для поиска неизвестных шаблонов, которые загружаются первый раз. Затем скомпилированные Template сохраняются в памяти. Закешированный объект Template возвращается при повторном поиске уже загруженного шаблона.
+
+чтобы включить кеширование с загрузчиками filesystem и app_directories, используйте следующие настройки:
+```
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [os.path.join(BASE_DIR, 'templates')],
+    'OPTIONS': {
+        'loaders': [
+            ('django.template.loaders.cached.Loader', [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ]),
+        ],
+    },
+}]
+```
+
+Все встроенные теги Django можно использовать с кеширующим загрузчиком, но теги сторонних приложений, или ваши собственные, должны использовать потокобезопасный код при использовании класса Node.
+Загрузчик выключен по умолчанию.
+
+django.template.loaders.locmem.Loader
+-------------------------------------
+
+class locmem.Loader
+--------------------
+Загружает шаблоны из словаря Python. Удобен при тестировании.
+
+Этот загрузчик принимает словарь каталогов первым аргументом:
+```
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'OPTIONS': {
+        'loaders': [
+            ('django.template.loaders.locmem.Loader', {
+                'index.html': 'content here',
+            }),
+        ],
+    },
+}]
+```
+Загрузчик выключен по умолчанию.
+
+Django использует загрузчики шаблонов в порядке, указанном в опции 'loaders'. Загрузчики используются пока один из них не найдет шаблон.
+
+urls.py
+--------
+```
+from django.conf.urls import include, url
+from django.contrib import admin
+from home import views
+
+urlpatterns = [
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^$', views.home_page, name='home_page'),
+]
+
+```
+
+Вспомогательные функции
+========================
+Пакет django.shortcuts содержит вспомогательные функции и классы влияющие на несколько уровней MVC. эти функции упрощают разработку и код.
+
+render
+-------
+```
+render(request, template_name[, context][, context_instance][, content_type][, status][, current_app][, dirs][, using])
+
+```
+Выполняет указанный шаблон с переданным словарем контекста и возвращает HttpResponse с полученным содержимым.
+
+Функция render() аналогична вызову функции render_to_response() с аргументом context_instance, который указывает использовать RequestContext.
+
+Django не предоставляет функции для создания TemplateResponse т.к. конструктор TemplateResponse принимает аргументы аналогичные аргументам render().
+
+Обязательные аргументы
+----------------------
+request
+--------
+Объект обрабатываемого запроса
+
+template_name
+-------------
+Полное название шаблона, который должен использоваться, или список названий шаблонов. Если передать список, будет использован первый существующий шаблон.
+
+Необязательные аргументы
+------------------------
+context
+-------
+Словарь переменных для контекста шаблона. По умолчанию, этот словарь пустой. Если значение ключа словаря это функция, она будет вызвана перед выполнением шаблона.
+
+content_type
+-------------
+MIME-тип результата. По умолчанию используется значение настройки DEFAULT_CONTENT_TYPE.
+
+status
+------
+Код HTTP статуса ответа. По умолчанию 200.
+
+using
+-----
+Параметр конфигурации NAME используется шаблонным движком для загрузки шаблона.
+
+views.py
+--------
+```
+from django.shortcuts import render
+
+def home_page(request):
+    return render(request, 'home/home.html', {})
+```
+Этот method аналогичен:
+-----------------------
+```
+from django.http import HttpResponse
+from django.template import RequestContext, loader
+
+def home_page(request):
+    t = loader.get_template('home/home.html')
+    c = RequestContext(request, {})
+    return HttpResponse(t.render(c))
+```
+
+tests.py
+--------
+```
+from django.core.urlresolvers import resolve
+from django.http import HttpRequest
+from django.template.loader import render_to_string
+from django.test import TestCase
+from home.views import home_page, home
+
+class HomePageTest(TestCase):
+
+    def test_root_url_resolves_to_home_page_view(self):
+        found = resolve('/')
+        self.assertEqual(found.func, home_page)
+
+    def test_home_page_returns_correct_html(self):
+        request = HttpRequest()
+        response = home_page(request)
+        expected_html = render_to_string('home/home.html')
+        self.assertEqual(response.content.decode(), expected_html)
+
+```
+./manage.py test
+-----------------
+```
+ERROR: test_home_page_returns_correct_html (home.tests.HomePageTest)
 ----------------------------------------------------------------------
-Ran 2 tests in 0.033s
+Traceback (most recent call last):
+  File "/home/janus/github/dj-21v/unit_03/mysite/home/tests.py", line 20, in test_home_page_returns_correct_html
+    response = home_page(request)
+  File "/home/janus/github/dj-21v/unit_03/mysite/home/views.py", line 60, in home_page
+    return render(request, 'home/home.html')
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/shortcuts.py", line 67, in render
+    template_name, context, request=request, using=using)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/template/loader.py", line 96, in render_to_string
+    template = get_template(template_name, using=using)
+  File "/home/janus/Envs/dj21/lib/python3.4/site-packages/django/template/loader.py", line 43, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: home/home.html
+
+```
+templates/home/home.html
+------------------------
+```
+<html>
+    <head>
+        <title>Home Page</title>
+    </head>
+    <body>
+        <h1>Home Page</h1>
+        
+    </body>
+</html>
+```
+./manage.py test
+----------------
+```
+Creating test database for alias 'default'...
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.062s
 
 OK
+Destroying test database for alias 'default'...
+
+```
+Язык шаблонов Django
+====================
+Шаблон Django – это просто текстовый файл, или строка Python, которые следуют языку шаблонов Django. Определенные конструкции распознаются и интерпретируются шаблонизатором. Основные – это переменные и теги.
+
+Шаблон рендерится с контекстом. Рендеринг заменяет переменные на их значения, которые ищутся в контексте, и выполняет теги. Все остальное выводится как есть.
+
+Синтаксис языка шаблонов Django использует четыре конструкции.
+--------------------------------------------------------------
+### Переменные
+Переменные выводят значения из контекста, который является словарем.
+
+Переменные выделяются {{ и }}, например:
+views.py
+--------
+```
+from django.shortcuts import render
+
+def home_page(request):
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons'})
+```
+home.html
+---------
+```
+My first name is {{ first_name }}. My last name is {{ last_name }}.
+```
+Обращение к ключам словаря, атрибутам объектов и элементам списка выполняется через точку:
+
+views.py
+--------
+```
+from django.shortcuts import render
+
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict})
+
+```
+home.html
+---------
+```
+My first name is {{ first_name }}. My last name is {{ last_name }}.
+{{ my_dict.key }}
 ```
 
-static/css/main.css
--------------------
-
-        .jumbotron h1 {
-            color: rgba(0, 0, 1, 1);
-        }
-
-base.html:
+Обращение к элементам списка
+views.html
 ----------
+```
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+    my_list = [1,2,3,4]
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict,'my_list':my_list})
 
-        {% load staticfiles %}
-        <!DOCTIPE html> 
+```
+home.html
+---------
+```
+My first name is {{ first_name }}. My last name is {{ last_name }}.
+        {{ my_dict.key }}
+        {{ my_list.1 }}
+```
 
+Обращение к атрибутам объектов
+views.html
+----------
+```
+class Myobject:
+    attribute = 'my_object.attribute'
 
-static files
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+
+    my_object = Myobject()
+    my_list = [1,2,3,4]
+
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict,'my_list':my_list,'my_object':my_object})
+ 
+```
+home.html
+---------
+```
+{{ my_object.attribute }}
+
+```
+Если значение переменной является вызываемый объект, шаблонизатор вызовет его без аргументов и подставит результат.
+
+### Теги
+Теги позволяют добавлять произвольную логику в шаблон.
+
+Например, теги могут выводить текст, добавлять логические операторы, такие как “if” или “for”, получать содержимое из базы данных, или предоставлять доступ к другим тегам.
+
+Теги выделяются {% и %}, например:
+```
+{% csrf_token %}
+```
+Большинство тегов принимают аргументы:
+```
+{% cycle 'odd' 'even' %}
+```
+Некоторые теги требуют закрывающий тег:
+```
+{% if user.is_authenticated %}Hello, {{ user.username }}.{% endif %}
+```
+autoescape
+----------
+Контролирует авто-экранирование. Этот тег принимает on или off аргумент, указывающий должно ли использоваться автоматическое экранирование внутри блока. Блок закрывается закрывающим тегом endautoescape.
+
+Если экранирование включено, ко всем переменным будет применяется HTML-экранирование перед выводом (но после применения всех фильтров). Это эквивалентно использованию фильтра escape для каждой переменной.
+
+Не будут экранированы переменные помеченные как безопасные( “safe”), или кодом определяющим переменную, или после применения фильтров safe или escape.
+
+Пример 
+-------
+views.py
+--------
+```
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+    my_object = Myobject()
+    my_list = [1,2,3,4]
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict,'my_list':my_list,'my_object':my_object, 'name':'<script>alert("XSS");</script>'})
+
+```
+home.html:
+----------
+```
+        {% autoescape on %}
+        <h2>autoescape on</h2>
+        {{ name }}
+        {% endautoescape %}
+        
+        {% autoescape off %}
+        <h3>autoescape off</h3>
+        {{ name }}
+        {% endautoescape %}
+```
+Комментарии
 ------------
-Заменить
+Комментарии могут выглядеть таким образом:
 ```
-    <link rel="stylesheet" href="css/bootstrap-theme.min.css">
-    <link rel="stylesheet" href="css/main.css">
+{# this won't be rendered #}
 ```
-на
-```
-    <link rel="stylesheet" href="{% static 'css/bootstrap-theme.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
-```
-Заменить
-```
-    <script src="js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
-```
-на
-```
-    <script src="{% static 'js/vendor/modernizr-2.8.3-respond-1.4.2.min.js' %}">
-```
-Заменить
-```
-    <script src="js/main.js"></script>
-    <script src="js/plugins.js"></script>
-```
-на
-```
-    <script src="{% static 'js/main.js' %}">
-    <script src="{% static 'js/plugins.js' %}">
-```
-Заменить
-```
-    <script src="js/vendor/bootstrap.min.js"></script>
-```
-на
-```
-    <script src="{% static 'js/vendor/bootstrap.min.js' %}">
-```
-Но
---
-```
-document.write('<script src="js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-```
-заменить на
-```
-document.write('<script src="static/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-```
-functional_tests.test_all_users --liveserver=localhost:8082
------------------------------------------------------------
-    Ran 2 tests in 12.785s
+Тег {% comment %} позволяет добавлять многострочные комментарии.
 
-    OK
+comment
+-------
+Игнорирует содержимое между {% comment %} и {% endcomment %}. Можно добавить заметку в первый тег. Например, добавить комментарий, описывающий почему код был закомментирован.
 
-settings.py
+Пример:
+-------
+```
+<p>Rendered text with {{ pub_date|date:"c" }}</p>
+{% comment "Optional note" %}
+    <p>Commented out text with {{ create_date|date:"c" }}</p>
+{% endcomment %}
+```
+
+Тег comment не может быть вложенным.
+------------------------------------
+csrf_token
 -----------
+Этот тег используется для организации CSRF защиты.
 
-        os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
+Циклы
+======
+# Цикл for
+Цикл по каждому элементу массива, добавляя их в контекст блока:
+
+views.py
+--------
+```
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+    my_object = Myobject()
+    my_list = [1,2,3,4]
+
+    categories = [{'id':0,'name':'Python'},{'id':1,'name':'Django'},{'id':2,'name':'Web'},{'id':4,'name':'Javascript'}]
+
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict,'my_list':my_list,'my_object':my_object, 'name':'<script>alert("XSS");</script>','rowclass1':'border: red solid 7px;', 'rowclass2':'border: green solid 3px;','categories':categories})
+ 
+```
+home.html
+----------
+```
+<h2>Категории</h2>
+<ul>
+{% for cat in categories %}
+    <li>{{ cat.name }}</li>
+{% endfor %}
+</ul>
+```
+Категории
+---------
+```
+        <ul>
+            <li>Python</li>
+            <li>Django</li>
+            <li>Web</li>
+            <li>Javascript</li>
+        </ul>
+```
+Можно использовать цикл по списку в обратном порядке {% for obj in list reversed %}.
+```
+    <h2>Категории reversed</h2>
+        <ul>
+        {% for cat in categories reversed %}
+            <li>{{ cat.name }}</li>
+        {% endfor %}
+        </ul>
+```
+Если нужен цикл по списку списков, можно распаковать значения под-списка на отдельные переменные. 
+
+Например, если контекст содержит список (x,y) координат points, можно использовать следующий код для их вывода:
+
+```
+{% for x, y in points %}
+    There is a point at {{ x }},{{ y }}
+{% endfor %}
+
+```
+Аналогично можно использовать словарь. Например, если контекст содержит словарь data, следующий код выведет ключи и значения словаря:
+```
+        <ul>
+        {% for data in categories %}
+        {% for key, value in data.items %}
+            <li>{{ key }}: {{ value }}</li>
+        {% endfor %}
+        {% endfor %}
+        </ul>
+```
+
+Внутри цикла доступные некоторые дополнительные переменные:
+-----------------------------------------------------------
+- forloop.counter 
+Номер текущей итерации цикла начиная с 1
+
+home.html
+---------
+```
+    <h2>Категории</h2>
+        <ul>
+        {% for cat in categories %}
+            <li>{{ forloop.counter }} {{ cat.name }}</li>
+        {% endfor %}
+        </ul>
+```
+
+- forloop.counter0    
+Номер текущей итерации цикла начиная с 0
+
+- forloop.revcounter  
+Номер текущей итерации цикла начиная с конца с 1
+
+- forloop.revcounter0 
+Номер текущей итерации цикла начиная с конца с 0
+
+- forloop.first   
+True, если это первая итерация
+
+- forloop.last    
+True, если это последняя итерация
+
+- forloop.parentloop  
+Для вложенных циклов, это “внешний” цикл.
+
+- for ... empty
+Тег for содержит необязательную часть {% empty %}, которая будет отображена, если список пуст или не найден:
+```
+<ul>
+{% for cat in categories %}
+    <li>{{ cat.name }}</li>
+{% empty %}
+    <li>Sorry, no categore in this list.</li>
+{% endfor %}
+</ul>
+```
+Это эквивалентно, но короче, читабельней и возможно быстрее, такому коду:
+```
+<ul>
+  {% if categories %}
+    {% for cat in categories %}
+      <li>{{ cat.name }}</li>
+    {% endfor %}
+  {% else %}
+    <li>Sorry, no categories in this list.</li>
+  {% endif %}
+</ul>
+```
+
+cycle
+------
+Возвращает один из аргументов при вызове. Первый аргумент при первом вызове, второй - при втором, и т.д. Когда аргументы кончаются, тег начинает с начала списка аргументов.
+
+Этот тег полезен в циклах:
+--------------------------
+```
+<table>
+        <caption><h2>Test Table</h2></caption>
+        {% for o in my_list %}
+            <tr class="{% cycle 'row1' 'row2' %}">
+                <td><img src='static/img/star.png'></td><td><img src='static/img/star.png'></td>
+            </tr>
+        {% endfor %}
+        </table>
+```
+Первый вызов сгенерирует HTML используя класс row1, второй - row2, третий - снова row1, и так далее для каждой итерации цикла.
+```
+        <table>
+            <caption><h2>Test Table</h2></caption>
+            <tr class="row1">
+                <td><img src='static/img/star.png'></td><td><img src='static/img/star.png'></td>
+            </tr>
+            <tr class="row2">
+                <td><img src='static/img/star.png'></td><td><img src='static/img/star.png'></td>
+            </tr>
+            <tr class="row1">
+                <td><img src='static/img/star.png'></td><td><img src='static/img/star.png'></td>
+            </tr>
+            <tr class="row2">
+                <td><img src='static/img/star.png'></td><td><img src='static/img/star.png'></td>
+            </tr>
+        </table>
+```
+
+Вы можете также использовать переменные. Например, если у вас есть две переменных в шаблоне, rowclass1 и rowclass2, вы можете переключаться между их значениями:
+```
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+    my_object = Myobject()
+    my_list = [1,2,3,4]
+
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict,'my_list':my_list,'my_object':my_object, 'name':'<script>alert("XSS");</script>','rowclass1':'border: red solid 7px;', 'rowclass2':'border: green solid 3px;'})
+```
+
+Переданные значения будут экранированы. Автоматическое экранирование можно выключить:
+
+```
+        <table>
+        <caption><h2>Border Table</h2></caption>
+        {% for o in my_list %}
+            <tr>
+                <td style="{% autoescape off %}{% cycle rowclass1 rowclass2  %}{% endautoescape %}"><img src='static/img/star.png'></td><td><img src='static/img/star.png'></td>
+            </tr>
+        {% endfor %}
+        </table>
+```
+использовать переменные и строки вместе:
+```
+{% for o in some_list %}
+    <tr class="{% cycle 'row1' rowclass2 'row2' %}">
+        ...
+    </tr>
+{% endfor %}
+```
+В некоторых случаях вам может понадобиться обратиться к значению не в цикле. Для этого просто передайте в тег {% cycle %} название, используя “as”, например:
+```
+{% cycle 'row1' 'row2' as rowcolors %}
+```
+Теперь вы можете использовать текущее значение цикла в любом месте шаблона используя переданное название как переменную контекста. Если вам необходимо следующее значение, используйте тег снова, используя название переменной. 
+
+Следующий шаблон:
+```
+        <table>
+        <caption><h2>Background Table</h2></caption>
+        <tr>
+            <td class="{% cycle 'row1' 'row2' as rowcolors %}">Background Table</td>
+            <td class="{{ rowcolors }}">Background Table</td>
+        </tr>
+        <tr>
+            <td class="{% cycle rowcolors %}">Background Table</td>
+            <td class="{{ rowcolors }}">Background Table</td>
+        </tr>
+        </table>
+```
+выведет:
+```
+        <table>
+        <caption><h2>Background Table</h2></caption>
+        <tr>
+            <td class="row1">Background Table</td>
+            <td class="row1">Background Table</td>
+        </tr>
+        <tr>
+            <td class="row2">Background Table</td>
+            <td class="row2">Background Table</td>
+        </tr>
+        </table>
+```
+Вы можете использовать любое количество значений в теге cycle, разделенных пробелами. Значения в одинарных (') или двойных кавычках (") рассматриваются как строки, в то время как, значения без кавычек, интерпретируются как переменные.
+
+По умолчанию, использование тега {% cycle %} с аргументом as выведет первое значение цикла. Это может быть проблемой, если вы хотите использовать значение во вложенном теге или в включенном теге. Если вы хотите просто определить цикл, но не выводить первое значение, используйте аргумент silent в конце тега. 
+
+ifchanged
+---------
+Проверяет было ли изменено значение предыдущей итерации цикла.
+
+Блочный тег {% ifchanged %} используется внутри цикла. 
+
+Существует два способа использовать тег.
+
+1. Проверять содержимое тега, и если оно было изменено с последней итерации, отображать его. Например, этот код отображает список дней и отображает месяц только при его изменении:
+```
+<h1>Archive for {{ year }}</h1>
+
+{% for date in days %}
+    {% ifchanged %}<h3>{{ date|date:"F" }}</h3>{% endifchanged %}
+    <a href="{{ date|date:"M/d"|lower }}/">{{ date|date:"j" }}</a>
+{% endfor %}
+```
+2. Если передано одна или более переменных, проверяет была ли изменена одна из переменных. Например, следующий код отображает дату при каждом изменении, в то же время отображает час, если час или дата были изменены:
+```
+{% for date in days %}
+    {% ifchanged date.date %} {{ date.date }} {% endifchanged %}
+    {% ifchanged date.hour date.date %}
+        {{ date.hour }}
+    {% endifchanged %}
+{% endfor %}
+```
+Тег ifchanged может содержать необязательный блок {% else %}, который будет отображаться, если значение не изменилось:
+```
+{% for match in matches %}
+    <div style="background-color:
+        {% ifchanged match.ballot_id %}
+            {% cycle "red" "blue" %}
+        {% else %}
+            gray
+        {% endifchanged %}
+    ">{{ match }}</div>
+{% endfor %}
+```
+
+debug
+-----
+Выводит всю отладочную информацию, в том числе текущей контекст и импортированные модули.
 
 
-Selenium: http://docs.seleniumhq.org/
-Selenium WebDriver: http://selenium-python.readthedocs.org/en/latest/api.html
-WebDriver for Chrome: https://sites.google.com/a/chromium.org/chromedriver/getting-started
-urlpatterns: https://docs.djangoproject.com/en/1.8/topics/http/urls/
-Static files: https://docs.djangoproject.com/en/1.9/howto/static-files/
-HTML5 Boilerplate: http://www.initializr.com/
-liveserver: https://docs.djangoproject.com/ja/1.9/topics/testing/tools/
+firstof
+-------
+Выводит первую из переданных переменных, которая не равна False. Ничего не выводит, если все переменные равны False.
+
+Пример:
+```
+{% firstof var1 var2 var3 %}
+```
+Это равносильно:
+```
+{% if var1 %}
+    {{ var1 }}
+{% elif var2 %}
+    {{ var2 }}
+{% elif var3 %}
+    {{ var3 }}
+{% endif %}
+```
+Вы можете использовать строку как значение по-умолчанию на случай, если все переменные равны False:
+```
+{% firstof var1 var2 var3 "fallback value" %}
+```
+Этот тэг экранирует переменные. Автоматическое экранирование можно выключить:
+```
+{% autoescape off %}
+    {% firstof var1 var2 var3 "<strong>fallback value</strong>" %}
+{% endautoescape %}
+```
+Если только некоторые переменные должны быть экранированы, используйте:
+```
+{% firstof var1 var2|safe var3 "<strong>fallback value</strong>"|safe %}
+```
+
+if
+---
+Тег {% if %} вычисляет переменную и если она равна “true” (то есть существует, не пустая и не равна “false”) выводит содержимое блока:
+```
+{% if categories %}
+    Number of categories: {{ categories|length }}
+{% elif subcategories %}
+    This is categories
+{% else %}
+    No categories.
+{% endif %}
+```
+тег if может содержать один или несколько блоков `` {% elif %}``, так же как и блок {% else %}, который будет выведен, если все предыдущие условия не верны. Все эти блоки необязательны.
+
+Булевы операторы
+----------------
+Тег if может использовать and, or или not:
+```
+{% if categories and subcategories %}
+    Both categories and subcategories are available.
+{% endif %}
+
+{% if not categories %}
+    There are no categories.
+{% endif %}
+
+{% if categories or subcategories %}
+    There are some categories or some subcategories.
+{% endif %}
+
+{% if not categories or subcategories %}
+    There are no categories or there are some subcategories.
+{% endif %}
+
+{% if categories and not subcategories %}
+    There are some categories and absolutely no subcategories.
+{% endif %}
+```
+Можно использовать and и or вместе, операция and имеет больший приоритет чем or, например:
+```
+{% if categories and subcategories or tag_list %}
+```
+будет интерпретировано как:
+```
+if (categories and subcategories) or tag_list
+```
+Использовать скобки в теге if нельзя. Если вам нужно указать приоритет, используйте вложенные теги if.
+
+Тег if может использовать операторы ==, !=, <, >, <=, >= и in которые работают таким образом:
+
+Оператор ==
+------------
+Равенство. Например:
+```
+{% if somevar == "x" %}
+  This appears if variable somevar equals the string "x"
+{% endif %}
+```
+Оператор !=
+------------
+Неравенство. Например:
+```
+{% if somevar != "x" %}
+  This appears if variable somevar does not equal the string "x",
+  or if somevar is not found in the context
+{% endif %}
+```
+Оператор <
+-----------
+Меньше чем. Например:
+```
+{% if somevar < 100 %}
+  This appears if variable somevar is less than 100.
+{% endif %}
+```
+Оператор >
+------------
+Больше чем. Например:
+```
+{% if somevar > 0 %}
+  This appears if variable somevar is greater than 0.
+{% endif %}
+```
+Оператор <=
+-------------
+Меньше чем или равно. Например:
+```
+{% if somevar <= 100 %}
+  This appears if variable somevar is less than 100 or equal to 100.
+{% endif %}
+```
+Оператор >=
+------------
+Больше чем или равно. Например:
+```
+{% if somevar >= 1 %}
+  This appears if variable somevar is greater than 1 or equal to 1.
+{% endif %}
+```
+Оператор in
+------------
+Вхождение в. Этот оператор поддерживается большинством контейнеров Python, чтобы проверит входит ли значение в контейнер. 
+```
+{% if "bc" in "abcdef" %}
+  This appears since "bc" is a substring of "abcdef"
+{% endif %}
+
+{% if "hello" in greetings %}
+  If greetings is a list or set, one element of which is the string
+  "hello", this will appear.
+{% endif %}
+
+{% if user in users %}
+  If users is a QuerySet, this will appear if user is an
+  instance that belongs to the QuerySet.
+{% endif %}
+```
+Оператор not in
+----------------
+Не вхождение в. Оператор обратный оператору in.
+
+Операторы сравнения не могут использовать вместе как в Python или математике. Например, вместо использования:
+```
+{% if a > b > c %}  (WRONG)
+```
+вы должны использовать:
+```
+{% if a > b and b > c %}
+```
+Фильтры
+========
+Вы можете использовать фильтры в выражении if. Например:
+```
+{% if messages|length >= 100 %}
+   You have lots of messages today!
+{% endif %}
+```
+Сложные выражения
+------------------
+Приоритет операторов, от низшего к высшему, выглядит следующим образом:
+
+1. or
+2. and
+3. not
+4. in
+5. ==, !=, <, >, <=, >=
+
+тег if:
+-------
+```
+{% if a == b or c == d and e %}
+```
+...будет интерпретирован как:
+```
+(a == b) or ((c == d) and e)
+```
+Если вам нужен другой приоритет, используйте вложенные теги if.
+
+ifequal
+--------
+Выводит содержимое блока, если два аргумента равны
+
+Например:
+```
+{% ifequal user.pk comment.user_id %}
+    ...
+{% endifequal %}
+```
+Как и в теге if, можно использовать необязательный блок {% else %}.
+
+Аргументом может быть строка:
+```
+{% ifequal user.username "adrian" %}
+    ...
+{% endifequal %}
+```
+Альтернативой использованию тега ifequal является применение if и оператора ==.
+
+ifnotequal
+----------
+Аналогичен тегу ifequal, но проверяет аргументы на неравенство.
+
+Альтернативой тегу ifnotequal является использование тега if и оператора !=.
+
+lorem
+------
+Выводит случайный “lorem ipsum” текст. Полезен для генерации примера данных в шаблоне.
+
+Использование:
+```
+{% lorem [count] [method] [random] %}
+```
+Тег {% lorem %} принимает несколько аргументов:
+- count   
+Количество параграфов или слов в сгенерированном тесте (по умолчанию 1).
+
+- method  
+Принимает w для слов, p – для HTML параграфов, или b – для текстовых параграфов (по умолчанию b).
+
+- random 
+Если передать слово random, не будет использоваться стандартный текст (“Lorem ipsum dolor sit amet...”) при генерации текста.
+
+Примеры:
+```
+{% lorem %} выведет обычный параграф “lorem ipsum”.
+
+{% lorem 3 p %} выведет обычный параграф “lorem ipsum” и два случайных параграфа, обернутые в HTML тег <p>.
+
+{% lorem 2 w random %} выведет два случайных слова на латыни.
+```
+now
+----
+Отображает текущую дату и/или время, используя формат соответственно переданной строке. Эта строка может содержать символы форматирования описанные в разделе о фильтре date.
+
+Например:
+```
+It is {% now "jS F Y H:i" %}
+```
+Вы можете экранировать символ форматирования с помощью слэша и использовать его как строку. В этом примере, “o” и “f” экранированы, т.к. иначе они будут использованы как строки форматирования, отображающие год и время:
+```
+It is the {% now "jS \o\f F" %}
+```
+Этот пример выведет “It is the 4th of September”.
+
+Переданный формат может быть одним из предопределенных DATE_FORMAT, DATETIME_FORMAT, SHORT_DATE_FORMAT или SHORT_DATETIME_FORMAT. Предопределенные форматы зависят от текущего языка и настройки Формат локализации, например:
+```
+It is {% now "SHORT_DATETIME_FORMAT" %}
+```
+Вы можете использовать синтаксис {% now "Y" as current_year %}, чтобы сохранить результат в переменной. Это может быть полезно при использовании {% now %} в теге blocktrans:
+```
+{% now "Y" as current_year %}
+{% blocktrans %}Copyright {{ current_year }}{% endblocktrans %}
+```
+regroup
+-------
+Группирует объекты по общему атрибуту.
+
+пример: 
+
+cities является списком городов, представленным словарями с ключами "name", "population" и "country":
+```
+def home_page(request):
+    my_dict = {'key':'My dikt Key'}
+    my_object = Myobject()
+    my_list = [1,2,3,4]
+    categories = [{'id':0,'name':'Python'},{'id':1,'name':'Django'},{'id':2,'name':'Web'},{'id':4,'name':'Javascript'}]
+    
+    cities = [
+    {'name': 'Mumbai', 'population': '19,000,000', 'country': 'India'},
+    {'name': 'Calcutta', 'population': '15,000,000', 'country': 'India'},
+    {'name': 'New York', 'population': '20,000,000', 'country': 'USA'},
+    {'name': 'Chicago', 'population': '7,000,000', 'country': 'USA'},
+    {'name': 'Tokyo', 'population': '33,000,000', 'country': 'Japan'},
+    ]
+
+    return render(request, 'home/home.html', {'first_name': 'Billi', 'last_name': 'Bons', 'my_dict':my_dict,'my_list':my_list,'my_object':my_object, 'name':'<script>alert("XSS");</script>','rowclass1':'border: red solid 7px;', 'rowclass2':'border: green solid 3px;','categories':categories,'cities':cities})
+
+```
+нужно отобразить список, отсортированный по стране:
+```
+India
+Mumbai: 19,000,000
+Calcutta: 15,000,000
+
+USA
+New York: 20,000,000
+Chicago: 7,000,000
+
+Japan
+Tokyo: 33,000,000
+```
+использовать тег {% regroup %}, чтобы сгруппировать список городов по странам. 
+------------------------------------------------------------------------------
+```
+{% regroup cities by country as country_list %}
+
+<ul>
+{% for country in country_list %}
+    <li>{{ country.grouper }}
+    <ul>
+        {% for item in country.list %}
+          <li>{{ item.name }}: {{ item.population }}</li>
+        {% endfor %}
+    </ul>
+    </li>
+{% endfor %}
+</ul>
+```
+- {% regroup %} принимает три аргумента: список, который вы хотите перегруппировать; атрибут, по которому нужно сгруппировать, и название переменной с результатами. 
+
+- {% regroup %} создает список (country_list) из групп объектов. Каждый объект группы содержит два атрибута:
+
+1. grouper – значение, по которому происходила группировка (например, строка “Индия” или “Япония”).
+2. list – список объектов в группе (например, список всех городов с country='India').
+
+- {% regroup %} не сортирует переданный список! Если элементы списка cities не были бы отсортированы по country, перегруппировка отобразила бы несколько групп для одной страны. Например, список cities был таким (заметьте, что страны не сгруппированы вместе):
+```
+cities = [
+    {'name': 'Mumbai', 'population': '19,000,000', 'country': 'India'},
+    {'name': 'New York', 'population': '20,000,000', 'country': 'USA'},
+    {'name': 'Calcutta', 'population': '15,000,000', 'country': 'India'},
+    {'name': 'Chicago', 'population': '7,000,000', 'country': 'USA'},
+    {'name': 'Tokyo', 'population': '33,000,000', 'country': 'Japan'},
+]
+```
+В результате применения тега {% regroup %} для списка выше получим такой результат:
+```
+Индия
+Мамбай: 19,000,000
+
+США
+Нью Йорк: 20,000,000
+
+Индия
+Калькутта: 15,000,000
+
+США
+Чикаго: 7,000,000
+
+Япония
+Токио: 33,000,000
+```
+способ отсортировать в шаблоне, используя фильтр dictsort:
+
+```
+{% regroup cities|dictsort:"country" by country as country_list %}
+```
+Группировка по другим свойствам
+--------------------------------
+Можно группировать объекты по методу, атрибуту, ключу словаря и списку объектов. Например, если “country” является внешним ключом на модель с атрибутом “description” :
+```
+{% regroup cities by country.description as country_list %}
+```
+spaceless
+----------
+Убирает пробелы между HTML тегами, включая символы табуляции и перенос строки.
+
+Пример использования:
+```
+{% spaceless %}
+    <p>
+        <a href="foo/">Foo</a>
+    </p>
+{% endspaceless %}
+```
+Этот пример вернет такой HTML:
+```
+<p><a href="foo/">Foo</a></p>
+```
+Будут удалены пробелы только между тегами, и оставит между тегами и текстом. В этом примере пробелы вокруг Hello не будут удалены:
+```
+{% spaceless %}
+    <strong>
+        Hello
+    </strong>
+{% endspaceless %}
+```
+templatetag
+-----------
+Выводит один из символов, которые используются для определения тегов.
+
+Так как система шаблонов не поддерживает “экранирование”, для отображения элементов синтаксиса необходимо использовать тег {% templatetag %}.
+
+- openblock   {%
+- closeblock  %}
+- openvariable    {{
+- closevariable   }}
+- openbrace   {
+- closebrace  }
+- opencomment {#
+- closecomment    #}
+
+Примеры использования:
+```
+{% templatetag openblock %} url 'entry_list' {% templatetag closeblock %}
+```
+url
+---
+Возвращает абсолютную ссылку (URL без имени домена) соответствующую указанному представлению с необязательными аргументами. Любые спецсимволы будут экранированы с помощью функции iri_to_uri().
+
+urls.py
+-------
+```
+urlpatterns = [
+    url(r'^$', views.home_page, name='home_page'),
+    url(r'^req/', views.req_test, name='req_test'),
+
+    url(r'^exampl1/', views.exampl1, name='some-url-name'),
+
+    url(r'^admin/', admin.site.urls),
+]
+
+```
+views.py
+---------
+```
+def exampl1(request):
+    return render(request, "home/exampl1.html", {})
+
+```
+home.html
+----------
+```
+        <h2>url</h2>
+
+        <a href="{% url 'some-url-name' %}">Example 1 </a>
+
+```
+Позиционные аргументы.
+----------------------
+Этот способ выводить ссылки без “хардкодинга” в шаблоне, чтобы не нарушать принцип DRY:
+```
+{% url 'some-url-name' v1 v2 %}
+```
+Первый аргумент – это путь к функции представления в формате package.package.module.function. Он может быть строкой в кавычках или любой другой контекстной переменной. Дополнительные аргументы необязательны. Это значения, разделенные пробелами, которые будут использоваться как аргументы при формировании URL.  
+
+Также можно использовать именованные аргументы:
+-----------------------------------------------
+```
+{% url 'some-url-name' arg1=v1 arg2=v2 %}
+```
+Нельзя использовать и позиционные и именованные аргументы в одном теге. Все обязательные аргументы URLconf должны быть указаны.
+
+Например, мы имеем представление, views.article, чей URLconf принимает ID клиента (article() это метод в файле views.py). 
+views.py
+--------
+```
+def article(request,id):
+    item = {'title':1,'content':id}    
+    return render(request, "home/article.html", {'item':item})
+```
+
+urls.py:
+--------
+```
+url(r'^article/([0-9]+)/$', views.article, name='app-views-article'),
+```
+example1.html
+-------------
+```
+        <h3>Article</h3>
+      
+        <a href="{% url 'app-views-article' 1 %}">Article 1 </a>
+```
+
+
+Фильтры
+========
+Фильтры преобразуют переменные и аргументы тегов.
+
+Могут выглядеть таким образом:
+```
+{{ django|title }}
+```
+Для контекста {'django': 'the web framework for perfectionists with deadlines'} этот шаблон выведет:
+
+The Web Framework For Perfectionists With Deadlines
+
+Некоторые фильтры принимают аргументы:
+```
+{{ my_date|date:"Y-m-d" }}
+```
+
+add
+----
+Суммирует аргумент и значение.
+```
+{{ value|add:"2" }}
+```
+Если value равно 4, будет выведено 6.
+
+Фильтр попытается преобразовать оба значения в целое число. Если это не удастся, он будет пытаться добавить значения в любом случае. Это работает для некоторых типов (строки, списки и др.) и не работает с другими. Если ничего не получится, будет выведена пустая строка.
+
+Например, у нас есть:
+```
+{{ first|add:second }}
+```
+и first равно [1, 2, 3] и second равно [4, 5, 6], тогда результат будет [1, 2, 3, 4, 5, 6].
+
+Строки, которые могут быть преобразованы в числа, будут суммированы, а не объединены.
+addslashes
+----------
+Добавляет слэш перед кавычкой. Удобно при экранировании строк в CSV, например.
+```
+{{ value|addslashes }}
+```
+Если value равно "I'm using Django", результат будет "I\'m using Django".
+
+capfirst
+--------
+Первый символ аргумента возводит в верхний регистр. Если первый символ не буква, фильтр ничего не будет делать.
+```
+{{ value|capfirst }}
+```
+Если value равно "django", результат будет "Django".
+
+center
+--------
+Центрирует значение в поле заданной ширины.
+```
+"{{ value|center:"15" }}"
+```
+Если value равно "django", результат будет "     Django    ".
+
+cut
+---
+Удаляет значение аргумента из строки, к которой применяется фильтр.
+```
+{{ value|cut:" " }}
+```
+Если value равно "String with spaces", результат будет "Stringwithspaces".
+
+date
+-----
+Форматирует дату в соответствии с указанным форматом.
+
+Использует формат функции date() в PHP (http://php.net/date) с небольшими отличиями.
+
+Доступное форматирование:
+-------------------------
+- a - 'a.m.' или 'p.m.' 
+```
+'a.m.'
+```
+- A   
+'AM' или 'PM'.
+```
+'AM'
+```
+- b   
+Название месяца, 3-х буквенное, в нижнем регистре.
+```
+'jan'
+```
+- c   
+ISO 8601 формат. (в отличии от других форматов, таких как “Z”, “O” или “r”, формат “c” не добавит временную зону для относительного времени).
+```
+2008-01-02T10:30:00.000123+02:00, или 2008-01-02T10:30:00.000123 если время относительное
+```
+- d   
+День месяца, 2 цифры с ведущим нулем.
+```
+От '01' до '31'
+```
+- D   
+День недели, 3-х буквенное текстовое название.
+```
+'Fri'
+```
+- e   
+Название временной зоны. Может быть в любом формате, или вернуть пустую строку в зависимости от объекта даты.
+```
+'', 'GMT', '-500', 'US/Eastern' и др.
+```
+- E   
+Название месяца, зависит от текущего языка. Используется для отображения полного называния даты.
+```
+'listopada' (для польского языка, не 'Listopad')
+```
+- f   
+Время, час в 12-часовом формате и минуты, минуты не отображаются если равны нулю. Собственное расширение.
+```
+'1', '1:30'
+```
+- F   
+Название месяца, текстовое, длинное.
+```
+'January'
+```
+- g   
+Час, 12-часовом формате без ведущих нулей.
+```
+От '1' до '12'
+```
+- G   
+Час, 24-часовой формат
+```
+От '0' до '23'
+```
+- h   
+Час, 12-часовой формат.
+```
+От '01' до '12'
+```
+- H   
+Час, 24-часовой формат.
+```
+От '00' до '23'
+```
+- i   
+Минуты.
+```
+От '00' до '59'
+```
+- I   
+Летнее время (DST), не важно, используется оно или нет.
+```
+От '1' до '0'
+```
+- j   
+День месяца без ведущего нуля.
+```
+От '1' до '31'
+```
+- l   
+Название дня недели, текстовое, длинное.
+```
+'Friday'
+```
+- L   
+Булево значение указывающее високосный ли год.
+```
+True или False
+```
+- m   
+Месяц, 2-цифирный с ведущими нулями.
+```
+От '01' до '12'
+```
+- M   
+Название месяца, текстовое, 3-х буквенное.
+```
+'Jan'
+```
+- n   
+Номер месяца без ведущего нуля.
+```
+От '1' до '12'
+```
+- N   
+Аббревиатура названия месяца в формате Associated Press.
+```
+'Jan.', 'Feb.', 'March', 'May'
+```
+- o   
+week-numbering год в соответствии с ISO-8601
+```
+'1999'
+```
+- O   
+Разница с временем по Гринвичу
+```
+'+0200'
+```
+- P   
+Время, в 12-часовом формате, минуты и ‘a.m.’/’p.m.’, минуты упускаются если равны нулю, значения ‘midnight’ и ‘noon’ используются по возможности.
+```
+'1 a.m.', '1:30 p.m.', 'midnight', 'noon', '12:30 p.m.'
+```
+- r   
+Дата в формате RFC 2822.
+```
+'Thu, 21 Dec 2000 16:01:07 +0200'
+```
+- s   
+Секунды, 2-цифирный формат без ведущих нулей.
+```
+От '00' до '59'
+```
+- S   
+Английский суффикс для дня месяца, 2 символа.
+```
+'st', 'nd', 'rd' или 'th'
+```
+- t   
+Количество дней в месяце.
+```
+От 28 до 31
+```
+- T   
+Часовой пояс сервера.
+```
+'EST', 'MDT'
+```
+- u   
+микросекунды
+```
+От 000000 до 999999
+```
+- U   
+Секунды с начала эпохи Unix (1 января 1970 00:00:00 UTC).
+- w  
+Номер дня недели, без ведущих нулей.
+```
+от '0' (воскресение) до '6' (суббота)
+```
+- W   
+Норме недели в году в соответствии с ISO-8601, первая неделя начинается с понедельника.
+```
+1, 53
+```
+- y   
+Год, 2 цифры.
+```
+'99'
+```
+- Y   
+Год, 4 цифры.
+```
+'1999'
+```
+- z   
+Номер дня в году.
+```
+От 0 до 365
+```
+- Z   
+Смещения часового пояса в секундах. Для часового пояса западнее UTC значение будет отрицательным, для тех, что восточнее UTC – положительным.
+```
+От -43200 до 43200
+```
+Например:
+```
+{{ value|date:"D d M Y" }}
+```
+Если value равно объекту datetime (например, результат выполнения datetime.datetime.now()), будет выведено значение 'Wed 09 Jan 2008'.
+
+Переданный формат может быть одним из предопределенных(DATE_FORMAT, DATETIME_FORMAT, SHORT_DATE_FORMAT или SHORT_DATETIME_FORMAT) или любой другой сформированный из символов форматирования из таблицы выше. Предопределенные форматы зависят от текущего языка и настройки Формат локализации, например:
+
+Предположим что USE_L10N равно True и LANGUAGE_CODE равно "es", тогда:
+```
+{{ value|date:"SHORT_DATE_FORMAT" }}
+```
+результат вывода будет "09/01/2008" (формат "SHORT_DATE_FORMAT" для языка es указан в Django как "d/m/Y").
+
+Если форматирование не указано:
+```
+{{ value|date }}
+```
+будет использовано значение из настройки DATE_FORMAT без учета текущего языка.
+
+Вы можете использовать date с фильтром time, чтобы получить полное представление значения datetime. Например:
+```
+{{ value|date:"D d M Y" }} {{ value|time:"H:i" }}
+```
+default
+--------
+Если значение равно False, будет использовано значение по-умолчанию. В противном случае используется значение.
+
+Например:
+```
+{{ value|default:"nothing" }}
+```
+Если value равно "" (пустая строка), будет выведено nothing.
+
+default_if_none
+---------------
+Если (и только в этом случае) значение равно None, будет использовано значение по-умолчанию. В противном случае используется значение.
+
+Например:
+```
+{{ value|default_if_none:"nothing" }}
+```
+Если value равно None, будет выведено "nothing".
+
+dictsort
+--------
+Принимает список словарей и возвращает список, отсортированный по указанному ключу.
+
+Например:
+```
+{{ value|dictsort:"name" }}
+```
+Если value равно:
+```
+[
+    {'name': 'zed', 'age': 19},
+    {'name': 'amy', 'age': 22},
+    {'name': 'joe', 'age': 31},
+]
+```
+будет возвращено:
+```
+[
+    {'name': 'amy', 'age': 22},
+    {'name': 'joe', 'age': 31},
+    {'name': 'zed', 'age': 19},
+]
+```
+Вы также можете делать более сложные вещи:
+```
+{% for book in books|dictsort:"author.age" %}
+    * {{ book.title }} ({{ book.author.name }})
+{% endfor %}
+```
+Если books равно:
+```
+[
+    {'title': '1984', 'author': {'name': 'George', 'age': 45}},
+    {'title': 'Timequake', 'author': {'name': 'Kurt', 'age': 75}},
+    {'title': 'Alice', 'author': {'name': 'Lewis', 'age': 33}},
+]
+```
+будет возвращено:
+```
+* Alice (Lewis)
+* 1984 (George)
+* Timequake (Kurt)
+```
+dictsortreversed
+-----------------
+Принимает список словарей и возвращает список отсортированный по указанному ключу в обратном порядке. 
+
+divisibleby
+-----------
+Возвращает True, если значение делится на аргумент.
+
+Например:
+```
+{{ value|divisibleby:"3" }}
+```
+Если value равно 21, будет возвращено True.
+
+escape
+------
+Экранирует HTML. В частности выполняются такие замены:
+```
+< заменяется на &lt;
+
+> заменяется на &gt;
+
+' (одинарная кавычка) заменяется на &#39;
+
+" (двойная кавычка) заменяется на &quot;
+
+& заменяется на &amp;
+```
+Экранирование применяется к выводимой строке, и нет разницы где в цепочке фильтров будет добавлен escape: он всегда будет применяться так, как будто это последний фильтр. Если экранирование необходимо сразу применить, используйте фильтр force_escape.
+
+Применение escape к переменной, которая уже была экранирована с помощью авто-экранирования, безопасно. Будет применено только одно экранирование. Так что безопасно использовать его с авто-экранированием. Если вам нужно применить экранирование несколько раз, используйте force_escape.
+
+Например, escape можно использовать для экранирования, если autoescape выключен:
+```
+{% autoescape off %}
+    {{ title|escape }}
+{% endautoescape %}
+```
+escapejs
+--------
+Экранирует символы в строке, используемой в JavaScript. Это не делает строку безопасной для использования в HTML, но защищает от синтаксических ошибок при генерации JavaScript/JSON.
+
+Например:
+```
+{{ value|escapejs }}
+```
+Если value равно 
+```
+"testing\r\njavascript \'string" <b>escaping</b>", 
+```
+будет выведено 
+```
+"testing\\u000D\\u000Ajavascript \\u0027string\\u0022 \\u003Cb\\u003Eescaping\\u003C/b\\u003E".
+```
+filesizeformat
+--------------
+Форматирует размер файла в читабельном формате (например, '13 KB', '4.1 MB', '102 bytes' и др.).
+
+Например:
+```
+{{ value|filesizeformat }}
+```
+Если value равно 123456789, будет выведено 117.7 MB.
+
+Размер файла и Международная система единиц
+-------------------------------------------
+filesizeformat не соответствует Международной системе единиц, которая рекомендует использовать кибибайт, мебибайт, гибибайт, и т.д. когда размеры байта вычислены в степени 1024 (данный случай). Вместо этого Django использует традиционные имена для единиц измерений (Кбайт, Мбайт, Гбайт, и т.д.) соответствующие именам, которые используются обычно.
+first
+------
+Возвращает первый элемент списка.
+
+Например:
+```
+{{ value|first }}
+```
+Если value равно ['a', 'b', 'c'], будет возвращено 'a'.
+
+floatformat
+------------
+При использовании без аргументов, округляет число с плавающей запятой до одной десятой. Дробная часть отображается только, если существует. Например:
+```
+34.23234    {{ value|floatformat }} 34.2
+34.00000    {{ value|floatformat }} 34
+34.26000    {{ value|floatformat }} 34.3
+```
+Если используется целочисленный аргумент, floatformat округляет до указанного количества знаков после запятой. Например:
+
+```
+34.23234    {{ value|floatformat:3 }}   34.232
+34.00000    {{ value|floatformat:3 }}   34.000
+34.26000    {{ value|floatformat:3 }}   34.260
+```
+Особенно полезный передавать 0 (нуль) как параметр, который будет округлять значение с плавающей точкой к ближайшему целому.
+
+```
+34.23234    {{ value|floatformat:"0" }} 34
+34.00000    {{ value|floatformat:"0" }} 34
+39.56000    {{ value|floatformat:"0" }} 40
+```
+Если аргумент отрицательный, floatformat округляет до указанного количества знаков после запятой – но дробная часть отображается только если существует. Например:
+
+```
+34.23234    {{ value|floatformat:"-3" }}    34.232
+34.00000    {{ value|floatformat:"-3" }}    34
+34.26000    {{ value|floatformat:"-3" }}    34.260
+```
+Использование floatformat без аргументов эквивалентно floatformat с -1.
+
+force_escape
+------------
+Применяет экранирование HTML к строке. Это фильтр применяется сразу и возвращает новую экранированную строку. Это полезно в редких случаях, если вам необходимо применить экранирование несколько раз, или если необходимо применить другие фильтры в экранированной строке.
+
+например, если вы хотите экранировать тег p созданный фильтром linebreaks:
+```
+{% autoescape off %}
+    {{ body|linebreaks|force_escape }}
+{% endautoescape %}
+```
+get_digit
+----------
+Принимает число и возвращает запрашиваемую цифру, где 1 самая правая цифра, 2 - вторая справа, и тд. Возвращает оригинальное значение, если оно не верно (не число или меньше 1). В противном случае, всегда выводится целое число.
+
+Например:
+```
+{{ value|get_digit:"2" }}
+```
+Если value равно 123456789, будет выведено 8.
+
+iriencode
+---------
+Конвертирует IRI (Internationalized Resource Identifier) в строку, которая может быть использована в URL. Это необходимо, если вы хотите использовать не ASCII символы в URL.
+
+Можно использовать этот фильтр после использования фильтра urlencode.
+
+Например:
+```
+{{ value|iriencode }}
+```
+Если value равно "?test=1&me=2", вывод будет "?test=1&amp;me=2".
+
+join
+-----
+Объединяет список, используя указанную строку, аналог str.join(list) в Python
+
+Например:
+```
+{{ value|join:" // " }}
+```
+Если value равно списку ['a', 'b', 'c'], вывод будет "a // b // c".
+
+last
+-----
+Возвращает последний элемент списка.
+
+Например:
+```
+{{ value|last }}
+```
+Если value равно ['a', 'b', 'c', 'd'], выведет "d".
+
+length
+-------
+Возвращает размер значения. Работает для строк и списков.
+
+Например:
+```
+{{ value|length }}
+```
+Если value равно ['a', 'b', 'c', 'd'] или "abcd", выведет 4.
+
+length_is
+----------
+Возвращает True, если размер значения равен аргументу, и False в противном случае.
+
+Например:
+```
+{{ value|length_is:"4" }}
+```
+Если value равно ['a', 'b', 'c', 'd'] или "abcd", вернет True.
+
+linebreaks
+-----------
+Заменяет переносы строки аналогами из HTML; один перенос строки будет заменен на br, новая строка с предыдущей пустой строкой оборачиваются в тег p.
+
+Например:
+```
+{{ value|linebreaks }}
+```
+Если value равно Joel\nis a slug, вывод будет 
+```
+<p>Joel<br />is a slug</p>.
+```
+linebreaksbr
+------------
+Заменяет все переносы строки на br.
+
+Например:
+```
+{{ value|linebreaksbr }}
+```
+Если value равно Joel\nis a slug, вывод будет 
+```
+Joel<br />is a slug.
+```
+linenumbers
+------------
+Отображает текст с номерами строк.
+
+Например:
+```
+{{ value|linenumbers }}
+```
+Если value равно:
+```
+one
+two
+three
+```
+вернет:
+```
+1. one
+2. two
+3. three
+```
+ljust
+------
+Выравнивает значение влево в поле указанной ширины.
+
+Аргумент: размер поля
+
+Например:
+```
+"{{ value|ljust:"10" }}"
+```
+Если value равно Django, выведет "Django    ".
+
+lower
+------
+Конвертирует строку в нижний регистр.
+
+Например:
+```
+{{ value|lower }}
+```
+Если value равно Still MAD At Yoko, выведет still mad at yoko.
+
+make_list
+----------
+Превращает значение в список. Для строк это будет список символов. Число сначала конвертируется в unicode, а потом в список.
+
+Например:
+```
+{{ value|make_list }}
+```
+Если value равно строке "Joel", будет возвращен список ['J', 'o', 'e', 'l']. Если value равно 123, вернет список ['1', '2', '3'].
+
+phone2numeric
+--------------
+Преобразует телефонный номер (возможно, содержащий буквы) в его числовой эквивалент.
+
+Значение не должно быть правильным телефонным номером, будет преобразована любая строка.
+
+Например:
+```
+{{ value|phone2numeric }}
+```
+Если value равно 800-COLLECT, выведет 800-2655328.
+
+pluralize
+---------
+Возвращает суффикс множественного числа, если значение не 1. По умолчанию использует суффикс 's'.
+
+Например:
+```
+You have {{ num_messages }} message{{ num_messages|pluralize }}.
+```
+Если num_messages равно 1, выведет You have 1 message. Если num_messages равно 2 выведет You have 2 messages.
+
+Для слов, которые используют суффикс отличный от 's', вы можете указать его как аргумент.
+
+Например:
+```
+You have {{ num_walruses }} walrus{{ num_walruses|pluralize:"es" }}.
+```
+Для слов, которые не преобразуются в множественную форму добавлением суффикса, вы можете указать как одинарный так и множественный суффиксы, разделенные запятыми.
+
+Например:
+```
+You have {{ num_cherries }} cherr{{ num_cherries|pluralize:"y,ies" }}.
+```
+Используйте blocktrans для переводимых строк.
+pprint
+-------
+“Обёртка” для pprint.pprint() – используется для отладки.
+
+random
+-------
+Возвращает случайный элемент из списка.
+
+Например:
+```
+{{ value|random }}
+```
+Если value равно ['a', 'b', 'c', 'd'], вернет "b".
+
+rjust
+-----
+Выравнивает значение вправо в поле указанной ширины.
+
+Аргумент: размер поля
+
+Например:
+```
+"{{ value|rjust:"10" }}"
+```
+Если value равно Django, вернет "    Django".
+
+safe
+-----
+Помечает строку, как не требующую последующего HTML экранирования. Если авто-экранирование отключено, этот фильтр ничего не изменит.
+
+Если вы используете цепочку фильтров, фильтр примененный после safe может снова сделать переменную не безопасной. Например, следующий код выведет переменную без экранирования:
+```
+{{ var|safe|escape }}
+```
+safeseq
+-------
+Применяет фильтр safe к каждому элементу последовательности. Полезно применять с другими тегами, работающими с последовательностями, такими как join. Например:
+```
+{{ some_list|safeseq|join:", " }}
+```
+Вы не можете использовать фильтр safe в таком случае, так как он сначала преобразует значение в строку.
+
+slice
+------
+Возвращает срез списка.
+
+Используйте синтаксис срезов Python. Смотрите http://www.diveintopython3.net/native-datatypes.html#slicinglists.
+
+Например:
+```
+{{ some_list|slice:":2" }}
+```
+Если some_list равно ['a', 'b', 'c'], вернет ['a', 'b'].
+
+slugify
+-------
+Конвертирует в ASCII. Преобразует пробелы в дефисы. Удаляет нетекстовые символы (все кроме букв, цифр, дефиса и символа подчеркивания). Удаляет пробелы в начале и в конце строки.
+
+Например:
+```
+{{ value|slugify }}
+```
+Если value равно "Joel is a slug", вернет "joel-is-a-slug".
+
+stringformat
+------------
+Форматирует значение в соответствии с аргументом, который является спецификатором форматирования строк. Спецификатор использует синтаксис форматирования строк Python, с той лишь разницей, что ведущий символ “%” опущен.
+
+Например:
+```
+{{ value|stringformat:"E" }}
+```
+Если value равно 10, будет выведено 1.000000E+01.
+
+striptags
+----------
+Пытается удалить все [X]HTML теги.
+
+Например:
+```
+{{ value|striptags }}
+```
+Если value равно 
+```
+"<b>Joel</b> <button>is</button>
+ a 
+ <span>slug</span>"
+```
+выведет "Joel is a slug".
+
+time
+----
+Форматирует время в соответствии с указанным форматом.
+
+Можно использовать предопределенный TIME_FORMAT, или собственный формат аналогичный формату описанному в date. Заметим, что предопределенный формат зависит от текущего языка.
+
+Например:
+```
+{{ value|time:"H:i" }}
+```
+Если value равно datetime.datetime.now(), может вернуть "01:23".
+
+Другой пример:
+
+Предположим USE_L10N равно True и LANGUAGE_CODE равно "de", тогда:
+```
+{{ value|time:"TIME_FORMAT" }}
+```
+будет возвращена строка "01:23:00" (формат "TIME_FORMAT" для языка de определен в Django как "H:i:s").
+
+Фильтр time принимает только строку формата, который относится к времени, а не дате (по понятным причинам). Если вам нужно отформатировать дату, используйте фильтр date (или вместе с time, если необходимо вывести полное значение datetime).
+
+Есть одно исключение: если передано значение datetime с указанным часовым поясом (time-zone-aware datetime объект) фильтр time принимает параметры форматирования для часового пояса, такие как 'e', 'O' , 'T' и 'Z'.
+
+Если форматирование не указано:
+```
+{{ value|time }}
+```
+будет использовано значение из настройки TIME_FORMAT без учета текущего языка.
+
+timesince
+---------
+Форматирует дату как время прошедшее с момента другой даты (например, “4 days, 6 hours”).
+
+Принимает необязательный аргумент – дату, используемую как точку отсчета (без аргументов используется текущее время). Например, если blog_date это дата, равная полночи 1 июня 2006, и comment_date равен 08:00, 1 июня 2006, тогда следующий код вернет “8 часов”:
+```
+{{ blog_date|timesince:comment_date }}
+```
+Сравнение абсолютной(с временной зоной) и относительной(без временной зоны) дат вернет пустую строку.
+
+Минута - самая малая единица измерения, и для дат из будущего, относительно точки сравнения, возвращается “0 минут” .
+
+timeuntil
+---------
+Аналогичен timesince, только определяет время от текущей даты до указанной. Например, если сегодня 1 июня 2006 и conference_date это дата 29 июня 2006, тогда {{ conference_date|timeuntil }} вернет “4 недели”.
+
+Принимает необязательный аргумент – дату, используемую как точку отсчета (вместо текущего времени). Если from_date содержит 22 июня 2006, тогда следующий код вернёт “1 неделя”:
+```
+{{ conference_date|timeuntil:from_date }}
+```
+Сравнение абсолютной(с временной зоной) и относительной(без временной зоны) дат вернет пустую строку.
+
+Минута - самая малая единица измерения, и для дат из прошлого, относительно точки сравнения, возвращается “0 минут” .
+
+title
+------
+Преобразует первый символ слов в верхний регистр, остальные в нижний.
+```
+{{ value|title }}
+```
+Если value равно "my FIRST post", вернет "My First Post".
+
+truncatechars
+--------------
+Обрезает строку до указанной длины. Обрезанная строка будет оканчиваться троеточием(”...”).
+
+Аргумент: длина строки в символах
+
+```
+{{ value|truncatechars:9 }}
+```
+Если value равно "Joel is a slug", вернет "Joel i...".
+
+truncatechars_html
+-------------------
+Аналогичен truncatechars, но учитывает наличие HTML-тегов. Теги, которые остались открыты в строке после обрезания, будут немедленно закрыты.
+
+```
+{{ value|truncatechars_html:9 }}
+```
+Если value равно 
+```
+"<p>Joel is a slug</p>"
+```
+вернет 
+```
+"<p>Joel i...</p>".
+```
+Символы новой строки в содержимом будут сохранены.
+
+truncatewords
+--------------
+Обрезает строку после указанного количества слов.
+
+Аргумент: количество слов в строке
+
+```
+{{ value|truncatewords:2 }}
+```
+Если value равно "Joel is a slug", вернет "Joel is ...".
+
+Переносы строки будут удалены.
+
+truncatewords_html
+-------------------
+Аналогичен truncatewords, но учитывает наличие HTML-тегов. Теги, которые остались открыты в строке после обрезания, будут немедленно закрыты.
+
+Этот фильтр менее эффективен, чем truncatewords, используйте его только с HTML-текстом.
+
+```
+{{ value|truncatewords_html:2 }}
+```
+Если value равно 
+```
+"<p>Joel is a slug</p>"
+```
+вернет 
+```
+"<p>Joel is ...</p>".
+```
+Символы новой строки в содержимом будут сохранены.
+
+upper
+------
+Конвертирует строку в верхний регистр
+
+```
+{{ value|upper }}
+```
+Если value равно "Joel is a slug", будет возвращено "JOEL IS A SLUG".
+
+urlencode
+----------
+Экранирует значение для безопасного использования в URL.
+
+```
+{{ value|urlencode }}
+```
+Если value равно "http://www.example.org/foo?a=b&c=d", будет возвращено "http%3A//www.example.org/foo%3Fa%3Db%26c%3Dd".
+
+Используй необязательный аргумент, можно указать символы, который не должны быть экранированы.
+
+Если аргумент не указан, символ ‘/’ предполагается как безопасный символ. Если необходимо экранировать все символы, передайте пустую строку. Например:
+```
+{{ value|urlencode:"" }}
+```
+Если value равно "http://www.example.org/", будет возвращено "http%3A%2F%2Fwww.example.org%2F".
+
+urlize
+------
+Конвертирует URL-ы и email-ы в тексте в “кликабельные” ссылки.
+
+Этот тег конвертирует ссылки с префиксами http://, https://, или www.. Например, http://goo.gl/aia1t будет конвертирован, goo.gl/aia1t – нет.
+
+Поддерживаются ссылки состоящие только из домена и заканчивающиеся на один из первоначальных доменов первого уровня (.com, .edu, .gov, .int, .mil, .net, and .org). Например, djangoproject.com будет преобразован.
+
+Ссылки могут быть с завершающей пунктуацией (точка, запятая, закрывающая скобка) и предшествующей пунктуацией (открывающая скобка), urlize все корректно преобразует.
+
+Ссылки, созданные urlize содержат атрибут rel="nofollow".
+
+Например:
+```
+{{ value|urlize }}
+```
+Если value равно "Check out www.djangoproject.com", будет выведено 
+```
+"Check out <a href="http://www.djangoproject.com" rel="nofollow">www.djangoproject.com</a>".
+```
+В дополнение к обычным ссылкам, urlize также преобразует email-ы в ссылки с mailto:. 
+Если value содержит "Send questions to foo@example.com", результат будет 
+```
+"Send questions to <a href="mailto:foo@example.com">foo@example.com</a>".
+```
+Фильтр urlize принимает необязательный аргумент autoescape. Если autoescape равен True, текст ссылки и URL будут экранированы с помощью фильтра escape. Значение по-умолчанию для autoescape равно True.
+
+urlizetrunc
+------------
+Преобразует URL-ы в ссылки как и urlize, но обрезает название ссылок длиннее указанного предела.
+
+Аргумент: Максимальное количество символов в названии ссылки, включая многоточие, добавленное при обрезании текста.
+
+Например:
+```
+{{ value|urlizetrunc:15 }}
+```
+Если value равно "Check out www.djangoproject.com", вернет 
+```
+'Check out <a href="http://www.djangoproject.com" rel="nofollow">www.djangopr...</a>'.
+```
+Как и urlize, фильтр следует применять к обычному тексту.
+
+wordcount
+-----------
+Возвращает количество слов.
+
+Например:
+```
+{{ value|wordcount }}
+```
+Если value равно "Joel is a slug", вернет 4.
+
+wordwrap
+---------
+“Оборачивает” слова до указанной длины строки.
+
+Аргумент: количество символов в строке
+
+Например:
+```
+{{ value|wordwrap:5 }}
+```
+Если value равно Joel is a slug, вернет:
+```
+Joel
+is a
+slug
+```
+yesno
+------
+Для true, false и (опционально) None выводит строки “yes”, “no”, “maybe”, или другие, переданные как список значений, разделенный запятыми:
+
+Например:
+```
+{{ value|yesno:"yeah,no,maybe" }}
+```
+```
+True        yes
+True    "yeah,no,maybe" yeah
+False   "yeah,no,maybe" no
+None    "yeah,no,maybe" maybe
+None    "yeah,no"   
+"no" (конвертирует None в False, если значение для None не указано)
+```
+
+тег filter
+----------
+Содержимое тега будет обработано указанными фильтрами. Можно указать цепочку фильтров, а также их аргументы, как и при выводе переменной в шаблоне.
+
+Содержимое тега включает весь текст между filter и endfilter.
+
+Пример:
+```
+{% filter force_escape|lower %}
+    This text will be HTML-escaped, and will appear in all lowercase.
+{% endfilter %}
+```
+Нельзя передавать фильтры escape и safe. Вместо этого используйте тег autoescape.
+
+Шаблон
+=======
+include
+--------
+Загружает шаблон и выводит его с текущим контекстом. Это способ “включить” один шаблон в другой.
+
+Названия шаблона можно указать переменной или строкой в одинарных или двойных кавычках.
+
+Это пример включает содержимое шаблона "foo/bar.html":
+```
+{% include "foo/bar.html" %}
+```
+Этот пример включает содержимое шаблона, чье имя содержится в переменной template_name:
+```
+{% include template_name %}
+```
+Можно передать любой объект с методом render(), который принимает контекст. Это позволяет указать скомпилированные объекты Template из контекста.
+
+Включенный шаблон выполняется с контекстом шаблона, который его включает. Этот пример выводит "Hello, John":
+
+Контекст: переменная person равна "john".
+
+Шаблон:
+```
+{% include "name_snippet.html" %}
+```
+Шаблон name_snippet.html:
+```
+{{ greeting }}, {{ person|default:"friend" }}!
+```
+Вы можете передать дополнительные переменные контекста в шаблон используя именованные аргументы:
+```
+{% include "name_snippet.html" with person="Jane" greeting="Hello" %}
+```
+Если вы хотите выполнить шаблон используя только указанные переменные в контексте (или не используя переменные совсем), добавите параметр only. Другие переменные не будут доступны в включаемом шаблоне:
+```
+{% include "name_snippet.html" with greeting="Hi" only %}
+```
+Тег include должен восприниматься как “выполним этот под-шаблон и включим полученный HTML”, а не “парсим этот под-шаблон и включаем его как часть родительского”. Это означает, что нет никакого общего состояния между включенными шаблонами – каждое включение это полностью независимый процесс.
+
+Блоки выполняются перед включение шаблона. Это означает, что шаблон включает уже выполненные и отрендеренные блоки - вы не можете переопределить эти блоки, как это делается при наследовании шаблонов.
+
+Наследование шаблонов
+======================
+Наследование шаблонов позволяет создать шаблон-“скелет”, который содержит базовые элементы  сайта и определяет блоки, которые могут быть переопределены дочерними шаблонами.
+
+block
+------
+Определяет блок, который может быть переопределен в дочернем шаблоне. 
+
+пример base.html:
+-----------------
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <title>{% block title %}My amazing site{% endblock %}</title>
+</head>
+
+<body>
+    <div id="sidebar">
+        {% block sidebar %}
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog/">Blog</a></li>
+        </ul>
+        {% endblock %}
+    </div>
+
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
+```
+Этот шаблон определяет HTML структуру документа, которую вы можете использовать для двух-колоночной страницы. Задача “дочернего” шаблона заполнить пустые блоки содержимым.
+
+В этом примере, тег block определяет три блока, которые может переопределить дочерний шаблон. Все что делает тег block – указывает механизму шаблонов, какая часть шаблона может быть переопределена в дочернем шаблоне.
+
+extends
+-------
+Указывает что данный шаблон наследуется от родительского.
+
+Может использоваться двумя способами:
+
+1. {% extends "base.html" %} (с кавычками) использует буквальное значение "base.html" в качестве названия родительского шаблона.
+
+2. {% extends variable %} использует значение variable. Если значение строка, Django использует ее как название родительского шаблона. Если значение переменной объект Template, Django использует этот объект как родительский шаблон.
+
+Дочерний шаблон может выглядеть таким образом:
+```
+{% extends "base.html" %}
+
+{% block title %}My amazing blog{% endblock %}
+
+{% block content %}
+{% for entry in blog_entries %}
+    <h2>{{ entry.title }}</h2>
+    <p>{{ entry.body }}</p>
+{% endfor %}
+{% endblock %}
+```
+тег extends говорит механизму шаблонов, что этот шаблон “наследует” другой шаблон. Когда механизм шаблонов выполняет этот шаблон, первым делом находится родительский шаблон – “base.html”.
+
+Далее механизм шаблонов находит три тега block в base.html и заменяет их содержимым дочернего шаблона. В зависимости от значения blog_entries, результат может выглядеть таким образом:
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <title>My amazing blog</title>
+</head>
+
+<body>
+    <div id="sidebar">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blog/">Blog</a></li>
+        </ul>
+    </div>
+
+    <div id="content">
+        <h2>Entry one</h2>
+        <p>This is my first entry.</p>
+
+        <h2>Entry two</h2>
+        <p>This is my second entry.</p>
+    </div>
+</body>
+</html>
+```
+Так как дочерний шаблон не определяет блок sidebar, будет использовано значение из родительского шаблона. Содержимое тега {% block %} родительского шаблона всегда используется как значение по умолчанию.
+
+Один из распространенных способов использовать наследование – это трехуровневый подход:
+
+1. Создать шаблон base.html, который отображает основной вид вашего сайта.
+
+2. Создать шаблон base_SECTIONNAME.html для каждого “раздела” вашего сайта. Например, base_news.html, base_sports.html. Все эти шаблоны наследуют base.html и включают стили и дизайн специфические для конкретного раздела.
+
+3. Создание шаблона для каждого типа страницы, такие как новость или запись в блоге. Эти шаблоны наследуют соответствующий шаблон раздела.
+
+Такой подход позволяет максимально использовать существующий код и легко добавлять элементы, такие как элементы навигации специфические для каждого раздела, в общие блоки шаблона.
+
+- Если вы используете {% extends %}, он должен быть первым тегом в шаблоне. Иначе наследование не будет работать.
+
+- Чем больше тегов {% block %} в вашем шаблоне, тем лучше. Помните, дочерний шаблон не обязан определять все блоки родительского, вы можете указать значение по умолчанию для всех блоков, а затем определить в дочернем шаблоне только те, которые необходимы. Лучше иметь больше “hooks”, чем меньше “hooks”.
+
+- Если вы дублируете содержимое в нескольких шаблонах, возможно вы должны перенести его в тег {% block %} родительского шаблона.
+
+- Если вам необходимо содержимое блока родительского шаблона, используйте переменную {{ block.super }}. Эта полезно, если вам необходимо дополнить содержимое родительского блока, а не полностью переопределить его. Содержимое {{ block.super }} не будет автоматически экранировано, так как оно уже было экранировано, при необходимости, в родительском шаблоне.
+
+Для ясности, вы можете добавить название вашему тегу {% endblock %}. Например:
+```
+{% block content %}
+...
+{% endblock content %}
+```
+В больших шаблонах такой подход поможет вам увидеть какой тег {% block %} был закрыт.
+
+Вы не можете определить несколько тегов block с одним названием в одном шаблоне. Такое ограничение существует потому, что тег block работает в “оба” направления. block не просто предоставляет “полость” в шаблоне – он определяет содержимое, которое заполняет “полость” в родительском шаблоне. Если бы было несколько тегов block с одним названием, родительский шаблон не знал содержимое какого блока использовать.
+
+Автоматическое экранирование HTML
+----------------------------------
+Создавая HTML используя шаблон, есть риск, что переменная может содержать символы, которые повлияют на структуру полученного HTML. Например, рассмотрим такой фрагмент:
+```
+Hello, {{ name }}
+```
+что произойдет, если пользователь выбрал такое имя:
+```
+<script>alert('hello')</script>
+```
+С таким именем шаблон вернет:
+```
+Hello, <script>alert('hello')</script>
+```
+что приведет к отображению alert-окна JavaScript!
+
+Аналогично, что если имя содержит символ '<'?
+```
+<b>username
+```
+Шаблон вернет такое содержимое:
+```
+Hello, <b>username
+```
+в результате оставшееся содержимое страницы будет выделено полужирным!
+
+Очевидно, пользовательским данными нельзя слепо доверять и вставлять непосредственно в содержимое страницы, так как злоумышленники могут использовать это с плохими намерениями. Такой тип уязвимости называется Cross Site Scripting (XSS) атакой.
+
+Чтобы избежать этой проблемы, у вас есть два варианта:
+
+1. Первый, вы можете применять ко всем сомнительным переменным фильтр escape, который преобразует потенциально опасные HTML символы в безопасные. 
+
+2. Второй, вы можете позволить Django автоматически экранировать HTML. 
+
+По-умолчанию в Django, каждый шаблон экранирует все переменные. В частности выполняются такие замены:
+```
+< заменяется на &lt;
+
+> заменяется на &gt;
+
+' (одинарная кавычка) заменяется на &#39;
+
+" (двойная кавычка) заменяется на &quot;
+
+& заменяется на &amp;
+```
+такое поведение используется по умолчанию. 
+------------------------------------------
+
+Если вы не хотите, чтобы данные автоматически экранировались, на уровне сайта, шаблона или одной переменной, вы можете отключить это несколькими способами.
+
+Зачем вам отключить экранирование? Потому что в некоторых ситуациях, вы намеренно добавляете HTML в переменную, и хотите, чтобы он выводился без экранирования. Например, вы можете хранить HTML в базе данных и хотите непосредственно вставить его в содержимое страницы. Или шаблоны Django используются для создания текста, который не является HTML – например email.
+
+Для отдельных переменных
+-------------------------
+Для отключения авто-экранирования для отдельных переменных, используйте фильтр safe:
+```
+This will be escaped: {{ data }}
+This will not be escaped: {{ data|safe }}
+```
+
+если data содержит 'b', будет выведено:
+```
+This will be escaped: &lt;b&gt;
+This will not be escaped: <b>
+```
+Для блоков шаблона
+------------------
+Для контроля авто-экранирования в шаблоне, “оберните” шаблон (или часть шаблона) тегом autoescape, например:
+```
+{% autoescape off %}
+    Hello {{ name }}
+{% endautoescape %}
+```
+Тег autoescape в качестве аргумента принимает on или off. В некоторых случаях, вы захотите включить экранирование в шаблоне, в котором оно было отключено. Например:
+```
+Auto-escaping is on by default. Hello {{ name }}
+
+{% autoescape off %}
+    This will not be auto-escaped: {{ data }}.
+
+    Nor this: {{ other_data }}
+    {% autoescape on %}
+        Auto-escaping applies again: {{ name }}
+    {% endautoescape %}
+{% endautoescape %}
+```
+Тег autoescape распространяет свой эффект на шаблоны, которые наследуют текущий, и на включенные тегом include шаблоны, как и другие блочные теги. Например:
+base.html
+```
+{% autoescape off %}
+<h1>{% block title %}{% endblock %}</h1>
+{% block content %}
+{% endblock %}
+{% endautoescape %}
+```
+child.html
+```
+{% extends "base.html" %}
+{% block title %}This &amp; that{% endblock %}
+{% block content %}{{ greeting }}{% endblock %}
+```
+Так как авто-экранирование отключено в базовом шаблоне, оно будет отключено и в дочернем шаблоне. 
+Если переменная greeting равна 
+```
+<b>Hello!</b>
+```
+будет выведено:
+```
+<h1>This &amp; that</h1>
+<b>Hello!</b>
+```
+Если вы создаете шаблон, который может использовать как с включенным авто-экранированием так и без него, добавляйте фильтр escape для каждой переменной, которую нужно экранировать. При включенном авто-экранировании фильтр escape не выполнит замену символов повторно.
+
+Строки и автоматическое экранирование
+--------------------------------------
+аргументом фильтра может быть строка:
+```
+{{ data|default:"This is a string literal." }}
+```
+Все строки в шаблоне вставляются без автоматического экранирования – они обрабатываются как строки, к которым применили фильтр safe. Причина этого состоит в том, что автор шаблона контролирует содержимое этих строк и самостоятельно может убедиться при создании шаблона, что они не содержат не безопасных символов.
+
+Это означает, чтобы вы должны писать:
+```
+{{ data|default:"3 &lt; 2" }}
+```
+вместо:
+```
+{{ data|default:"3 < 2" }}  {# Bad! Don't do this. #}
+```
+Это правило не распространяется на переменные, которые используются в качестве аргументов, так как автор шаблоне не может контролировать содержимое этих переменных.
+
+
+HyperText Transfer Protocol - https://ru.wikipedia.org/wiki/HTTP
+Список кодов состояния HTTP - https://ru.wikipedia.org/wiki/%D0%A1%D0%BF%D0%B8%D1%81%D0%BE%D0%BA_%D0%BA%D0%BE%D0%B4%D0%BE%D0%B2_%D1%81%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%B8%D1%8F_HTTP
