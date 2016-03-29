@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Products {% endblock %}
+
+{% block content %}
+    <div class="container">
+      <!-- row of columns -->
+      <div class="row">
+        <div class="col-md-4 sidebar">
+            <h3>Categories</h3>
+            <ul>
+                <li>
+                    <a href="{% url "shop:index" %}">All</a>
+                </li>
+            </ul>
+        </div>
+
+        <div id="main" class="col-md-8 product-list">
+            <h1>Products</h1>
+            {% for product in products %}
+                <div class="item">
+                    <a href= '{% url "shop:product_detail" product.id %}' ><h2>{{ product.name }}</h2></a>
+                    <h4>${{ product.price }}</h4>
+                    <p>{{ product.description }}</p>
+                </div>
+            {% endfor %}
+        
+        </div>
+      </div>
+     <hr>
+{% endblock %}

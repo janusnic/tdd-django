@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+    <div class="product-detail">
+        
+        <h1>{{ product.name }}</h1>
+        
+        <p class="price">${{ product.price }}</p>
+        
+        {{ product.description|linebreaks }}
+    </div>
+{% endblock %}
+
+        
+        
+        
