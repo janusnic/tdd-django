@@ -9,21 +9,28 @@
         <div class="col-md-4 sidebar">
             <h3>Categories</h3>
             <ul>
-                <li>
+                <li {% if not category %}class="selected"{% endif %}>
                     <a href="{% url "shop:index" %}">All</a>
                 </li>
+            {% for c in categories %}
+                <li {% if category.slug == c.slug %}class="selected"{% endif %}>
+                    <a href="{{ c.get_absolute_url }}">{{ c.name }}</a>
+                </li>
+            {% endfor %}
             </ul>
         </div>
 
         <div id="main" class="col-md-8 product-list">
-            <h1>Products</h1>
-            {% for product in products %}
-                <div class="item">
-                    <a href= '{% url "shop:product_detail" product.id %}' ><h2>{{ product.name }}</h2></a>
-                    <h4>${{ product.price }}</h4>
-                    <p>{{ product.description }}</p>
-                </div>
-            {% endfor %}
+            <h1>{% if category %}{{ category.name }}{% else %}Products{% endif %}</h1>
+        {% for product in products %}
+            <div class="item">
+                <a href="{{ product.get_absolute_url }}">
+                    <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no_image.png" %}{% endif %}">
+                </a>
+                <a href="{{ product.get_absolute_url }}"><h3>{{ product.name }}</h3></a>
+                <h4>${{ product.price }}</h4>
+            </div>
+        {% endfor %}
         
         </div>
       </div>
