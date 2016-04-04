@@ -14,7 +14,7 @@ admin.site.register(Category,CategoryAdmin)
 
 class ProductAdmin(admin.ModelAdmin):
 
-    list_display = ('name', 'updated')
+    # list_display = ('name', 'updated')
     list_filter = ['updated']
     search_fields = ['name']
     ordering = ['updated']

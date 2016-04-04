@@ -1,663 +1,66 @@
-# tdd-django unit_05
+# tdd-django unit_06
 
-методы модели
-=============
-__unicode__
-------------
+Менеджеры
+=========
+class Manager
+Менеджер(Manager) - это интерфейс, через который создаются запросы к моделям Django. Каждая модель имеет хотя бы один менеджер.
 
-Метод __unicode__() вызывается когда вы применяете функцию unicode() к объекту. Django использует unicode(obj) (или функцию str(obj)) в нескольких местах. В частности, для отображения объектов в интерфейсе администратора Django и в качестве значения, вставляемого в шаблон, при отображении объекта. 
+Имя менеджера
+--------------
+По умолчанию Django добавляет Manager с именем objects для каждого класса модели. Однако, если вы хотите использовать objects, как имя поля, или хотите использовать название, отличное от objects для Manager, вы можете переименовать его для модели. Чтобы переименовать Manager добавьте в класс атрибут, значение которого экземпляр models.Manager():
 
-models.py:
------------
+from django.db import models
 
-        from django.db import models
+class MyClass(models.Model):
+    #...
+    item = models.Manager()
 
-        class Category(models.Model):
-            name = models.CharField(max_length=100)
-            description = models.TextField(max_length=4096)
+Обращение к MyClass.objects вызовет исключение AttributeError, в то время как MyClass.item.all() вернет список всех объектов MyClass.
 
-            def __unicode__(self):
-                return u'%s' % (self.name)
+Собственные менеджеры
+---------------------
+Вы можете использовать собственный менеджер, создав его через наследование от основного класса Manager и добавив его в модель.
 
+Есть две причины, почему вам может понадобиться изменить Manager: добавить дополнительные методы, и/или изменить базовый QuerySet, который возвращает Manager.
 
-Если вы определили метод __unicode__() и не определили __str__(), Django самостоятельно добавит метод __str__() который вызывает __unicode__(), затем преобразует результат в строку в кодировке UTF-8. Это рекомендуемый подход: определить только __unicode__() и позволить Django самостоятельно преобразовать в строку при необходимости.
-
-__str__
---------
-
-Метод __str__() вызывается когда вы применяете функцию str() к объекту. В Python 3 Django использует str(obj) в нескольких местах. В частности, для отображения объектов в интерфейсе администратора Django и в качестве значения, вставляемого в шаблон, при отображении объекта. 
-
-models.py:
------------
-
-        from django.db import models
-
-        class Category(models.Model):
-            name = models.CharField(max_length=100)
-            description = models.TextField(max_length=4096)
-
-            def __str__(self):
-                return '%s' % (self.name)
-
-В Python 2 Django использует __str__, если нужно вывести результат функции repr(). Определять метод __str__() не обязательно, если вы определили метод __unicode__().
-
-метод __unicode__() может аналогично использоваться и в __str__():
-
-        from django.db import models
-        from django.utils.encoding import force_bytes
-
-        class Category(models.Model):
-            name = models.CharField('Categories Name', max_length=100)
-            
-            description = models.TextField(max_length=4096, default='')
-
-            def __str__(self):
-                return force_bytes('%s' % (self.name))
-
-
-В Python 3, так как все строки являются Unicode строками, используйте только метод __str__(). Если вам необходима совместимость с Python 2, Можете декорировать ваш класс модели декоратором python_2_unicode_compatible().
-
-django.utils.encoding
-======================
-
-Django предоставляет простой способ определить __str__() и  __unicode__() методы, которые работают на Python 2 и 3: необходимо определить метод __str__(), возвращающий текст и применить декоратор python_2_unicode_compatible().
-
-В Python 3, декоратор ничего не выполняет. В Python 2, он определяет соответствующие методы  __unicode__() и __str__() ( в процессе замены оригинального __str__()).
-
-python_2_unicode_compatible()
-------------------------------
-
-        from django.db import models
-        from django.utils.encoding import python_2_unicode_compatible
-
-        @python_2_unicode_compatible
-        class Category(models.Model):
-            name = models.CharField('Categories Name', max_length=100)
-            
-            description = models.TextField(max_length=4096, default='')
-
-            def __str__(self):
-                return '%s' % (self.name)
-
-        @python_2_unicode_compatible
-        class Product(models.Model):
-
-            name = models.CharField(max_length=200, db_index=True)
-            
-            image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
-            description = models.TextField(blank=True)
-            price = models.DecimalField(max_digits=10, decimal_places=2)
-            stock = models.PositiveIntegerField()
-            available = models.BooleanField(default=True)
-            created = models.DateTimeField(auto_now_add=True)
-            updated = models.DateTimeField(auto_now=True)
-
-            def __str__(self):
-                return '%s' % (self.name)
-
-            def __str__(self):
-                return '%s' % (self.title)
-
-
-SlugField
-----------
-
-        class SlugField([max_length=50, **options])
-
-- Slug – газетный термин. “Slug” – это короткое название-метка, которое содержит только буквы, числа, подчеркивание или дефис. В основном используются в URL.
-- Как и для CharField, можно указать max_length. Если max_length не указан, Django будет использовать значение 50.
-- Устанавливает Field.db_index в True, если аргумент явно не указан.
-
-
-Вставляем в нашу модель slug:
+Добавление методов в менеджер
 -----------------------------
+Добавление дополнительных методов в Manager - лучший способ добавить “table-level” функционал в вашу модель. (Для “row-level” функционала – то есть функции, которые работают с одним экземпляром модели – используйте методы модели, а не методы менеджера.)
 
-        slug = models.SlugField(max_length=200, db_index=True, unique=True)
+Методы Manager могут возвращать что угодно. И это не обязательно должен быть QuerySet.
 
-models.py
----------
-        from django.db import models
-        from django.utils.encoding import python_2_unicode_compatible
-
-        @python_2_unicode_compatible
-        class Category(models.Model):
-            name = models.CharField('Categories Name', max_length=100)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
-            description = models.TextField(max_length=4096, default='')
-
-            def __str__(self):
-                return self.name
-
-        @python_2_unicode_compatible
-        class Product(models.Model):
-
-            name = models.CharField(max_length=200, db_index=True)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
-
-            image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
-            description = models.TextField(blank=True)
-            price = models.DecimalField(max_digits=10, decimal_places=2)
-            stock = models.PositiveIntegerField()
-            available = models.BooleanField(default=True)
-            created = models.DateTimeField(auto_now_add=True)
-            updated = models.DateTimeField(auto_now=True, help_text="Please use the following format: <em>YYYY-MM-DD</em>.")
-
-            def __str__(self):
-                return self.name
-
-
-Параметр unique=True отвечает за то, чтоб название было уникальным.
---------------------------------------------------------------------
-## Подключение к админке. 
-
-### ModelAdmin.prepopulated_fields
-
-Обычно значение SlugField создается на основе какого-то другого значения(например, название статьи). Это может работать автоматически в интерфейсе администрации благодаря параметру prepopulated_fields.
-
-prepopulated_fields 
--------------------
-позволяет определить поля, которые получают значение основываясь на значениях других полей:
-
-        class CategoryAdmin(admin.ModelAdmin):
-            prepopulated_fields = {"slug": ("name",)}
-
-Указанные поля будут использовать код JavaScript для заполнения поля значением на основе значений полей-источников. Основное применение - это генерировать значение для полей SlugField из значений другого поля или полей. Процесс генерирования состоит в объединении значений полей-источников и преобразованию результата в правильный “slug” (например, заменой пробелов на дефисы).
-
-prepopulated_fields не принимает поля DateTimeField, ForeignKey или ManyToManyField.
-
-# Настройки ModelAdmin
-ModelAdmin очень гибкий. Он содержит ряд параметров для настройки интерфейса администратора. Все настройки определяются в подклассе ModelAdmin:
-
-        from django.contrib import admin
-
-        class ProductAdmin(admin.ModelAdmin):
-            date_hierarchy = 'updated'
-
-admin.py:
----------
-
-        from django.contrib import admin
-
-        from .models import Category, Product
-
-        class CategoryAdmin(admin.ModelAdmin):
-
-            list_display = ('name', 'slug')
-            prepopulated_fields = {"slug": ("name",)}
-
-        admin.site.register(Category,CategoryAdmin)
-
-
-        class ProductAdmin(admin.ModelAdmin):
-
-            prepopulated_fields = {"slug": ("name",)}
-
-        admin.site.register(Product, ProductAdmin)
-
-
-API для доступа к данным 
-========================
-
-ForeignKey, ManyToManyField и OneToOneField
--------------------------------------------
-
-связь между моделями определяется с помощью ForeignKey.  Django поддерживает все основные типы связей: многие-к-одному, многие-ко-многим и один-к-одному.
-
-Поля отношений
-===============
-Django предоставляет набор полей для определения связей между моделями.
-
-ForeignKey
------------
-
-        class ForeignKey(othermodel[, **options])
-
-Связь многое-к-одному. Принимает позиционный аргумент: класс связанной модели.
-
-Для создания рекурсивной связи – объект со связью многое-к-одному на себя – используйте models.ForeignKey('self').
-
-Если вам необходимо добавить связь на модель, которая еще не определена, вы можете использовать имя модели вместо класса:
-
-            from django.db import models
-
-            class Article(models.Model):
-                user = models.ForeignKey('User')
-                # ...
-
-            class User(models.Model):
-                # ...
-                pass
-
-Для связи на модель из другого приложения используйте название модели и приложения. Например, если модель User находится в приложении auth, используйте:
-
-        class Article(models.Model):
-            user = models.ForeignKey('auth.User')
-
-Такой способ позволяет создать циклическую зависимость между моделями из разных приложений.
-
-В базе данных автоматом создается индекс для ForeignKey. Можно указать для db_index False, чтобы отключить такое поведение. Это может пригодиться, если внешний ключ используется для согласованности данных, а не объединения(join) в запросах, или вы хотите самостоятельно создать альтернативный индекс или индекс на несколько колонок.
-
-Не рекомендуется использовать ForeignKey из приложения без миграций к приложению с миграциями. 
-
-## Представление в базе данных
-Django добавляет "_id" к названию поля для создания названия колонки. 
-
-### ForeignKey.related_name
-Название, используемое для обратной связи от связанной модели. Также значение по умолчанию для related_query_name (название обратной связи используемое при фильтрации результата запроса). 
-
-Если вы не хотите, чтобы Django создавал обратную связь, установите related_name в '+' или добавьте в конце '+'. Например, такой код создаст связь, но не добавит обратную связь в модель Category:
-
-        category = models.ForeignKey(Category, verbose_name="the related category", related_name='+')
-
-первым аргументом принимает класс модели, поэтому используется keyword аргумент verbose_name
-Django не делает первую букву прописной для verbose_name - только там, где это необходимо.
-
-ForeignKey.related_query_name
------------------------------
-Название обратной связи используемое при фильтрации результата запроса. По умолчанию используется related_name, или название модели:
-
-# Declare the ForeignKey with related_query_name
-
-        class Product(models.Model):
-
-            category = models.ForeignKey(Category, related_name='products')
-            name = models.CharField(max_length=200, db_index=True)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
-
-
-            def __str__(self):
-                return '%s' % (self.name)
-
-
-## ForeignKey.to_field
-Поле связанной модели, которое используется для создания связи между таблицами. По-умолчанию, Django использует первичный ключ.
-
-## ForeignKey.db_constraint
-Указывает создавать ли “constraint” для внешнего ключа в базе данных. По умолчанию True и в большинстве случает это то, что вам нужно. Указав False вы рискуете целостностью данных. Некоторые ситуации, когда вам может быть это необходимо:
-
-- Вам досталась в наследство нецелостная база данных
-- Вы используете шардинг базы данных.
-
-При False, если связанный объект не существует, при обращении к нему будет вызвано исключение DoesNotExist.
-
-## ForeignKey.on_delete
-Когда объект, на который ссылается ForeignKey, удаляется, Django по-умолчанию повторяет поведение ограничения ON DELETE CASCADE в SQL и удаляет объекты, содержащие ForeignKey. Такое поведение может быть переопределено параметром on_delete. Например, если ваше поле ForeignKey может содержать NULL и вы хотите, чтобы оно устанавливалось в NULL после удаления связанного объекта:
-```
-category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.SET_NULL)
-```
-Возможные значения для on_delete находятся в django.db.models:
-
-- CASCADE
-Каскадное удаление, значение по умолчанию.
-
-- PROTECT
-Препятствует удалению связанного объекта вызывая исключение django.db.models.ProtectedError`(подкласс :exc:`django.db.IntegrityError).
-
-- SET_NULL
-Устанавливает ForeignKey в NULL; возможно только если null равен True.
-
-- SET_DEFAULT
-Устанавливает ForeignKey в значение по умолчанию; значение по-умолчанию должно быть указано для ForeignKey.
-
-- SET()
-Устанавливает ForeignKey в значение указанное в SET(). Если указан выполняемый объект, результат его выполнения. Вызываемый объект можно использовать, чтобы избежать запросов во время импорта 
-
-- DO_NOTHING
-Ничего не делать. Если используемый тип базы данных следит за целостностью связей, будет вызвано исключение IntegrityError, за исключением, когда вы самостоятельно добавите SQL правило ON DELETE для поля таблицы (возможно используя загрузочный sql).
-
-## ManyToManyField
-class ManyToManyField(othermodel[, **options])
-
-Связь многие-ко-многим. Принимает позиционный аргумент: класс связанной модели. Работает так же как и ForeignKey, включая рекурсивную и ленивую связь.
-
-Связанные объекты могут быть добавлены, удалены или созданы с помощью RelatedManager.
-
-Не рекомендуется использовать ManyToManyField из приложения без миграций к приложению с миграциями.
-
-### Представление в базе данных
-Django самостоятельно создаст промежуточную таблицу для хранения связи многое-ко-многим. По-умолчанию, название этой таблицы создается из названия поля и связанной модели. Так как некоторые базы данных не поддерживают длинные названия таблиц, оно будет обрезано до 64 символов и будет добавлен уникальный хеш. Это означает что вы можете увидеть такие названия таблиц author_books_9cdf4; это нормально. Вы можете указать название промежуточной таблицы, используя параметр db_table.
-
-## Параметры
-ManyToManyField принимает дополнительные аргументы – все не обязательны – которые определяют как должна работать связь.
-
-- ManyToManyField.related_name
-Аналогично ForeignKey.related_name.
-
-- ManyToManyField.related_query_name
-Аналогично ForeignKey.related_query_name.
-
-- ManyToManyField.limit_choices_to
-Аналогично ForeignKey.limit_choices_to.
-
-- limit_choices_to``не работает для ``ManyToManyField переопределенной через through промежуточной моделью.
-
-## ManyToManyField.symmetrical
-Используется только при рекурсивной связи.
-
-## ManyToManyField.through
-Django автоматически создает промежуточную таблицу для хранения связи. Однако, если вы хотите самостоятельно определить промежуточную таблицу, используйте параметр through указав модель Django, которая будет хранить связь между моделями.
-
-Обычно используют для хранения дополнительных данных.
-
-Если вы не указали through модель, вы все равно может обратиться к неявно промежуточной модели, которая была автоматически создана. Она содержит три поля, связывающие модели.
-
-Если связанные модели разные, создаются следующие поля:
-```
-id: первичный ключ для связи.
-
-<containing_model>_id: id модели, которая содержит поле ManyToManyField.
-
-<other_model>_id: id модели, на которую ссылается ManyToManyField.
-```
-Если ManyToManyField ссылается на одну и ту же модель, будут созданы поля:
-```
-id: первичный ключ для связи.
-
-from_<model>_id: id объекта основной модели (исходный объект).
-
-to_<model>_id: id объекта, на который указывает связь (целевой объект).
-```
-Этот класс может использоваться для получения связей.
-
-## ManyToManyField.db_table
-Имя промежуточной таблицы для хранения связей многое-ко-многим. Если не указан, Django самостоятельно создаст название по умолчанию используя название таблицы определяющей связь и название поля.
-
-## ManyToManyField.db_constraint
-Указывает создавать ли “constraint” для внешних ключей в промежуточной таблице в базе данных. По умолчанию True и в большинстве случает это то, что вам нужно. Указав False вы рискуете целостностью данных. Некоторые ситуации, когда вам может быть это необходимо:
-
-- Вам досталась в наследство нецелостная база данных
-- Вы используете шардинг базы данных.
-
-Нельзя указать db_constraint и through одновременно.
-
-## ManyToManyField.swappable
-
-Управляет поведением миграций, если ManyToManyField ссылается на подменяемую(swappable) модель. При True - значение по умолчанию - если ManyToManyField ссылается на модель, указанную через settings.AUTH_USER_MODEL (или другую настройку, определяющую какую модель использовать), связь в миграции будет использовать настройку, а не саму модель.
-
-Вам может понадобится значение False только, если связь должна указывать на какую-то конкретную модель, игнорируя настройку - например, если это модель профиля пользователя для какой-то конкретной модели пользователя и не будет работать с любой моделью из настройки.
-
-Если вы не уверены какое значение выбрать, используйте значение по умолчанию True.
-
-## ManyToManyField.allow_unsaved_instance_assignment
-
-Работает аналогично ForeignKey.allow_unsaved_instance_assignment.
-
-ManyToManyField не поддерживает validators.
-
-null не влияет на работу поля т.к. нет способа сделать связь обязательной на уровне базы данных.
+Вызов собственных методов QuerySet из Manager
+---------------------------------------------
+Т.к. большинство методом стандартного QuerySet доступны из Manager, следующий подход необходимо использовать только для собственных методов переопределенного QuerySet:
 
 shop/models.py
 --------------
-        from django.db import models
-        from django.utils.encoding import python_2_unicode_compatible
-
-        @python_2_unicode_compatible
-        class Category(models.Model):
-            name = models.CharField('Categories Name', max_length=100)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
-            description = models.TextField(max_length=4096, default='')
-
-            def __str__(self):
-                return self.name
-
-        @python_2_unicode_compatible
-        class Product(models.Model):
-
-            category = models.ForeignKey(Category, related_name='products')
-            name = models.CharField(max_length=200, db_index=True)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
-
-            image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
-            description = models.TextField(blank=True)
-            price = models.DecimalField(max_digits=10, decimal_places=2)
-            stock = models.PositiveIntegerField()
-            available = models.BooleanField(default=True)
-            created = models.DateTimeField(auto_now_add=True)
-            updated = models.DateTimeField(auto_now=True, help_text="Please use the following format: <em>YYYY-MM-DD</em>.")
-
-            def __str__(self):
-                return self.name
-
-
-Функция get_object_or_404()
-----------------------------
-
-Одна из распространенных идиом – вызвать метод get() и возбудить исключение Http404, если объект не существует. Она инкапсулирована в функции get_object_or_404(), которая принимает в первом аргументе модель Django, а также произвольное количество именованных аргументов, которые передает функции get() менеджера, подразумеваемого по умолчанию. Если объект не существует, функция возбуждает исключение Http404. 
-Например:
-
-Получить объект Category с первичным ключом 3 
-
-        category = get_object_or_404(Category, pk=3)
-
-Когда этой функции передается модель, для выполнения запроса get() она использует менеджер, подразумеваемый по умолчанию. 
-
-shop/views.py:
---------------
-
-def product_detail(request, id):
-    try:
-        product = Product.objects.get(pk=id)
-    except Product.DoesNotExist:
-        raise Http404("Product does not exist")
-    return render(request,
-                          'shop/product/detail.html',
-                          {'product': product})
-
-shop/views.py:
---------------
-
-from django.shortcuts import get_object_or_404, render
-
-        def product_detail(request, id):
-            product = get_object_or_404(Product, id=id, available=True)
-            
-            return render(request,
-                          'shop/product/detail.html',
-                          {'product': product})
-
-shop/views.py
--------------
-        from django.shortcuts import render, get_object_or_404
-        from .models import Product
-
-        def index(request, category_slug=None):
-            category = None
-            categories = Category.objects.all()
-            products = Product.objects.filter(available=True)
-            if category_slug:
-                category = get_object_or_404(Category, slug=category_slug)
-                products = products.filter(category=category)
-            return render(request, 'shop/product/index.html', {'category': category,
-                                                              'categories': categories,
-                                                              'products': products})
-
-
-        def product_detail(request, id, slug):
-            product = get_object_or_404(Product, id=id, slug=slug, available=True)
-            
-            return render(request,
-                          'shop/product/detail.html',
-                          {'product': product})
-
-shop/urls.py
-------------
-        """shop URL Configuration
-
-        """
-        from django.conf.urls import url
-        from . import views
-
-        urlpatterns = [
-            url(r'^$', views.index, name='index'),
-            url(r'^(?P<category_slug>[-\w]+)/$', views.index, name='product_index_by_category'),
-            url(r'^(?P<id>\d+)/(?P<slug>[-\w]+)/$', views.product_detail, name='product_detail'),
-        ]
-
-get_absolute_url
-=================
-        Model.get_absolute_url()
-Определите метод get_absolute_url(), чтобы указать Django как вычислить URL для объекта. Метод должен вернуть строку, которая может быть использована в HTTP запросе.
-
-        def get_absolute_url(self):
-            return "/people/%i/" % self.id
-(Хотя это код правильный и простой, но такой подход не самый лучший для создания подобных методов. Лучше использовать функцию reverse().)
-
-        def get_absolute_url(self):
-            from django.core.urlresolvers import reverse
-            return reverse('people.views.details', args=[str(self.id)])
-
-Django использует get_absolute_url() в интерфейсе администратора. Если объект содержит этот метод, страница редактирования объекта будет содержать ссылку “Показать на сайте”, которая приведет к странице отображения объекта, ссылку на которую возвращает get_absolute_url().
-
-Кроме того, несколько приложений Django также используют этот метод, например syndication feed framework. Если объект модели представляет какой-то уникальный URL, вам стоит определить метод get_absolute_url().
-
-При создания URL не используйте непроверенные данные от пользователя, чтобы избежать подделки ссылок или перенаправлений:
-
-        def get_absolute_url(self):
-            return '/%s/' % self.name
-Если self.name равен '/example.com', будет возвращен '//example.com/', являющимся правильным URL-ом относительно протокола, вместо ожидаемого '/%2Fexample.com/'.
-
-
-shop/models.py
---------------
-
         from django.db import models
         from django.utils.encoding import python_2_unicode_compatible
         from django.core.urlresolvers import reverse
 
-        @python_2_unicode_compatible
-        class Category(models.Model):
-            name = models.CharField('Categories Name', max_length=100)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
-            description = models.TextField(max_length=4096, default='')
-
-            def __str__(self):
-                return self.name
-
-            def get_absolute_url(self):
-                return reverse('shop:product_index_by_category', args=[self.slug])
+        class AvailabledManager(models.Manager):
+            def get_queryset(self):
+                return super(AvailabledManager, self).get_queryset().filter(status='available')
 
 
-        @python_2_unicode_compatible
-        class Product(models.Model):
+Изменение базового QuerySets менеджера
+--------------------------------------
+Базовый QuerySet менеджера возвращает все объекты модели.
 
-            category = models.ForeignKey(Category, related_name='products')
-            name = models.CharField(max_length=200, db_index=True)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
+Менеджеры по умолчанию
+----------------------
+При использовании собственного объекта Manager первый Manager, который заметит Django (в том порядке, в котором они определяются в модели) имеет особый статус. Для Django первый Manager будет Manager “по умолчанию”, и некоторые компоненты Django (включая dumpdata) будут использовать этот Manager. Поэтому нужно быть осторожным при выборе менеджера по умолчанию, чтобы, переопределив get_queryset(), не попасть в ситуацию, когда вы не можете получить нужный объект.
 
-            image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
-            description = models.TextField(blank=True)
-            price = models.DecimalField(max_digits=10, decimal_places=2)
-            stock = models.PositiveIntegerField()
-            available = models.BooleanField(default=True)
-            created = models.DateTimeField(auto_now_add=True)
-            updated = models.DateTimeField(auto_now=True, help_text="Please use the following format: <em>YYYY-MM-DD</em>.")
-
-            def __str__(self):
-                return self.name
-
-            def get_absolute_url(self):
-                return reverse('shop:product_detail', args=[self.id, self.slug])
-
-get_absolute_url() в шаблонах
-------------------------------
-вместо того, чтобы “хардкодить” URL-ы. Например, это плохой подход:
-
-        <!-- BAD template code. Avoid! -->
-        <a href="/shop/{{ object.id }}/">{{ object.name }}</a>
-
-Этот шаблон значительно лучше:
-
-        <a href="{{ object.get_absolute_url }}">{{ object.name }}</a>
-
-Идея в том что, если вы измените структуру URL-а для объекта, или просто исправите опечатку, вам не нужно исправлять его во всех местах, где этот URL используется. Просто определите его один раз в методе get_absolute_url(), и пусть остальной код использует его.
-
-Строка, которую возвращает get_absolute_url(), должна состоять только из ASCII символов (требуется спецификацией URI, RFC 2396) и быть закодированной для URL, если необходимо.
-
-Код и шаблоны, использующие get_absolute_url(), должны иметь возможность использовать результат без обработки. Вы можете использовать функцию django.utils.encoding.iri_to_uri(), если используете unicode-строку, которая содержит не ASCII символы.
-
-
-templates/shop/product/index.html
----------------------------------
-        {% extends "base.html" %}
-        {% load static %}
-        {% block title %}Products {% endblock %}
-
-        {% block content %}
-            <div class="container">
-              <!-- row of columns -->
-              <div class="row">
-                <div class="col-md-4 sidebar">
-                    <h3>Categories</h3>
-                    <ul>
-                        <li {% if not category %}class="selected"{% endif %}>
-                            <a href="{% url "shop:index" %}">All</a>
-                        </li>
-                    {% for c in categories %}
-                        <li {% if category.slug == c.slug %}class="selected"{% endif %}>
-                            <a href="{{ c.get_absolute_url }}">{{ c.name }}</a>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                </div>
-
-                <div id="main" class="col-md-8 product-list">
-                    <h1>{% if category %}{{ category.name }}{% else %}Products{% endif %}</h1>
-                {% for product in products %}
-                    <div class="item">
-                        <a href="{{ product.get_absolute_url }}">
-                            <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no_image.png" %}{% endif %}">
-                        </a>
-                        <a href="{{ product.get_absolute_url }}">{{ product.name }}</a><br>
-                        ${{ product.price }}
-                    </div>
-                {% endfor %}
-                
-                </div>
-              </div>
-             <hr>
-        {% endblock %}
-
-templates/shop/product/detail.html
-----------------------------------
-        
-        {% extends "base.html" %}
-        {% load static %}
-
-        {% block title %}{{ product.name }}{% endblock %}
-
-        {% block content %}
-            <div class="product-detail">
-                <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no_image.png" %}{% endif %}">
-                <h1>{{ product.name }}</h1>
-                <h2><a href="{{ product.category.get_absolute_url }}">{{ product.category }}</a></h2>
-                <p class="price">${{ product.price }}</p>
-                
-                {{ product.description|linebreaks }}
-            </div>
-        {% endblock %}
-
-
-STATUS_CHOICES
-============== 
-
-choices
--------
-Итератор (например, список или кортеж) 2-х элементных кортежей, определяющих варианты значений для поля. При определении, виджет формы использует select вместо стандартного текстового поля и ограничит значение поля указанными значениями.
-
-Список значений выглядит:
--------------------------
-
-    STATUS_CHOICES = (
-        ('available', 'Available'),
-        ('sale', 'For Sale'),
-        ('onstock', 'On Stock'),
-        ('notavailbl', 'Not Available'),
-    )
-
-
-Первый элемент в кортеже - значение хранимое в базе данных, второй элемент - отображается виджетом формы, или в ModelChoiceField. Для получения отображаемого значения используется метод get_status_display экземпляра модели. Значения лучше указать в константах внутри модели:
-
+shop/models.py
+--------------
         from django.db import models
+        from django.utils.encoding import python_2_unicode_compatible
+        from django.core.urlresolvers import reverse
+
+        class AvailabledManager(models.Manager):
+            def get_queryset(self):
+                return super(AvailabledManager, self).get_queryset().filter(status='available')
 
         @python_2_unicode_compatible
         class Product(models.Model):
@@ -677,378 +80,761 @@ choices
             description = models.TextField(blank=True)
             price = models.DecimalField(max_digits=10, decimal_places=2)
             stock = models.PositiveIntegerField()
-
+            
             status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='available')
             created = models.DateTimeField(auto_now_add=True)
             updated = models.DateTimeField(auto_now=True, help_text="Please use the following format: <em>YYYY-MM-DD</em>.")
+
+            objects = models.Manager() # The default manager.
+            available = AvailabledManager() # The Dahl-specific manager.
+
+Параметры модели
+================
+Параметры Meta
+--------------
+app_label
+---------
+Если модель находится не в стандартной локации (models.py или пакет models приложения), модель должна определять к какому приложению она принадлежит
+
+app_label = 'myapp'
+------------------
+app_label больше не обязательный параметр для моделей, которые находятся вне модуля models приложения.
+
+db_table
+--------
+Название таблицы в базе данных для этой модели:
+
+Название таблицы
+----------------
+Экономя ваше время, Django автоматически создаст название таблицы из названия модели и приложения. Название таблицы состоит из названия приложения(“app label”) – название используемое для команды manage.py startapp – и названия модели, объединенные нижним подчеркиванием.
+
+Для переопределения названия таблицы используйте атрибут db_table class Meta.
+
+Если имя колонки это зарезервированное SQL слово, или содержит символы запрещенные в названиях переменной в Python – в частности, дефис – все нормально. Django автоматически экранирует название колонок и таблиц.
+
+Используйте нижний регистр для названий таблиц в MySQL
+------------------------------------------------------
+Настоятельно рекомендуем использовать нижний регистр при переопределении названия таблицы через db_table, особенно при использовании MySQL. 
+Названия таблиц в кавычках для Oracle
+-------------------------------------
+Т.к в Oracle есть ограничение в 30 символов на название таблиц, и для соблюдения соглашений работы с Oracle, Django может ограничить название таблицы и преобразовать его в верхний регистр. Чтобы избежать этого, укажите название в кавычках в настройке db_table:
+
+    db_table = '"name_left_in_lowercase"'
+
+Кавычки можно использовать для других типов базы данных, не только Oracle, однако, они не будут иметь никакого эффекта.
+
+db_tablespace
+-------------
+Имя “tablespace” базы данных для этой модели. По умолчанию используется настройка DEFAULT_TABLESPACE, если она определена. Если база данных не поддерживает “tablespace” для индексов, этот параметр будет проигнорирован.
+
+default_related_name
+--------------------
+Название, которое будет использоваться для обратных связей к этой модели. По умолчанию 
+    
+    <model_name>_set.
+
+Т.к. название поля обратной связи должно быть уникальным, будьте осторожны, если собираетесь наследоваться от модели. Чтобы избежать коллизий в названиях, можно добавить '%(app_label)s' и '%(model_name)s', которые будут заменены соответственно на название приложения модели и название модели в нижнем регистре. Смотрите именование обратных связей для абстрактных моделей.
+
+get_latest_by
+-------------
+Название сортируемого поля модели, обычно DateField, DateTimeField или IntegerField. Определяет поле по умолчанию, которое будет использовано методами latest() и earliest() Manager-а модели.
+
+managed
+-------
+По умолчанию True, означает что Django создаст необходимые таблицы в базе данных при выполнении команды migrate и удалит их при выполнении flush. То есть Django управляет таблицами.
+
+При False, таблицы модели не будет создаваться или удаляться. Это полезно, если модель отображает существующую таблицу или “VIEW” в базе данных, которая была создана другим способом. Это единственная разница при managed=False. Все остальные этапы работы с моделью не изменяются. Они включают
+
+Автоматическое добавление первичного ключа, если он не был определен. Для ясности лучше определить в модели все поля таблицы, которую отображает модель с managed=False`.
+
+Если модель с managed=False содержит ManyToManyField на другую неуправляемую модель, промежуточная таблица для хранения связи многое-ко-многим не будет создана. Однако, промежуточная таблица между управляемой и не управляемой моделью будет создана.
+
+Если вы хотите переопределить такое поведение по умолчанию, создайте модель для промежуточной таблицы (с необходимым managed) и укажите использование этой модели через параметр ManyToManyField.through.
+
+Правильное создание таблиц при тестировании в тестовой базе данных для модели с managed=False ложится на ваши плечи.
+
+Если вы хотите переопределить поведение модели на уровне Python, вы можете использовать managed=False и создать копию существующей модели. Однако, есть лучшее решение для такой ситуации: Proxy-модели.
+
+order_with_respect_to
+---------------------
+Объекты модели будут отсортированы относительно указанного поля. Почти всегда используется для связанных объектов.
+
+При добавлении order_with_respect_to, будет добавлено два дополнительных метода для получения и установки порядка связанных объектов: get_RELATED_order() и set_RELATED_order(), где RELATED название модели в нижнем регистре. 
+
+ordering
+--------
+Сортировка по умолчанию используемая при получении объектов:
+
+    ordering = ['-order_date']
+Это кортеж или список строк. Каждая строка это название поля с необязательным префиксом “-”, который указывает на нисходящую сортировку. Поля без “-” будут отсортированы по возрастанию. Используйте ”?” для случайной сортировке.
+
+Например, для сортировки по возрастанию по полю updated:
+
+    ordering = ['updated']
+Нисходящая сортировка по полю updated:
+
+    ordering = ['-updated']
+Для нисходящей сортировки по updated и восходящей по name, используйте:
+
+    ordering = ['-updated', 'name']
+
+permissions
+-----------
+Дополнительные разрешения(permissions) будут добавлены в таблицу разрешений при создании модели. Разрешения на добавление, удаление и изменение автоматически создаются для каждой модели. Это список 2-х элементных кортежей в формате (код разрешения, название разрешения).
+
+default_permissions
+-------------------
+По умолчанию ('add', 'change', 'delete'). Вы можете поменять этот список, например, указав пустой список, если ваше приложение не требует никаких прав доступа. Необходимо указать в модели перед тем, как она будет создана командой migrate.
+
+proxy
+-----
+При proxy = True, модель унаследованная от другой модели будет создана как proxy-модель.
+
+unique_together
+----------------
+Множество полей, комбинация значений которых должна быть уникальна:
+
+    unique_together = (("id", "slug"),)
+
+Кортеж кортежей полей, которые должны быть вместе уникальны. Используется в интерфейсе администратора для проверки данных и на уровне базы данных (то есть соответствующее определение UNIQUE будет добавлено в CREATE TABLE запрос).
+
+Для удобства unique_together может быть одноуровневым списком, если определяется один набор уникальных полей:
+
+    unique_together = ("id", "slug")
+
+index_together
+--------------
+Множество полей, для которых создается один индекс:
+
+        index_together = [
+            ["pub_date", "deadline"],
+        ]
+Будет создан один индекс для группы полей (то есть будет выполнен необходимый CREATE INDEX.)
+
+Для удобства index_together может быть одноуровневым списком, если определяется один набор полей:
+
+    index_together = ["pub_date", "deadline"]
+verbose_name
+------------
+Читабельное название модели, в единственном числе:
+
+    verbose_name = "product"
+Если не указано, Django создаст из названия модели: CamelCase станет camel case.
+
+verbose_name_plural
+-------------------
+Название модели в множественном числе:
+
+    verbose_name_plural = "products"
+Если не указано, Django создаст по правилу verbose_name + "s".
+
+shop/models.py
+--------------
+        from django.db import models
+        from django.utils.encoding import python_2_unicode_compatible
+        from django.core.urlresolvers import reverse
+
+        @python_2_unicode_compatible
+        class Category(models.Model):
+            name = models.CharField('Categories Name', max_length=100)
+            slug = models.SlugField(max_length=200, db_index=True, unique=True)
+            description = models.TextField(max_length=4096, default='')
+
+            class Meta:
+                ordering = ('name',)
+                verbose_name = 'category'
+                verbose_name_plural = 'categories'
 
             def __str__(self):
                 return self.name
 
             def get_absolute_url(self):
+                return reverse('shop:product_index_by_category', args=[self.slug])
+
+        class AvailabledManager(models.Manager):
+            def get_queryset(self):
+                return super(AvailabledManager, self).get_queryset().filter(status='available')
+
+        @python_2_unicode_compatible
+        class Product(models.Model):
+            
+            STATUS_CHOICES = (
+                ('available', 'Available'),
+                ('sale', 'For Sale'),
+                ('onstock', 'On Stock'),
+                ('notavailbl', 'Not Available'),
+            )
+
+            category = models.ForeignKey(Category, related_name='products')
+            name = models.CharField(max_length=200, db_index=True)
+            slug = models.SlugField(max_length=200, db_index=True, unique=True)
+
+            image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
+            description = models.TextField(blank=True)
+            price = models.DecimalField(max_digits=10, decimal_places=2)
+            stock = models.PositiveIntegerField()
+            
+            status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='available')
+            created = models.DateTimeField(auto_now_add=True)
+            updated = models.DateTimeField(auto_now=True, help_text="Please use the following format: <em>YYYY-MM-DD</em>.")
+
+            objects = models.Manager() # The default manager.
+            available = AvailabledManager() # The Dahl-specific manager.
+
+            class Meta:
+                ordering = ('-price','-updated',)
+                index_together = (('id', 'slug'),)
+                verbose_name = 'product'
+                verbose_name_plural = 'products'
+
+            def __str__(self):
+                s = self.name
+                if self.status != 'available':
+                    s += ' (not available)'
+                return s
+
+            def get_absolute_url(self):
                 return reverse('shop:product_detail', args=[self.id, self.slug])
 
-
-Значение по умолчанию для этого поля. 
--------------------------------------
-Это может быть значение или функция. Если это функция - она будет вызвана при каждом создании объекта.
-
-    STATUS_CHOICES = (
-        ('available', 'Available'),
-        ('sale', 'For Sale'),
-        ('onstock', 'On Stock'),
-        ('notavailbl', 'Not Available'),
-    )
-           
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='available')
-    
-
-ModelAdmin.fields
-==================
-Если вам необходимо внести небольшие изменения форму на странице редактирования и добавления, например, изменить список отображаемых полей, их порядок или сгруппировать их, вы можете использовать настройку fields (сложные изменения можно выполнить используя настройку fieldsets). 
-
-порядок полей в форме. 
-----------------------
-
-        class ProductAdmin(admin.ModelAdmin):
-
-            list_display = ('name', 'updated')
-            fields = ['name','category','description','created','updated','status']
-            
-            prepopulated_fields = {"slug": ("name",)}
-
-        admin.site.register(Product, ProductAdmin)
-
-fields может содержать поля указанные в ModelAdmin.readonly_fields, они не будут доступны для редактирования.
-
-Параметр fields, в отличии от list_display, может содержать только названия полей модели или полей определенных в form. Можно указать названия функций, если они указаны в readonly_fields.
-
-Чтобы поля отображались в одной строке, укажите их в кортеже вместе.
-
-        fieldsets = [
-                ('Item',             {'fields': [('name','slug'),'category','description']}),
-                ('Date information', {'fields': [('created','updated')], 'classes': ['collapse']}),
-                ('Medias',           {'fields': ['image']}),
-                ('Metas',            {'fields': [('status','price','stock']}),
-            ]
-
-
-Первый элемент кортежа в fieldsets – название группы полей.
-
-Если не определен ни атрибут fields, ни fieldsets, Django покажет все поля с editable=True кроме AutoField, в одном наборе полей в порядке, в котором они указанные в модели.
-
-Словарь field_options может содержать следующие ключи:
--------------------------------------------------------
-- fields
---------
-Кортеж с названиями полей. Этот ключ обязателен.
-
-        {'fields': [('title','slug'),'category','content']}),
-
-Как и в атрибуте fields, чтобы отобразить поля в одной строке, добавьте их в один кортеж. 
-
-fields может содержать значения из ModelAdmin.readonly_fields, чтобы отображать поля без возможности их редактирования.
-
-Добавление функции в fields аналогично добавлению в параметр fields - функция должна быть указанна в readonly_fields.
-- classes
----------
-Список содержащий CSS классы, которые будут добавлены в группу полей.
-
-        {
-        'classes': ('wide', 'extrapretty'),
-        }
-
-Django предоставляет два класса для использования: collapse и wide. Группа полей с классом collapse будет показа в свернутом виде с кнопкой “развернуть”. Группа полей с классом wide будет шире по горизонтали.
-
-- description
--------------
-Необязательный текст, который будет отображаться под названием группы полей. Этот текст не отображается для TabularInline.
-
-текст не будет экранирован. Это позволяет добавить HTML на страницу.
-
-добавить HTML классы для каждой группы полей. 
----------------------------------------------
-класс "collapse", который отображает группу полей изначально скрытой. Это полезно, если форма содержит поля, которые редко редактируются:
-
-            fieldsets = [
-                ('Item',             {'fields': [('name','slug'),'category','description']}),
-
-                ('Date information', {'fields': [('created','updated')], 'classes': ['collapse']}),
-
-                ('Medias',           {'fields': ['image']}),
-                ('Metas',            {'fields': [('status','price','stock']}),
-            ]
-
-### ModelAdmin.list_display_links
-Используйте list_display_links, чтобы указать какие поля в list_display будут ссылками на страницу редактирования объекта.
-
-По умолчанию, на страницу редактирования объекта будет вести ссылка в первой колонке – первое поле в list_display. Но list_display_links позволяет изменить это поведение:
-
-Можно указать None, чтобы убрать ссылки.
-
-Укажите список или кортеж полей (так же как и в list_display) чьи колонки должны быть ссылками на страницу редактирования.
-
-Вы можете указывать одно или несколько полей. Пока указанные поля входят в list_display, Django безразлично сколько их. Единственное требование: для использования list_display_links вы должны указать list_display.
-
-
-    class CategoryAdmin(admin.ModelAdmin):
-
-        list_display = ('name', 'slug')
-        list_display_links = ('name',)
-
-В этом примере список объектов будет без ссылок:
-
-    class CategoryAdmin(admin.ModelAdmin):
-
-        list_display = ('name', 'slug')
-
-        list_display_links = None
-
-
-## ModelAdmin.readonly_fields
-По умолчанию интерфейс администратора отображает все поля как редактируемые. Поля указанные в этой настройке (которая является list или tuple) будут отображаться значение без возможности редактировать, они также будут исключены из ModelForm используемой для создания и редактирования объектов. Однако, если вы определяете аргумент ModelAdmin.fields или ModelAdmin.fieldsets поля для чтения должны быть в них указаны (иначе они будут проигнорированы).
-
-Если readonly_fields используется без определения порядка полей через атрибуты ModelAdmin.fields или ModelAdmin.fieldsets, поля из этой настройки будут отображаться после редактируемых полей.
-
-
-        readonly_fields = ('created','updated')
-
-Добавление связанных объектов
-=============================
-
-Django знает, что поле ForeignKey должно быть представлено как select. 
-
-Обратите внимание на ссылку “Add Another category” возле поля Category. При нажатии на “Add Another category” будет показано всплывающее окно с формой добавления category. 
-
-Настройка страницы списка объектов
-----------------------------------
-По умолчанию Django отображает результат выполнения str() для каждого объекта. Но чаще всего хочется показывать список полей. Для этого используйте параметр list_display, который является кортежем состоящим из названий полей модели:
-
-
-    list_display = ('name', 'updated', 'status')
-
-
-ModelAdmin.list_filter
-======================
-Укажите list_filter, чтобы определить фильтры данных в правой панели страницы списка объектов
-
-list_filter - это список элементов, которые могу быть одного из следующих типов:
---------------------------------------------------------------------------------
-- название поля следующего типа: BooleanField, CharField, DateField, DateTimeField, IntegerField, ForeignKey или ManyToManyField.:
-
-
-        list_filter = ['updated']
-
-Это добавляет “Фильтр” по полю updated в боковой панели
-
-Тип фильтра зависит от типа поля. Так как updated является DateTimeField, Django отображает соответствующие варианты для фильтрации: “Any date,” “Today,” “Past 7 days,” “This month,” “This year.”
-
-
-добавим поиск:
---------------
-
-    search_fields = ['name']
-
-Это добавляет поле для поиска в верхней части страницы. При вводе запроса, Django будет искать по полю name. Вы можете использовать любое количество полей – используется запрос LIKE, так что постарайтесь не перегрузить вашу базу данных.
-
-Страница списка объектов также содержит постраничное отображение. По умолчанию отображается 100 объектов на страницу. 
-
-
-admin.py:
----------
-
-        cfrom django.contrib import admin
-
-        from .models import Category, Product
-
-        class CategoryAdmin(admin.ModelAdmin):
-
-            list_display = ('name', 'slug')
-            list_display_links = ('name',)
-            search_fields = ['name', 'slug', 'description']
-            prepopulated_fields = {"slug": ("name",)}
-
-        admin.site.register(Category,CategoryAdmin)
-
-
-        class ProductAdmin(admin.ModelAdmin):
-
-            list_display = ('name', 'updated')
-            list_filter = ['updated']
-            search_fields = ['name']
-            ordering = ['updated']
-            prepopulated_fields = {"slug": ("name",)}
-            date_hierarchy = 'updated'
-
-        admin.site.register(Product, ProductAdmin)
-
-
-Именованные группы
+Выполнение запросов
 ===================
-Для регулярных выражений в Python синтаксис для именованных совпадений выглядит таким образом
+После создания модели, Django автоматически создает API для работы с базой данных, который позволяет вам создавать, получать, изменять и удалять объекты.
 
-     (?P<name>pattern)
+Создание объектов
+-----------------
+Для представления данных таблицы в виде объектов Python, Django использует интуитивно понятную систему: класс модели представляет таблицу, а экземпляр модели - запись в этой таблице.
 
-где name это название группы, а pattern – шаблон.
+Чтобы создать объект, создайте экземпляр класса модели, указав необходимые поля в аргументах и вызовите метод save() чтобы сохранить его в базе данных.
 
-Комбинирование URLconfs
-=======================
-В любой момент, ваш urlpatterns может “включать” другие модули URLconf.
+Чтобы создать и сохранить объект используйте метод create().
+Сохранение изменений в объектах
+--------------------------------
+Для сохранения изменений в объект, который уже существует в базе данных, используйте save().
 
-mysite/urls.py
+Сохранение полей ForeignKey и ManyToManyField
+---------------------------------------------
+Обновление ForeignKey работает так же, как и сохранение обычных полей; просто назначьте полю объект необходимого типа. 
+
+Обновление ManyToManyField работает немного по-другому; используйте метод add() поля, чтобы добавить связанный объект.
+
+Получение объектов
+------------------
+Для получения объектов из базы данных, создается QuerySet через Manager модели.
+
+QuerySet представляет выборку объектов из базы данных. Он может не содержать, или содержать один или несколько фильтров – критерии для ограничения выборки по определенным параметрам. В терминах SQL, QuerySet - это оператор SELECT, а фильтры - условия такие, как WHERE или LIMIT.
+
+Вы получаете QuerySet, используя Manager. Каждая модель содержит как минимум один Manager, и он называется objects по умолчанию. Обратиться к нему можно непосредственно через класс модели:
+
+Получение всех объектов
+-----------------------
+Самый простой способ получить объекты из таблицы - это получить их всех. Для этого используйте метод all() менеджера(Manager):
+
+Метод all() возвращает QuerySet всех объектов в базе данных.
+
+    def index(request, category_slug=None):
+        category = None
+        categories = Category.objects.all()
+        
+        products = Product.available.all()
+        
+        if category_slug:
+            category = get_object_or_404(Category, slug=category_slug)
+            products = products.filter(category=category)
+        return render(request, 'shop/product/index.html', {'category': category,
+                                                          'categories': categories,
+                                                          'products': products})
+Получение объектов через фильтры
+--------------------------------
+QuerySet, возвращенный Manager, описывает все объекты в таблице базы данных. Обычно вам нужно выбрать только подмножество всех объектов.
+
+Для создания такого подмножества, вы можете изменить QuerySet, добавив условия фильтрации. Два самых простых метода изменить QuerySet - это:
+
+filter(**kwargs)
+----------------
+Возвращает новый QuerySet, который содержит объекты удовлетворяющие параметрам фильтрации.
+
+    def index(request, category_slug=None):
+        category = None
+        categories = Category.objects.all()
+        products = Product.objects.filter(status='available')
+        
+        if category_slug:
+            category = get_object_or_404(Category, slug=category_slug)
+            products = products.filter(category=category)
+        return render(request, 'shop/product/index.html', {'category': category,
+                                                          'categories': categories,
+                                                          'products': products})
+exclude(**kwargs)
+-----------------
+Возвращает новый QuerySet содержащий объекты, которые не удовлетворяют параметрам фильтрации.
+
+Цепочка фильтров
+-----------------
+Результат изменения QuerySet - это новый QuerySet и можно использовать цепочки фильтров. 
+
+Отфильтрованный QuerySet – уникален
+-----------------------------------
+После каждого изменения QuerySet, вы получаете новый QuerySet, который никак не связан с предыдущим QuerySet. Каждый раз создается отдельный QuerySet, который может быть сохранен и использован.
+
+QuerySets – ленивы
+------------------
+QuerySets – ленивы, создание QuerySet не выполняет запросов к базе данных. Вы можете добавлять фильтры хоть весь день и Django не выполнит ни один запрос, пока QuerySet не вычислен. 
+
+Получение одного объекта с помощью get
+--------------------------------------
+filter() всегда возвращает QuerySet, даже если только один объект возвращен запросом - в этом случае, это будет QuerySet содержащий один объект.
+
+Если вы знаете, что только один объект возвращается запросом, вы можете использовать метод get() менеджера(Manager), который возвращает непосредственно объект:
+
+Учтите, что есть разница между использованием get() и filter() с [0]. Если результат пустой, get() вызовет исключение DoesNotExist. Это исключение является атрибутом модели, для которой выполняется запрос. 
+
+Также Django отреагирует, если запрос get() вернет не один объект. В этом случае будет вызвано исключение MultipleObjectsReturned, которое также является атрибутом класса модели.
+
+Ограничение выборки
+-------------------
+Используйте синтаксис срезов для списков Python для ограничения результата выборки QuerySet. Это эквивалент таких операторов SQL как LIMIT и OFFSET.
+
+На самом деле, срез QuerySet возвращает новый QuerySet – запрос не выполняется. 
+
+Фильтры полей
 --------------
-        from django.conf.urls import url, include
-        from django.contrib import admin
+Фильтры полей – это “операторы” для составления условий SQL WHERE. Они задаются как именованные аргументы для метода filter(), exclude() и get() в QuerySet.
 
-        from home import views
+Фильтры полей выглядят как field__lookuptype=value. (Используется двойное подчеркивание). 
 
-        urlpatterns = [
+Python позволяет определить функции, которые принимают именованные аргументы с динамически вычисляемыми названиями и значениями.
+Поля указанные при фильтрации должны быть полями модели. Есть одно исключение, для поля ForeignKey можно указать поле с суффиксом _id. В этом случае необходимо передать значение первичного ключа связанной модели. 
+
+API базы данных поддерживает около двух дюжин фильтров; 
+Вот пример самых используемых фильтров:
+
+- exact
+“Точное” совпадение. Например:
+
+    >>> Product.objects.get(name__exact="Samsung phone")
+Создаст такой SQL запрос:
+
+    SELECT ... WHERE name = 'Samsung phone';
+Если вы не указали фильтр – именованный аргумент не содержит двойное подчеркивание – будет использован фильтр exact.
+
+- iexact
+Регистронезависимое совпадение. Такой запрос:
+
+    >>> Product.objects.get(name__iexact="Samsung phone")
+Найдет Product с названием "Samsung phone", "samsung phone", и даже "SamsunG pHone".
+
+- contains
+Регистрозависимая проверка на вхождение. Например:
+
+    Product.objects.get(name__contains='Samsung')
+Будет конвертировано в такой SQL запрос:
+
+    SELECT ... WHERE name LIKE '%Samsung%';
+
+Существуют также регистронезависимые версии, icontains.
+
+- startswith, endswith
+Поиск по началу и окончанию соответственно. Существуют также регистронезависимые версии istartswith и iendswith.
+
+Фильтры по связанным объектам
+-----------------------------
+Django предлагает удобный и понятный интерфейс для фильтрации по связанным объектам, самостоятельно заботясь о JOIN в SQL. Для фильтра по полю из связанных моделей, используйте имена связывающих полей разделенных двойным нижним подчеркиванием, пока вы не достигните нужного поля.
+
+Этот пример получает все объекты Product с Category, name которого равен 'phone':
+
+    >>> Product.objects.filter(category__name='phone')
+Этот поиск может быть столь глубоким, как вам будет угодно.
+
+Все работает и в другую сторону. Чтобы обратиться к “обратной” связи, просто используйте имя модели в нижнем регистре.
+
+Этот пример получает все объекты Category, которые имеют хотя бы один связанный объект Product с name содержащим 'Samsung':
+
+    >>> Category.objects.filter(product__name__contains='Samsung')
+Если вы используйте фильтр через несколько связей и одна из промежуточных моделей не содержит подходящей связи, Django расценит это как пустое значение (все значения равны NULL). Исключение не будет вызвано. Например, в этом фильтре:
+
+    Product.objects.filter(product__brend__name='Lennon')
+(при связанной модели Brend), если нет объекта brend связанного с product, это будет расценено как отсутствие name, вместо вызова исключения т.к. brend отсутствует. В большинстве случаев это то, что вам нужно. Единственный случай, когда это может работать не однозначно - при использовании isnull. Например:
+
+    Product.objects.filter(entry__brend__name__isnull=True)
+вернет объекты Product у которого пустое поле name у brend и также объекты, у которых пустой brend в  entry. Если вы не хотите включать вторые объекты, используйте:
+
+    Product.objects.filter(brend__name__isnull=False,
+            product__brend__name__isnull=True)
+
+Удаление объектов
+-----------------
+Метод удаления соответственно называется delete(). Этот метод сразу удаляет объект и ничего не возвращает. Например:
+
+    e.delete()
+Можно также удалить несколько объектов сразу. Каждый QuerySet имеет метод delete(), который удаляет все объекты из QuerySet.
+
+Учтите, что при любой возможности будет использован непосредственно SQL запрос, то есть метод delete() объекта может и не использоваться при удалении. Если вы переопределяете метод delete() модели и хотите быть уверенным, что он будет вызван, вы должны “самостоятельно” удалить объект модели (например, использовать цикл по QuerySet и вызывать метод delete() для каждого объекта) не используя метод delete() QuerySet.
+
+При удалении Django повторяет поведение SQL выражения ON DELETE CASCADE – другими словами, каждый объект, имеющий связь(ForeignKey) с удаляемым объектом, будет также удален. Например:
+
+    b = Product.objects.get(pk=1)
+    # This will delete the Product and all of its Category objects.
+    b.delete()
+Это поведение можно изменить, определив аргумент on_delete поля ForeignKey.
+
+Метод delete() содержится только в QuerySet и не существует в Manager. Это сделано, чтобы вы случайно не выполнили Category.objects.delete(), и не удалили все записи. Если вы на самом деле хотите удалить все объекты, сначала явно получите QuerySet, содержащий все записи:
+
+    Category.objects.all().delete()
+
+Работа с формами
+================
+HTML формы
+----------
+Форма в HTML – это набор элементов в 
+
+        <form>...</form>, 
+
+которые позволяют пользователю вводить текст, выбирать опции, изменять объекты и конторолы страницы, и так далее, а потом отправлять эту информацию на сервер.
+
+Некоторые элементы формы - текстовые поля ввода и чекбоксы - достаточно простые и встроены в HTML. Некоторые – довольно сложные, состоят из диалогов выбора даты, слайдеров и других контролов, который обычно используют JavaScript и CSS.
+
+Кроме input элементов форма должна содержать еще две вещи:
+
+- куда: URL, на который будут отправлены данные
+- как: HTTP метод, который должна использовать форма для отправки данных
+
+Форма также говорит браузеру, что данные должны оправляться на URL, указанный в атрибуте action тега form и для отправки необходимо использовать HTTP метод, указанный атрибуте method - post.
+
+GET или POST
+------------
+GET и POST – единственные HTTP методы, которые используются для форм.
+
+При GET данные собираются в строку и передаются в URL. URL содержит адрес, куда отправлять данные, и данные для отправки. 
+
+Любой запрос, который может изменить состояние системы - например, который изменяет данные в базе данных - должен использовать POST. GET должен использоваться для запросов, которые не влияют на состояние системы.
+
+GET удобен для таких вещей, как форма поиска, т.к. URL, который представляет GET запрос, можно легко сохранить в избранное или отправить по почте.
+
+Формы в Django
+---------------
+В контексте Web приложения ‘form’ может означать HTML form, или класс Django Form, который создает HTML формы, или данне, которые передаются при отправке формы, или ко всему механизму вместе.
+
+Класс Django Form
+------------------
+Как и модель в Django, которая описывает структуру объекта, его поведение и представление, Form описывает форму, как она работает и показывается пользователю.
+
+Как поля модели представляют поля в базе данных, поля формы представляют HTML input элементы. 
+
+Поля формы сами являются классами. Они управляют данными формы и выполняют их проверку при отправке формы. Например, DateField и FileField работают с разными данными и выполняют разные действия с ними.
+
+Поле формы представлено в браузере HTML “виджетом” - компонент интерфейса. Каждый тип поля представлен по умолчанию определенным классом Widget, который можно переопределить при необходимости.
+
+Создание, обработка и рендеринг форм
+-------------------------------------
+При рендеринге объекта в Django мы обычно:
+
+- получаем его в представлении (например, загружаем из базы данных)
+- передаем в контекст шаблона
+- представляем в виде HTML в шаблоне, используя переменные контекста
+
+Рендеринг форм происходит аналогичным образом с некоторыми отличиями.
+
+В случае с моделями, вряд ли нам может понадобится пустая модель в шаблоне. Для форм же нормально показывать пустую форму для пользователя.
+
+Экземпляр модели, который используется в представлении, обычно загружается из базы данных. При работе с формой мы обычно создаем экземпляр формы в представлении.
+
+При создании формы мы может оставить её пустой, или добавить начальные данные
+
+Создание форм в Django
+----------------------
+Для начала нам понадобится следующий класс формы:
+
+from django import forms
+
+class NameForm(forms.Form):
+    your_name = forms.CharField(label='Your name', max_length=100)
+
+Этот код создает класс Form с одним полем (your_name). Мы добавили читабельное название поля, которое будет добавлено в тег label при рендеринге поля (на самом деле мы могли не добавлять label т.к. аналогичное название Django сгенерировал бы самостоятельно).
+
+Максимальное количество символом в значении мы указали с помощью параметра max_length. Он используется для двух вещей. Будет добавлен атрибут maxlength="100" в HTML тег input (теперь браузер не позволит пользователю ввести больше символов, чем мы указали). Также Django выполнит проверку введенного значения, когда получит запрос с браузера с введенными данными.
+
+Экземпляр Form содержит метод is_valid(), который выполняет проверку всех полей формы. Если все данные правильные, это метод:
+- вернет True
+- добавит данные формы в атрибут cleaned_data.
+
+После рендеринга наша форма будет выглядеть следующим образом:
+
+        <label for="your_name">Your name: </label>
+        <input id="your_name" type="text" name="your_name" maxlength="100">
+
+Обратите внимание, она не содержит тег form, или кнопку отправки. Вам необходимо самостоятельно их добавить в шаблоне.
+
+Поля формы
+----------
+При создании класса Form наиболее важной деталью является определение полей формы. Каждое поле обладает собственной логикой проверки вводимых данных наряду с дополнительными возможностями.
+
+required
+--------
+По умолчанию каждый класс Field предполагает значение обязательным. Таким образом, если вы передадите ему пустое значение, т.е. None или пустую строку (""), то метод clean() вызовет исключение ValidationError
+
+Field.clean(value)
+Каждый экземпляр класса Field имеет метод clean(), который принимает единственный аргумент и который вызывает исключение django.forms.ValidationError в случае ошибки или возвращает чистое значение
+
+initial
+-------
+Аргумент initial позволяет определять начальное значение для поля, при его отображении на незаполненной форме.
+Для определения динамических начальных данных, используйте параметр Form.initial.
+Использование этого аргумента подходит для отображения пустой формы, в которой поля будут иметь указанные значения. 
+
+Виджеты
+--------
+Каждое поле формы содержит соответствующий класс Widget, который отвечает за создание HTML кода, представляющего поле.
+
+В большинстве случаев поле уже содержит подходящий виджет. Например, по умолчанию поле CharField представлено виджетом TextInput, который создает тег input type="text" в HTML. 
+
+widget
+------
+Аргумент widget позволяет указать класс Widget, который следует использовать при отображении поля. 
+
+HiddenInput
+-----------
+Скрытый ввод: input type='hidden' 
+
+BooleanField
+------------
+Стандартный виджет: CheckboxInput
+Пустое значение: False.
+Возвращает: True или False языка Python.
+Гарантирует, что значение равно True (т.е. чекбокс отмечен), если поле имеет атрибут required=True.
+Ключи сообщений об ошибках: required.
+
+TypedChoiceField
+----------------
+Стандартный виджет: Select
+Пустое значение: Всё, что вы назовёте empty_value.
+Возвращает: Значение типа, указанного аргументом coerce.
+Проверяет, что полученное значение присутствует в списке вариантов и может быть преобразовано в нужный тип.
+Ключи сообщений об ошибках: required, invalid_choice.
+
+Принимает дополнительные аргументы:
+
+- coerce
+Функция, которая принимает один аргумент и возвращает преобразованное значение. Например, можно использовать стандартные int, float, bool и другие типы. Функция по умолчанию не выполняет преобразования. Преобразование значения происходит после валидации, поэтому можно вернуть значение, которое отсутствует в choices.
+
+- empty_value
+Значение, используемое для представления “пустоты”. Обычно это пустая строка. None является ещё одним вариантом. Следует отметить, что это значение не будет преобразовываться функцией, определённой аргументом coerce, так что выбирайте значение соответственно.
+
+shop/forms.py
+-------------
+
+        from django import forms
+
+        PRODUCT_QUANTITY_CHOICES = [(i, str(i)) for i in range(1, 21)]
+
+
+        class CartAddProductForm(forms.Form):
+            quantity = forms.TypedChoiceField(choices=PRODUCT_QUANTITY_CHOICES,
+                                              coerce=int)
+            update = forms.BooleanField(required=False,
+                                        initial=False,
+                                        widget=forms.HiddenInput)
+
+Представление
+--------------
+Данные формы отправляются обратно в Django и обрабатываются представлением, обычно тем же, которое и создает форму. Это позволяет повторно использовать часть кода.
+
+Для обработки данных формой нам необходимо создать ее в представлении для URL, на который браузер отправляет данные формы:
+
+
+        from django.shortcuts import render, get_object_or_404
+        from .models import Product, Category
+        from .forms import CartAddProductForm
+
+        def product_detail(request, id, slug):
+            product = get_object_or_404(Product, id=id, slug=slug, status='available')
+            cart_product_form = CartAddProductForm()
+            return render(request,
+                          'shop/product/detail.html',
+                          {'product': product,
+                           'cart_product_form': cart_product_form})
+
+        def cart_add(request, product_id):
+            return render(request,
+                          'shop/product/cart.html')
+
+
+Если в представление пришел GET запрос, будет создана пустая форма и добавлена в контекст шаблона для последующего рендеринга. Это мы и ожидаем получить первый раз открыв страницу с формой.
+
+Шаблон
+------
+Наш cart.html шаблон может быть довольно простым:
+
+        <form action="{% url "shop:cart_add" product.id %}" method="post">
+            {{ cart_product_form }}
+            {% csrf_token %}
+            <input type="submit" value="Add to cart">
+        </form>
+
+Все поля формы и их атрибуты будут добавлены в HTML из {{ form }} при рендеринге шаблона.
+
+Подделка межсайтового запроса (CSRF)
+====================================
+
+Промежуточный слой CSRF и шаблонный тег предоставляют легкую-в-использовании защиту против Межсайтовой подделки запроса. Этот тип атак случается, когда злонамеренный Web сайт содержит ссылку, кнопку формы или некоторый javascript, который предназначен для выполнения некоторых действий на вашем Web сайте, используя учетные данные авторизованного пользователя, который посещал злонамеренный сайт в своем браузере. Сюда также входит связанный тип атак, ‘login CSRF’, где атакуемый сайт обманывает браузер пользователя, авторизируясь на сайте с чужими учетными данными.
+
+Первая защита против CSRF атак - это гарантирование того, что GET запросы (и другие ‘безопасные’ методы, определенные в 9.1.1 Safe Methods, HTTP 1.1, RFC 2616) свободны от побочных эффектов. Запросы через ‘небезопасные’ методы, такие как POST, PUT и DELETE могут быть защищены при помощи шагов, описанных ниже.
+
+Для того чтобы включить CSRF защиту для ваших представлений, выполните следующие шаги:
+
+Промежуточный слой CSRF активирован по умолчанию и находится в настройке MIDDLEWARE_CLASSES. Если вы переопределяете эту настройку, помните, что ``‘django.middleware.csrf.CsrfViewMiddleware’``должен следовать перед промежуточными слоями, которые предполагают, что запрос уже проверен на CSRF атаку.
+
+        MIDDLEWARE_CLASSES = (
+            'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.middleware.common.CommonMiddleware',
+            'django.middleware.csrf.CsrfViewMiddleware',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+            'django.contrib.messages.middleware.MessageMiddleware',
+            'django.middleware.clickjacking.XFrameOptionsMiddleware',
+            'django.middleware.security.SecurityMiddleware',
+        )
+
+
+Если вы отключили защиту, что не рекомендуется, вы можете использовать декоратор csrf_protect() в части представлений, которые вы хотите защитить.
+
+{% csrf_token %}
+-----------------
+В любом шаблоне, который использует POST форму, используйте тег csrf_token внутри элемента form если форма для внутреннего URL, т. е.:
+
+        <form action="." method="post">{% csrf_token %}
+
+Это не должно делаться для POST форм, которые ссылаются на внешние URL’ы, поскольку это может вызвать утечку CSRF токена, что приводит к уязвимости.
+
+В соответствующих функциях представления, убедитесь, что 'django.template.context_processors.csrf' контекстный процессор используется. Обычно, это может быть сделано в один из двух способов:
+
+Использовать RequestContext, который всегда использует 'django.template.context_processors.csrf' (не зависимо от параметра TEMPLATES ). Если вы используете общие представления или contrib приложения, вы уже застрахованы, так как эти приложения используют RequestContext повсюду.
+
+Вручную импортировать и использовать процессор для генерации CSRF токена и добавить в шаблон контекста. т.е.:
+
+        from django.shortcuts import render_to_response
+        from django.template.context_processors import csrf
+
+        def my_view(request):
+            c = {}
+            c.update(csrf(request))
+            # ... view code here
+            return render_to_response("a_template.html", c)
+
+Формы и CSRF защита
+-------------------
+Django поставляется с защитой против Cross Site Request Forgeries. При отправке формы через POST с включенной защитой от CSRF вы должны использовать шаблонный тег csrf_token. 
+
+Данные поля
+-----------
+Когда в форму добавлены данные, и она проверена методом is_valid() (и is_valid() вернул True), проверенные данные будут добавлены в словарь form.cleaned_data. Эти данные будет преобразованы в подходящий тип Python.
+
+templates/shop/product/detail.html
+----------------------------------
+
+        <div class="product-detail">
+            <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no_image.png" %}{% endif %}">
+            <h1>{{ product.name }}</h1>
+            <h2><a href="{{ product.category.get_absolute_url }}">{{ product.category }}</a></h2>
+            <p class="price">${{ product.price }}</p>
+
+            <form action="{% url "shop:cart_add" product.id %}" method="post">
+                {{ cart_product_form }}
+                {% csrf_token %}
+                <input type="submit" value="Add to cart">
+            </form>
             
-            url(r'^$', views.home, name='main'),
-            url(r'^shop/', include('shop.urls', namespace='shop')),
-            url(r'^admin/', admin.site.urls),
-        ]
-
-регулярные выражения не содержат $ (определитель конца строки), но содержит косую черту в конце. Каждый раз, когда Django встречает include() (django.conf.urls.include()), из URL обрезается уже совпавшая часть, остальное передается во включенный URLconf для дальнейшей обработки.
+            {{ product.description|linebreaks }}
+        </div>
 
 shop/urls.py
 ------------
-        """shop URL Configuration
-        """
+        
         from django.conf.urls import url
         from . import views
 
         urlpatterns = [
             url(r'^$', views.index, name='index'),
+            url(r'^add/(?P<product_id>\d+)/$', views.cart_add, name='cart_add'),
             url(r'^(?P<category_slug>[-\w]+)/$', views.index, name='product_index_by_category'),
             url(r'^(?P<id>\d+)/(?P<slug>[-\w]+)/$', views.product_detail, name='product_detail'),
         ]
 
-Что использует URLconf при поиске нужного шаблона URL
-------------------------------------------------------
-- URLconf использует запрашиваемый URL как обычную строку Python. Он не учитывает параметры GET, POST и имя домена.
-URLconf не учитывает тип запроса. POST, GET, HEAD, и др. – будут обработаны одним представлением при одинаковом URL.
+templates/shop/product/cart.html
+--------------------------------
+            {% extends "base.html" %}
+            {% load static %}
 
-Найденные аргументы – всегда строки
-------------------------------------
-Каждый найденный аргумент передается в представление как строка, независимо от того, какое совпадение определено в регулярном выражении. Например, URLconf содержит такую строку:
+            {% block title %}Your shopping cart{% endblock %}
 
-            url(r'^(?P<id>\d+)/$', views.product_detail, name='product_detail'),
+            {% block content %}
+                <div class="container">
+                  <!-- row of columns -->
+                  <div class="row">
+                    <div class="col-md-4 sidebar">
+                        <h3>Categories</h3>
+                        <ul>
+                            <li {% if not category %}class="selected"{% endif %}>
+                                <a href="{% url "shop:index" %}">All</a>
+                            </li>
+                        {% for c in categories %}
+                            <li {% if category.slug == c.slug %}class="selected"{% endif %}>
+                                <a href="{{ c.get_absolute_url }}">{{ c.name }}</a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
 
-аргумент id для views.product_detail() будет строкой, несмотря на то, что d+ отлавливает только числа.
+                <div id="main" class="col-md-8 product-list">
+                
+                <h1>Your shopping cart</h1>
+                <table class="cart">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Remove</th>
+                            <th>Unit price</th>                
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in cart %}
+                        {% with product=item.product %}
+                        <tr>
+                            <td>
+                                <a href="{{ product.get_absolute_url }}">
+                                    <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no_image.png" %}{% endif %}">
+                                </a>
+                            </td>
+                            <td>{{ product.name }}</td>
+                            <td>
+                                <form action="{% url "shop:cart_add" product.id %}" method="post">
+                                    
+                                    <input type="submit" value="Update">
+                                    {% csrf_token %}
+                                </form>
+                            </td>
+                            <td><a href="#">Remove</a></td>
+                            <td class="num"></td>
+                            <td class="num"></td>
+                        </tr>
+                        {% endwith %}
+                    {% endfor %}
+                    <tr class="total">
+                        <td>Total</td>
+                        <td colspan="4"></td>
+                        <td class="num"></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <p class="text-right">
+                    <a href="{% url "shop:index" %}" class="button light">Continue shopping</a>
+                    <a href="#" class="button">Checkout</a>
+                </p>
+             </div>
+            </div>
+            <hr>
 
-MEDIA
-=====
+            {% endblock %}
 
-MEDIA_URL
-=========
-По умолчанию: '' (Пустая строка)
-
-URL который указывает на каталог MEDIA_ROOT, используется для работы с файлами. Должен оканчиваться слешом при не пустом значении. Вам необходимо настроить раздачу этих файлов как dev-сервером, так и боевым.
-
-Если вы хотите использовать {{ MEDIA_URL }} в шаблонах, добавьте 'django.template.context_processors.media' в опцию 'context_processors' настройки TEMPLATES.
-
-Например: "http://media.example.com/"
-
-MEDIA_URL и STATIC_URL должны отличаться.
-
-MEDIA_ROOT
-==========
-По умолчанию: '' (Пустая строка)
-
-Абсолютный путь к каталогу, в котором хранятся медиа-файлы, используется для работы с файлами.
-
-Например: "/var/www/example.com/media/"
-
-MEDIA_ROOT и STATIC_ROOT должны отличаться. Когда STATIC_ROOT только добавили, нормальным было указать MEDIA_ROOT на те самые файлы, однако, т.к. это потенциально не безопасно, добавлена проверка этих значений.
-
-mysite/settiings.py
--------------------
-
-        MEDIA_URL = '/media/'
-        MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
-
-mysite/urls.py
---------------
-        from django.conf.urls import url, include
-        from django.contrib import admin
-        from django.conf import settings
-        from django.conf.urls.static import static
-
-        from home import views
-
-        urlpatterns = [
-            
-            url(r'^$', views.home, name='main'),
-            url(r'^shop/', include('shop.urls', namespace='shop')),
-            url(r'^admin/', admin.site.urls),
-        ]
-        if settings.DEBUG:
-            urlpatterns += static(settings.MEDIA_URL,
-                                  document_root=settings.MEDIA_ROOT)
-
-
-Раздача файлов, загруженных пользователем, при разработке
----------------------------------------------------------
-При разработке медиа файлы из MEDIA_ROOT можно раздавать используя представление django.contrib.staticfiles.views.serve().
-
-Не используйте его на боевом сервере!
-
-Например, если MEDIA_URL равна /media/, вы можете добавить следующий код в urls.py:
-
-from django.conf import settings
-from django.conf.urls.static import static
-
-urlpatterns = [
-    # ... the rest of your URLconf goes here ...
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-Это представление работает только при включенной отладке и для локальных префиксов (например /media/), а не полных URL-ов (e.g. http://media.example.com/).
-
-Раздача статических файлов при разработке.
-------------------------------------------
-Если вы используете django.contrib.staticfiles, runserver все сделает автоматически, если DEBUG равна True. Если django.contrib.staticfiles не добавлено в INSTALLED_APPS, вы можете раздавать статические файлы используя представление django.contrib.staticfiles.views.serve().
-
-Не используйте его на боевом сервере!
-
-Например, если STATIC_URL равна /static/, вы можете добавить следующий код в urls.py:
-
-from django.conf import settings
-from django.conf.urls.static import static
-
-urlpatterns = [
-    # ... the rest of your URLconf goes here ...
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-Это представление работает только при включенной отладке и для локальных префиксов (например /static/), а не полных URL-ов (e.g. http://static.example.com/).
-
-Также эта функция раздает файлы из каталога STATIC_ROOT не выполняя поиск всех статических файлов, как это делает django.contrib.staticfiles.
-
-Настройка статики
-=================
-Убедитесь что django.contrib.staticfiles добавлено INSTALLED_APPS.
-
-В настройках укажите STATIC_URL, например:
-
-        STATIC_URL = '/static/'
-В шаблоне или “захардкодьте” URL /static/my_app/myexample.jpg, или лучше использовать тег static для генерация URL-а по указанному относительному пути с использованием бэкенда, указанного в STATICFILES_STORAGE (это позволяет легко перенести статические файлы на CDN).
-
-        {% load staticfiles %}
-        <img src="{% static "my_app/myexample.jpg" %}" alt="My image"/>
-Сохраните статические файлы в каталоге static вашего приложения. Например my_app/static/my_app/myimage.jpg.
-
-Раздача файлов
---------------
-Кроме конфигурации, необходимо настроить раздачу статических файлов.
-
-При разработке, если вы используете django.contrib.staticfiles, это все происходит автоматически через runserver, при DEBUG равной True. Оно предназначено только для разработки, и не должно использоваться на боевом сервере.
-
-Ваш проект, возможно, будет содержать статические файлы, которые не относятся ни к одному из приложений. Настройка STATICFILES_DIRS указывает каталоги, которые проверяются на наличие статических файлов. По умолчанию эта настройка пустая. Например:
-
-        STATICFILES_DIRS = (
-            os.path.join(BASE_DIR, "static"),
-            '/var/www/static/',
-        )
-Пространства имен для статических файлов
-----------------------------------------
-Вы можете добавлять статические файлы непосредственно в каталог my_app/static/ (не создавая подкаталог my_app), но это плохая идея. Django использует первый найденный по имени файл и, если у вас есть файлы с одинаковым названием в разных приложениях, Django не сможет использовать оба. Необходимо как-то указать, какой файл использовать, и самый простой способ – это пространство имен. Просто положите их в каталог с названием приложения(my_app/static/my_app).
