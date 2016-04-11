@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product, Category
+from .models import Product, Category, OrderItem
 from .forms import CartAddProductForm
 
 from django.views.decorators.http import require_POST
 from .cart import Cart
-from .forms import CartAddProductForm
+from .forms import CartAddProductForm, OrderCreateForm
+
+from .tasks import order_created
 
 def index(request, category_slug=None):
     category = None
@@ -55,3 +57,24 @@ def cart_detail(request):
         item['update_quantity_form'] = CartAddProductForm(initial={'quantity': item['quantity'],
                                                                    'update': True})
     return render(request, 'shop/product/cart.html', {'cart': cart})
+
+def order_create(request):
+    cart = Cart(request)
+    if request.method == 'POST':
+        form = OrderCreateForm(request.POST)
+        if form.is_valid():
+            order = form.save()
+            for item in cart:
+                OrderItem.objects.create(order=order,
+                                         product=item['product'],
+                                         price=item['price'],
+                                         quantity=item['quantity'])
+            # clear the cart
+            cart.clear()
+            # launch task
+            order_created(order.id)
+            return render(request, 'shop/orders/created.html', {'order': order})
+    else:
+        form = OrderCreateForm()
+    return render(request, 'shop/orders/create.html', {'cart': cart,
+                                                        'form': form})
