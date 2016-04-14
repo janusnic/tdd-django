@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
+import datetime
+from django.utils import timezone
 
 @python_2_unicode_compatible
 class Category(models.Model):

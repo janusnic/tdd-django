@@ -1,0 +1,5 @@
+        <ul>
+          {% for p in products %}
+            <li><a href="{% url 'shop:product_index_by_category' p.id %}">{{ p.name }}</a>
+          {% endfor %}
+        </ul>

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Category, Product, Order, OrderItem
 from ckeditor.widgets import CKEditorWidget
+from django import forms
 
 class CategoryAdmin(admin.ModelAdmin):
 
