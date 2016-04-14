@@ -48,6 +48,7 @@ class Product(models.Model):
 
     objects = models.Manager() # The default manager.
     available = AvailabledManager() # The Dahl-specific manager.
+    views = models.IntegerField(default=0)
 
     class Meta:
         ordering = ('-price','-updated',)
@@ -61,6 +62,17 @@ class Product(models.Model):
             s += ' (not available)'
         return s
 
+    def was_updated_recently(self):
+        return self.updated >= timezone.now() - datetime.timedelta(days=1)
+    was_updated_recently.admin_order_field = 'updated'
+    was_updated_recently.boolean = True
+    was_updated_recently.short_description = 'Updated recently?'
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    
     def get_absolute_url(self):
         return reverse('shop:product_detail', args=[self.id, self.slug])
 

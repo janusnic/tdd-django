@@ -29,6 +29,15 @@
         <h2><a href="{{ product.category.get_absolute_url }}">{{ product.category }}</a></h2>
         <p class="price">${{ product.price }}</p>
 
+        <p class="raiting">
+
+                {% if product.views > 1 %}
+                    ({{ product.views }} views)
+                {% elif product.views == 1 %}
+                    ({{ product.views }} view)
+                {% endif %}
+        </p>
+
         <form action="{% url "shop:cart_add" product.id %}" method="post">
             {{ cart_product_form }}
             {% csrf_token %}

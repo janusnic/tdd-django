@@ -31,8 +31,28 @@
                 <h4>${{ product.price }}</h4>
             </div>
         {% endfor %}
+
+        <!-- Next/Prev page links  --> 
+          {% if products.object_list and products.paginator.num_pages > 1 %} 
+            <div class="pagination" style="margin-top: 20px; margin-left: -20px; "> 
+                <span class="step-links"> 
+                    {% if products.has_previous %} 
+                        <a href= "?page={{ products.previous_page_number }}">newer entries &lt;&lt; </a> 
+                    {% endif %} 
+
+                    <span class="current"> 
+                        &nbsp;Page {{ products.number }} of {{ products.paginator.num_pages }} 
+                    </span> 
+
+                    {% if products.has_next %} 
+                        <a href="?page={{ products.next_page_number }}"> &gt;&gt; older entries</a> 
+                    {% endif %} 
+                </span> 
+            </div> 
+           {% endif %}
         
         </div>
       </div>
      <hr>
 {% endblock %}
+

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Category, Product, Order, OrderItem
-# Register your models here.
+from ckeditor.widgets import CKEditorWidget
 
 class CategoryAdmin(admin.ModelAdmin):
 
@@ -12,9 +12,34 @@ class CategoryAdmin(admin.ModelAdmin):
 admin.site.register(Category,CategoryAdmin)
 
 
+class ProductAdminForm(forms.ModelForm):
+    description = forms.CharField(widget=CKEditorWidget())
+
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+def make_availabled(modeladmin, request, queryset):
+    queryset.update(status='available')
+make_availabled.short_description = "Mark selected products as availabled"
+
 class ProductAdmin(admin.ModelAdmin):
 
-    # list_display = ('name', 'updated')
+    def make_not_availabled(self, request, queryset):
+        queryset.update(status=DRAFT)
+    make_not_availabled.short_description = "Mark selected products as not availabled"
+
+    def make_for_sale(self, request, queryset):
+        rows_updated = queryset.update(status='sale')
+        if rows_updated == 1:
+            message_bit = "1 product was"
+        else:
+            message_bit = "%s products were" % rows_updated
+            self.message_user(request, "%s successfully marked as for sale." % message_bit)
+    make_for_sale.short_description = "Mark selected stories as for sale"
+
+
+    list_display = ('name', 'updated', 'was_updated_recently')
     list_filter = ['updated']
     search_fields = ['name']
     ordering = ['updated']
@@ -27,7 +52,13 @@ class ProductAdmin(admin.ModelAdmin):
                 ('Metas',            {'fields': ['status','price','stock']}),
             ]
     prepopulated_fields = {"slug": ("name",)}
+
+    actions = [make_availabled, 'make_not_availabled', 'make_for_sale']
+    
+    form = ProductAdminForm
     date_hierarchy = 'updated'
+
+
 
 admin.site.register(Product, ProductAdmin)
 

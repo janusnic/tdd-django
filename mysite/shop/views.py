@@ -6,13 +6,25 @@ from django.views.decorators.http import require_POST
 from .cart import Cart
 from .forms import CartAddProductForm, OrderCreateForm
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 from .tasks import order_created
 
 def index(request, category_slug=None):
     category = None
     categories = Category.objects.all()
-    # products = Product.objects.filter(status='available')
+    
     products = Product.available.all()
+
+    paginator = Paginator(products, 2)
+
+    try: page = int(request.GET.get("page", '1'))
+    except ValueError: page = 1
+
+    try:
+        products = paginator.page(page)
+    except (InvalidPage, EmptyPage):
+        products = paginator.page(paginator.num_pages)
     
     if category_slug:
         category = get_object_or_404(Category, slug=category_slug)
@@ -24,6 +36,13 @@ def index(request, category_slug=None):
 
 def product_detail(request, id, slug):
     product = get_object_or_404(Product, id=id, slug=slug, status='available')
+
+    try:
+        product.views = product.views + 1
+        product.save()
+    except:
+        pass
+
     cart_product_form = CartAddProductForm()
     return render(request,
                   'shop/product/detail.html',

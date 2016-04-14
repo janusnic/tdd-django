@@ -24,6 +24,7 @@ urlpatterns = [
     
     url(r'^$', views.home, name='main'),
     url(r'^shop/', include('shop.urls', namespace='shop')),
+    url(r'^ckeditor/', include('ckeditor_uploader.urls')),
     url(r'^admin/', admin.site.urls),
 ]
 if settings.DEBUG:
