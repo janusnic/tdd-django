@@ -1,776 +1,774 @@
-# tdd-django unit_09
+# tdd-django unit_10
 
-Настройки ModelAdmin
-=====================
-ModelAdmin очень гибкий. Он содержит ряд параметров для настройки интерфейса администратора. Все настройки определяются в подклассе ModelAdmin:
+Аутентификация пользователей в Django
+=====================================
+Django поставляется с системой аутентификации пользователей. Она обеспечивает пользовательские аккаунты, группы, права и сессии на основе куки.
+
+Система аутентификации Django отвечает за оба аспекта: аутентификацию и авторизацию. аутентификация проверяет пользователя, а авторизация определяет, что аутентифицированный пользователь может делать.
+
+Система аутентификации состоит из:
+----------------------------------
+1. Пользователей
+
+2. Прав: Бинарные (да/нет) флаги, определяющие наличие у пользователя права выполнять определённые действия.
+
+3. Групп: Общий способ назначения меток и прав на множество пользователей.
+
+4. Настраиваемой системы хеширования паролей
+
+5. Инструментов для форм и представлений для аутентификации пользователей или для ограничения доступа к контенту
+
+Поддержка аутентификации скомпонована в виде модуля в django.contrib.auth. По умолчанию, требуемые настройки уже включены в settings.py, создаваемый с помощью команды django-admin startproject, и представляют собой две записи в параметре конфигурации INSTALLED_APPS:
+
+1. 'django.contrib.auth' содержит ядро системы аутентификации и её стандартные модели.
+
+2. 'django.contrib.contenttypes' является фреймворком типов, который позволяет правам быть назначенными на создаваемые вами модели.
+
+две записи в параметре конфигурации MIDDLEWARE_CLASSES:
+-------------------------------------------------------
+1. SessionMiddleware управляет сессиями во время запросов.
+
+2. AuthenticationMiddleware ассоциирует пользователей с запросами с помощью сессий.
+
+При наличии этих настроек, применение команды manage.py migrate создаёт в базе данных необходимые для системы аутентификации таблицы, создаёт права для любых моделей всех зарегистрированных приложений.
+
+Использование системы аутентификации пользователя
+=================================================
+
+Создание пользователей
+----------------------
+        Самый простой способ создать пользователя – использовать метод create_user():
+
+        from django.contrib.auth.models import User
+        user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
+
+        # At this point, user is a User object that has already been saved
+        # to the database. You can continue to change its attributes
+        # if you want to change other fields.
+        user.last_name = 'Lennon'
+        user.save()
+
+Создание суперпользователя
+--------------------------
+Суперпользователя можно создать с помощью команды createsuperuser:
+
+    $ python manage.py createsuperuser --username=joe --email=joe@example.com
+
+Команда попросит ввести пароль. Пользователь будет создан сразу же по завершению команды. Если не указывать --username или the --email, команда попросит ввести их.
+
+
+UserProfile:
+============
+
+        ./manage.py startapp userprofiles
+
+settings.py
+------------
+
+        # Application definition
+        INSTALLED_APPS = [
+            'django.contrib.admin',
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.messages',
+            'django.contrib.staticfiles',
+
+            'ckeditor',
+            'ckeditor_uploader',
+            'shop',
+            'userprofiles',
+        ]
+
+userprofiles/models.py
+--------------------------
+
+        from django.db import models
+        from django.utils.encoding import python_2_unicode_compatible
+        from django.contrib.auth.models import User
+        from django.db.models.signals import post_save
+        
+        @python_2_unicode_compatible
+        class UserProfile(models.Model):
+            # This line is required. Links UserProfile to a User model instance.
+            user = models.OneToOneField(User)
+
+            # The additional attributes we wish to include.
+
+            location = models.CharField(max_length=140, blank=True)
+            gender = models.CharField(max_length=140, blank=True)
+            age = models.IntegerField(default=0, blank=True)
+            company = models.CharField(max_length=50, blank=True)
+
+            website = models.URLField(blank=True)
+            profile_picture = models.ImageField(upload_to='thumbpath', blank=True)
+
+            # Override the __str__() method to return out something meaningful!
+            def __str__(self):
+                return self.user.username
+
+        def create_profile(sender, instance, created, **kwargs):
+            if created:
+                profile, created = UserProfile.objects.get_or_create(user=instance)
+
+        # Signal while saving user
+        post_save.connect(create_profile, sender=User)
+
+
+
+get_or_create(defaults=None, **kwargs)
+--------------------------------------
+Удобный метод для поиска объекта по заданным параметрам поиска kwargs (может быть пустым, если все поля содержат значения по умолчанию), и создания нового при необходимости.
+
+Возвращает кортеж (object, created), где object полученный или созданный объект и created – булево значение, указывающее был ли создан объект.
+
+Этот метод удобно использовать для скриптов импорта данных. Например:
+
+        try:
+            obj = Person.objects.get(first_name='John', last_name='Lennon')
+        except Person.DoesNotExist:
+            obj = Person(first_name='John', last_name='Lennon', birthday=date(1940, 10, 9))
+            obj.save()
+Такой способ становится весьма громоздким при увеличении количества полей модели. Пример выше может быть переписан с использованием метода get_or_create():
+
+        obj, created = Person.objects.get_or_create(first_name='John', last_name='Lennon',
+                          defaults={'birthday': date(1940, 10, 9)})
+
+Все именованные аргументы переданные в get_or_create() — кроме одного не обязательного defaults — будут использованы при вызове get(). Если объект найден, get_or_create() вернет этот объект и False. Если найдено несколько объектов - будет вызвано исключение MultipleObjectsReturned. Если объект не найден, get_or_create() создаст и сохранит новый объект, возвращая новый объект и True. Новый объект будет создан примерно за таким алгоритмом:
+
+        params = {k: v for k, v in kwargs.items() if '__' not in k}
+        params.update(defaults)
+        obj = self.model(**params)
+        obj.save()
+
+Это означает, что будут выбраны именованные аргументы кроме 'defaults' и не содержащие двойное подчеркивание (которые указывают на не-точный поиск). Затем добавляются значения из defaults, перезаписывая ключи при необходимости, полученные данные используются как аргументы для конструктора класса модели. Как уже указывалось выше, это упрощенный алгоритм, но все важные детали указаны. 
+
+Если модель содержит поле defaults и вы хотите использовать его в параметрах поиска в get_or_create(), просто используйте 'defaults__exact':
+
+    Foo.objects.get_or_create(defaults__exact='bar', defaults={'defaults': 'baz'})
+
+Метод get_or_create() использует аналогичное поведение с ошибками что и метод create(), если вы самостоятельно определяете значение первичного ключа. Если объект должен быть создан и значение первичного ключа уже существует в базе данных, будет вызвано исключение IntegrityError.
+
+Этот метод атомарный при правильном использовании, правильной настройке и работе БД. Однако, если уникальность полей не контролируется на уровне БД(unique или unique_together), этот метод склонен к “гонке-состояний” и в БД могут попасть не уникальные данные(при нескольких процессах запросы могут одновременно отправиться на выполнения к БД, а там уже ничего не проверяется).
+
+При использовании MySQL, убедитесь что используете READ COMMITTED вместо REPEATABLE READ (по умолчанию), иначе get_or_create может вызывать IntegrityError, но объект не будет возвращен последующим вызовом get().
+
+Наконец, несколько слов об использовании get_or_create() в представлениях Django. Пожалуйста используйте его только для POST запросов, если только у вас нет основательных причин не делать этого. Запросы GET не должны влиять на данные; используйте запрос POST для изменения данных. 
+
+Вы можете использовать get_or_create() с атрибутами ManyToManyField и обратными внешними связями. При это запросы будут ограничены контекстом связи. Это может вызвать некоторые проблемы при создании объектов.
+
+Возьмем следующие модели:
+
+        class Chapter(models.Model):
+            title = models.CharField(max_length=255, unique=True)
+
+        class Book(models.Model):
+            title = models.CharField(max_length=256)
+            chapters = models.ManyToManyField(Chapter)
+
+Вы можете использовать get_or_create() для поля chapters модели Book, но будут учитывать только объекты связанные с конкретной книгой:
+
+        >>> book = Book.objects.create(title="Ulysses")
+        >>> book.chapters.get_or_create(title="Telemachus")
+        (<Chapter: Telemachus>, True)
+        >>> book.chapters.get_or_create(title="Telemachus")
+        (<Chapter: Telemachus>, False)
+        >>> Chapter.objects.create(title="Chapter 1")
+        <Chapter: Chapter 1>
+        >>> book.chapters.get_or_create(title="Chapter 1")
+        # Raises IntegrityError
+
+Это произошло, потому что мы пытались получить или создать “Chapter 1” для книги “Ulysses”, но ни один объект не был найден, т.к. он не связан с этой книгой, и мы получили ошибку при попытке его создать т.к. поле title должно быть уникальным.
+
+
+Прослушивание сигналов
+======================
+Для того, чтобы принять сигнал, Вам необходимо с помощью метода Signal.connect() зарегистрировать функцию receiver, которая вызывается, когда сигнал послан:
+
+        Signal.connect(receiver[, sender=None, weak=True, dispatch_uid=None])
+Параметры:  
+- receiver – Функция, которая будет привязана к этому сигналу. Смотрите Функции-получатели.
+- sender – Указывает конкретного отправителя. Смотрите Сигналы, получаемые от определённых отправителей..
+- weak – Django сохраняет обработчики сигналов используя слабые ссылки(weak references). Поэтому, если функция-обработчик является локальной функцией, сборщик мусора может удалить ее. Чтобы избежать этого, передайте weak=False в connect().
+- dispatch_uid – Уникальный идентификатор получателя сигнала. На случай, если назначение обработчика может вызываться несколько раз. Смотрите Предотвращение дублирования сигналов.
+
+Функции-получатели
+------------------
+Во-первых, мы должны определить функцию-получатель. Получатель должен быть Python функцией или методом:
+
+        def my_callback(sender, **kwargs):
+            print("Request finished!")
+Заметьте, что функция принимает аргумент sender, а также аргументы (**kwargs) в формате словаря; все обработчики сигналов должны принимать подобные аргументы.
+
+Все сигналы имеют возможность посылать именованные аргументы и могут изменить их набор в любой момент. Сигнал request_finished документирован как не посылающий аргументов, и у нас может появиться искушение записывать наш обработчик сигнала в виде my_callback(sender).
+
+Регистрация функции-получателя
+------------------------------
+Есть два способа, которыми Вы можете подключить получатель к сигналу. Вы можете вручную вызвать connect:
+
+        from django.core.signals import request_finished
+
+        request_finished.connect(my_callback)
+Кроме того, вы можете использовать декоратор receiver() при определении вашего получателя:
+
+        receiver(signal)
+Параметры:  signal – Сигнал или список обрабатываемых сигналов.
+Вот как можно использовать декоратор:
+
+        from django.core.signals import request_finished
+        from django.dispatch import receiver
+
+        @receiver(request_finished)
+        def my_callback(sender, **kwargs):
+            print("Request finished!")
+Теперь наша функция my_callback будет вызываться каждый раз, когда запрос завершается.
+
+Код обработчиков сигналов и подключения может находиться где угодно. Но мы рекомендуем избегать корневого модуля приложения и models, чтобы сократить побочный эффект при импорте приложения.
+
+На практике, обработчики сигналов лежат в модуле signals приложения, к которому они относятся. Подключение к сигналам выполняется в методе ready() конфигурационного класса приложения. При использовании декоратора receiver() просто импортируйте модуль signals в ready().
+
+Т.к. ready() не существует в предыдущих версиях Django, регистрацию обработчиков сигналов обычно выполняют в модуле models.
+
+Метод ready() можно выполнить более одного раза во время тестировани, таким образом, вам может потребоваться защитить ваши сигналы от дублирования, особенно, если вы планируете отправлять их из тестов.
+Сигналы, получаемые от определённых отправителей.
+-------------------------------------------------
+Некоторые сигналы могу быть посланы много раз, но Вам будет нужно получать только определённое подмножество этих сигналов. Например, рассмотрим django.db.models.signals.pre_save - сигнал, посылаемый перед сохранением модели. Бывает, что Вам не нужно знать о сохранении любой модели, Вас интересует только одна конкретная модель:
+
+В этих случаях Вы можете получать только сигналы, посланные определёнными отправителями. В случае django.db.models.signals.pre_save отправитель будет сохраняемой моделью некоторого класса, так что вы можете указать, что вы хотите получать только сигналы, посылаемые этой моделью:
+
+        from django.db.models.signals import pre_save
+        from django.dispatch import receiver
+        from myapp.models import MyModel
+
+
+        @receiver(pre_save, sender=MyModel)
+        def my_handler(sender, **kwargs):
+            ...
+Функция my_handler будет вызвана только при сохранении объекта класса MyModel.
+
+Предотвращение дублирования сигналов
+-------------------------------------
+В некоторых случаях модуль, в котором Вы подключаете сигналы, может быть импортирован несколько раз. Это может привести к тому, что получатель сигнала будет зарегистрирован несколько раз, и таким образом, вызов сигнала произойдет несколько раз при наступлении одного и того же события.
+
+Такое поведение может приводить к проблемам (например, если происходит отправка электронной почты всякий раз, когда посылается сигнал о сохранении модели), поэтому передавайте некоторый уникальный идентификатор в качестве значения аргумента dispatch_uid для идентификации в функции-получателе. Обычно, этот идентификатор является строкой, хотя подойдёт любой хешируемый объект. В итоге функция-получатель будет привязана к сигналу единожды для каждого уникального значения dispatch_uid.
+
+        from django.core.signals import request_finished
+
+        request_finished.connect(my_callback, dispatch_uid="my_unique_identifier")
+Создание и посылка сигналов.
+---------------------------
+Вы можете создавать свои собственные сигналы в ваших приложениях.
+
+Создание сигналов
+-----------------
+        class Signal([providing_args=list])
+Все сигналы являются экземплярами класса django.dispatch.Signal, где providing_args – список названий аргументов сигнала, которые будут доступны слушателям. Этот аргумент предназначен просто для документирования, никакой проверки, передаёт ли сигнал эти параметры, не выполняется.
+
+Например:
+
+        import django.dispatch
+
+        pizza_done = django.dispatch.Signal(providing_args=["toppings", "size"])
+Это объявление сигнала pizza_done, который предоставит получателям аргументы toppings и size.
+
+Вы можете задать в этом списке аргументов любые значения передаваемых параметров.
+
+Отправка сигналов
+------------------
+В Django существует два способа отправки сигналов.
+
+        Signal.send(sender, **kwargs)
+        Signal.send_robust(sender, **kwargs)
+Для отправки сигнала необходимо вызвать Signal.send() или Signal.send_robust(). Вы обязательно должны указать аргумент ``sender``(обычно это класс), кроме того можно указать сколько угодно других именованных аргументов.
+
+Например, вот как может выглядеть отправка сигнала pizza_done:
+
+        class PizzaStore(object):
+            ...
+
+            def send_pizza(self, toppings, size):
+                pizza_done.send(sender=self.__class__, toppings=toppings, size=size)
+                ...
+И send(), и send_robust() возвращают список кортежей пар [(receiver, response), ... ]. Каждый кортеж содержит вызываемую функцию и ее ответ.
+
+send() отличается от send_robust() способом обработки исключений, генерируемых функцией-получателем. send() не ловит никаких исключений, сгенерированных в получателе, позволяя исключению проваливаться дальше. Таким образом, не все получатели могут получить сигнал при возникновении ошибки.
+
+send_robust() перехватывает все ошибки, наследуемые от класса Exception языка Python, и гарантирует, что сигнал дойдёт до всех получателей. Если произойдёт ошибка в одном из них, экземпляр исключения будет помещён в кортежную пару, для получателя, который соответствует вызываемой ошибке.
+
+Трассировочная информация доступна через атрибут __traceback__ ошибок, возвращаемых при вызове send_robust().
+
+Отключение сигнала
+------------------
+        Signal.disconnect([receiver=None, sender=None, weak=True, dispatch_uid=None])
+Чтобы отключить получатель от сигнала, вызовите Signal.disconnect(). Аргументы те же, что и у Signal.connect(). Метод возвращает True в случае, если получатель был отключен и False - если нет.
+
+В аргументе receiver указывается получатель, который должен перестать получать сигнал. Аргумент может содержать None, если для идентификации получателя используется dispatch_uid.
+
+Migrations
+------------
+
+        ./manage.py makemigrations userprofiles
+        Migrations for 'userprofiles':
+          0001_initial.py:
+            - Create model UserProfile
+        ./manage.py migrate
+        Operations to perform:
+          Apply all migrations: sessions, blog, admin, userprofiles, contenttypes, auth
+        Running migrations:
+          Rendering model states... DONE
+          Applying userprofiles.0001_initial... OK
+
+Объект InlineModelAdmin
+=======================
+Интерфейс администратора позволяет редактировать связанные объекты на одной странице с родительским объектом. Это называется “inlines”.
+
+Вы можете редактировать userprofile на странице редактирования user.
+
+Вы добавляете “inlines” к модели добавив их в ModelAdmin.inlines:
+userprofiles/admin.py
+-------------------------
 
         from django.contrib import admin
+        from .models import UserProfile
+        from django.contrib.auth.admin import UserAdmin
+        from django.contrib.auth import get_user_model
 
-        class ProductAdmin(admin.ModelAdmin):
+        class UserProfileInline(admin.StackedInline):
+            model = UserProfile
+            can_delete = False
 
-            list_filter = ['updated']
-            search_fields = ['name']
-            ordering = ['updated']
-            readonly_fields = ('created','updated')
-            fieldsets = [
-                        ('Item',             {'fields': [('name','slug'),'category']}),
-                        ('Date information', {'fields': [('created','updated')], 'classes': ['collapse']}),
-                        ('Description',      {'fields': ['description']}),
-                        ('Medias',           {'fields': ['image']}),
-                        ('Metas',            {'fields': ['status','price','stock']}),
-                    ]
-            prepopulated_fields = {"slug": ("name",)}
-            date_hierarchy = 'updated'
+        class UserProfileAdmin(UserAdmin):
+            inlines=(UserProfileInline, )
+
+        admin.site.unregister(get_user_model())
+        admin.site.register(get_user_model(), UserProfileAdmin)
 
 
-## ModelAdmin.actions
-Список действий, которые будут включены на странице списка объектов. 
+Django предоставляет два подкласса InlineModelAdmin:
+------------------------------------------------------------------
+  1. TabularInline
+  2. StackedInline
+  Разница между ними только в используемом шаблоне.
 
-Повседневный алгоритм работы с административным интерфейсом Django выглядит как “выделить объект, затем изменить его.” Он подходит для большинства случаев. Тем не менее, когда потребуется выполнить одно и то же действие над множеством объектов.
+Создание форм в Django Класс Form
+=================================
 
-В таких случаях административный интерфейс Django позволяет вам создать и зарегистрировать “действия” – простые функции, которые вызываются для выполнения неких действий над списком объектов, выделенных на странице интерфейса.
+        from django import forms
+        from django.contrib.auth.models import User
 
-Если вы взгляните на любой список изменений на интерфейсе администратора, вы увидите эту возможность в действии. Django поставляется с действием “удалить выделенные объекты”, которое доступно для всех моделей. 
+        class RegistrationForm(forms.Form):
+            username = forms.RegexField(label="Username", max_length=30,
+                regex=r'^[\w.-]+$', error_messages={'invalid': 'This value may contain only letters, numbers and ./-/_ characters.'})
+            email = forms.EmailField(label='E-mail')
+            password = forms.CharField(label='Password',
+                widget=forms.PasswordInput(render_value=False))
 
-Создание действий
-==================
-Общим способом использования действий в интерфейсе администратора является пакетное изменение модели. 
+Максимальное количество символом в значении мы указали с помощью параметра max_length. Он используется для двух вещей. Будет добавлен атрибут maxlength="30" в HTML тег input (теперь браузер не позволит пользователю ввести больше символов, чем мы указали). Также Django выполнит проверку введенного значения, когда получит запрос с браузера с введенными данными.
 
-class Product:
+Экземпляр Form содержит метод is_valid(), который выполняет проверку всех полей формы. Если все данные правильные, это метод:
+- вернет True
+- добавит данные формы в атрибут cleaned_data.
+
+После рендеринга наша форма будет выглядеть следующим образом:
+
+
+        <p><label for="id_username">Username:</label> <input class="form-control" id="id_username" maxlength="30" name="username" placeholder="Enter Your User Name" type="text" /></p>
+        <p><label for="id_email">E-mail:</label> <input class="form-control" id="id_email" name="email" placeholder="johndoe@company.com" type="email" /></p>
+        <p><label for="id_password">Password:</label> <input class="form-control" id="id_password" name="password" placeholder="Easy to remember, hard to guess" type="password" /></p>
+
+Обратите внимание, она не содержит тег form, или кнопку отправки. Вам необходимо самостоятельно их добавить в шаблоне.
+
+Представление
 --------------
+Данные формы отправляются обратно в Django и обрабатываются представлением, обычно тем же, которое и создает форму. Это позволяет повторно использовать часть кода.
 
-        @python_2_unicode_compatible
-        class Product(models.Model):
-            
-            STATUS_CHOICES = (
-                ('available', 'Available'),
-                ('sale', 'For Sale'),
-                ('onstock', 'On Stock'),
-                ('notavailbl', 'Not Available'),
-            )
-           
-            status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='available')
-            created = models.DateTimeField(auto_now_add=True)
+Для обработки данных формой нам необходимо создать ее в представлении для URL, на который браузер отправляет данные формы:
 
+        # -*- coding: utf-8 -*-
+        from django.contrib.auth import authenticate, login
+        from django.shortcuts import redirect
+        from django.views.generic import FormView, TemplateView
 
+        from userprofiles.utils import get_form_class
+        from django.core.urlresolvers import reverse
+        from django.http import HttpResponseRedirect, HttpResponse
 
-Стандартной задачей, которую мы будем выполнять с подобной моделью, будет изменение состояний с 'Not Available' на Available. 
+        class RegistrationView(FormView):
+            form_class = get_form_class('userprofiles.forms.RegistrationForm')
+            template_name = 'userprofiles/registration.html'
 
-## Создание функций для действий
-Сначала нам потребуется написать функцию, которая вызывается при выполнении действия в интерфейсе администратора. Функции действий - это обычные функции, которые принимают три аргумента:
+            def form_valid(self, form):
+                form.save()
+                username = form.cleaned_data['username']
+                password = form.cleaned_data['password']
 
-- Экземпляр класса ModelAdmin,
-- Экземпляр класса HttpRequest, представляющий текущий запрос,
-- Экземпляр класса QuerySet, содержащий набор объектов, которые выделил пользователь.
+                # return redirect(up_settings.REGISTRATION_REDIRECT)
+                url = reverse('users:userprofiles_registration_complete')
+                return HttpResponseRedirect(url)
 
-Наша функция make_availabled не нуждается в экземпляре ModelAdmin или в объекте реквеста, но использует выборку:
+        registration = RegistrationView.as_view()
 
-        def make_availabled(modeladmin, request, queryset):
-            queryset.update(status='available')
 
+Если в представление пришел GET запрос, будет создана пустая форма и добавлена в контекст шаблона для последующего рендеринга. Это мы и ожидаем получить первый раз открыв страницу с формой.
 
-В целях улучшения производительности, мы используем метод выборки update method. Другие типы действий могут обрабатывать каждый объект индивидуально. В таких случаях мы просто выполняем итерацию по выборке:
+Если форма отправлена через POST запрос, представление создаст форму с данными из запроса: form = RegistrationForm(request.POST) Это называется “привязать данные к форме” (теперь это связанная с данными форма).
 
-        for obj in queryset:
-            do_something_with(obj)
-
-
-Обеспечим действие “красивым” заголовком, который будет отображаться в интерфейсе администратора. По умолчанию, это действие будет отображено в списке действий как “Make availabled”, т.е. по имени функции, где символы подчёркивания будут заменены пробелами. 
-
-make_availabled атрибут short_description:
-
-        def make_availabled(modeladmin, request, queryset):
-            queryset.update(status='available')
-        make_availabled.short_description = "Mark selected products as availabled"
-
-Добавление действий в класс ModelAdmin
----------------------------------------
-Затем мы должны проинформировать наш класс ModelAdmin о новом действии. Это действие аналогично применению любой другой опции конфигурации. Таким образом, полный пример admin.py с определением действия и его регистрации будет выглядеть так:
-
-
-        def make_availabled(modeladmin, request, queryset):
-            queryset.update(status='available')
-        make_availabled.short_description = "Mark selected products as availabled"
-
-
-        class ProductAdmin(admin.ModelAdmin):
-
-            list_filter = ['updated']
-            search_fields = ['name']
-            ordering = ['updated']
-            readonly_fields = ('created','updated')
-            fieldsets = [
-                        ('Item',             {'fields': [('name','slug'),'category']}),
-                        ('Date information', {'fields': [('created','updated')], 'classes': ['collapse']}),
-                        ('Description',      {'fields': ['description']}),
-                        ('Medias',           {'fields': ['image']}),
-                        ('Metas',            {'fields': ['status','price','stock']}),
-                    ]
-            prepopulated_fields = {"slug": ("name",)}
-            date_hierarchy = 'updated'
-
-            actions = [make_availabled,]
-
-
-Обработка ошибок в действиях
------------------------------
-При наличии предполагаемых условий возникновения ошибки, которая может возникнуть во время работы вашего действия, вы должны аккуратно проинформировать пользователя о проблеме. Это подразумевает обработку исключений и использование метода django.contrib.admin.ModelAdmin.message_user() для отображения описания проблемы в отклике.
-
-Действия как методы ModelAdmin
-------------------------------
-так как действия связано с объектом Product, то правильнее будет внедрить это действие в сам объект ProductAdmin.
-
-        class ProductAdmin(admin.ModelAdmin):
-            ...
-
-            actions = [make_availabled, 'make_not_availabled']
-
-            def make_not_availabled(self, request, queryset):
-                queryset.update(status=DRAFT)
-            make_not_availabled.short_description = "Mark selected products as not availabled"
-
-это указывает классу ModelAdmin искать действие среди своих методов.
-
-Определение действий в виде методов предоставляет действиям более прямолинейный, идеоматический доступ к самому объекту ModelAdmin, позволяя вызывать любой метод, предоставляемый интерфейсом администратора.
-
-мы можем использовать self для вывода сообщения для пользователя в целях его информирования об успешном завершении действия:
-
-        class ProductAdmin(admin.ModelAdmin):
-            ...
-
-            actions = [make_availabled, 'make_not_availabled', 'make_for_sale']
-
-            def make_not_availabled(self, request, queryset):
-                queryset.update(status=DRAFT)
-            make_not_availabled.short_description = "Mark selected products as not availabled"
-
-            def make_for_sale(self, request, queryset):
-                rows_updated = queryset.update(status='sale')
-                if rows_updated == 1:
-                    message_bit = "1 product was"
-                else:
-                    message_bit = "%s products were" % rows_updated
-                self.message_user(request, "%s successfully marked as for sale." % message_bit)
-            make_for_sale.short_description = "Mark selected stories as for sale"
-
-
-Это обеспечивает действие функционалом, аналогичным встроенным возможностям интерфейса администратора
-
-Отключение действий
---------------------
-Иногда требуется отключать определённые действия, особенно зарегистрированные глобально, для определённых объектов. Существует несколько способов для этого:
-
-Отключение глобального действия
---------------------------------
-#### AdminSite.disable_action(name)
-Если требуется отключить глобальное действие, вы можете вызвать метод AdminSite.disable_action().
-
-Например, вы можете использовать данный метод для удаления встроенного действия “delete selected objects”:
-
-        admin.site.disable_action('delete_selected')
-
-После этого действие больше не будет доступно глобально.
-
-Тем не менее, если вам потребуется вернуть глобально отключенное действия для одной конкретной модели, просто укажите это действия явно в списке ModelAdmin.actions:
-
-
-        # Globally disable delete selected
-        admin.site.disable_action('delete_selected')
-
-        # This ModelAdmin will not have delete_selected available
-        class SomeModelAdmin(admin.ModelAdmin):
-            actions = ['some_other_action']
-            ...
-
-        # This one will
-        class AnotherModelAdmin(admin.ModelAdmin):
-            actions = ['delete_selected', 'a_third_action']
-            ...
-
-Отключение всех действия для определённого экземпляра ModelAdmin
------------------------------------------------------------------
-Если вам требуется запретить пакетные действия для определённого экземпляра ModelAdmin, просто установите атрибут ModelAdmin.actions в None:
-
-        class MyModelAdmin(admin.ModelAdmin):
-            actions = None
-
-Это укажет экземпляру ModelAdmin не показывать и не позволять выполнения никаких действий, включая зарегистрированные глобально.
-
-Условное включение и отключение действий
-----------------------------------------
-### ModelAdmin.get_actions(request)
-Наконец, вы можете включать или отключать действия по некоему условию на уровне запроса (и, следовательно, на уровне каждого пользователя), просто переопределив метод ModelAdmin.get_actions().
-
-Он возвращает словарь разрешённых действий. Ключами являются имена действий, а значениями являются кортежи вида (function, name, short_description).
-
-Чаще всего вы будете использовать данный метод для условного удаления действия из списка, полученного в родительском классе. Например, если мне надо разрешить пакетное удаление объектов только для products с именами, начинающимися с буквы ‘S’:
-
-        class ProductAdmin(admin.ModelAdmin):
-            ...
-
-            def get_actions(self, request):
-                actions = super(ProductAdmin, self).get_actions(request)
-                if request.product.name[0].upper() != 'S':
-                    if 'delete_selected' in actions:
-                        del actions['delete_selected']
-                return actions
-
-
-Действие “удалить выделенные объекты” использует метод QuerySet.delete() по соображениям эффективности, который имеет важный недостаток: метод delete() вашей модели не будет вызван.
-
-Если вам потребуется изменить такое поведение, то просто напишите собственное действие, которое выполняет удаление в необходимой вам манере, например, вызывая Model.delete() для каждого выделенного элемента.
-
-### ModelAdmin.actions_on_top
-### ModelAdmin.actions_on_bottom
-Определяет где на странице будет расположены панели с действиями. По умолчанию эта панель расположена сверху (actions_on_top = True; actions_on_bottom = False).
-
-### ModelAdmin.actions_selection_counter
-Указывает отображать ли счетчик выбранных объектов после списка действий. По умолчанию он отображается (actions_selection_counter = True).
-
-### ModelAdmin.date_hierarchy
-Укажите в date_hierarchy название DateField или DateTimeField поля вашей модели, и страница списка объектов будет содержать навигацию по датам из этого поля.
-
-        date_hierarchy = 'updated'
-
-Навигация учитывает значения поля, например, если все значения будут датами из одного месяца, будут отображаться только дни этого месяца.
-
-date_hierarchy использует внутри QuerySet.datetimes() (USE_TZ = True).
-
-## ModelAdmin.formfield_overrides
-Позволяет быстро изменить настройки отображения различных типов Field в интерфейсе администратора. formfield_overrides – словарь указывающий параметры для классов полей, которые будут передаваться в конструкторы указанных полей.
-
-Model
------
-
-    def was_updated_recently(self):
-        return self.updated >= timezone.now() - datetime.timedelta(days=1)
-    was_updated_recently.admin_order_field = 'updated'
-    was_updated_recently.boolean = True
-    was_updated_recently.short_description = 'Updated recently?'
-
-
-admin
-------
-
-        class ProductAdmin(admin.ModelAdmin):
-
-            list_display = ('name', 'updated', 'was_updated_recently')
-            list_filter = ['updated']
-            search_fields = ['name']
-            ordering = ['updated']
-
-
-Постраничный вывод - Paginator
-==============================
-
-Django предоставляет несколько классов, которые помогают реализовать постраничный вывод данных, т.е. данных, распределённых на несколько страниц с ссылками «Предыдущая/Следующая». Эти классы располагаются в django/core/paginator.py.
-
-вы можете передать классу Paginator список/кортеж, QuerySet Django или любой другой объект, который имеет методы count() или __len__(). Для определения количества объектов, содержащихся в переданном объекте, Paginator сначала попробует вызвать метод count(), затем, при его отсутствии, вызывает len(). Такой подход позволяет объектам, подобным QuerySet, более эффективно использовать метод count() при его наличии.
-
-Использование Paginator в представлении
----------------------------------------
-
-        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-        def index(request, category_slug=None):
-            category = None
-            categories = Category.objects.all()
-            
-            products = Product.available.all()
-
-            paginator = Paginator(products, 2)
-
-            try: page = int(request.GET.get("page", '1'))
-            except ValueError: page = 1
-
-            try:
-                products = paginator.page(page)
-            except (InvalidPage, EmptyPage):
-                products = paginator.page(paginator.num_pages)
-            
-            if category_slug:
-                category = get_object_or_404(Category, slug=category_slug)
-                products = products.filter(category=category)
-            return render(request, 'shop/product/index.html', {'category': category,
-                                                              'categories': categories,
-                                                              'products': products})
-
-
-В шаблоне index.html подключен блок навигации по страницам:
-
-         <!-- Next/Prev page links  --> 
-          {% if products.object_list and products.paginator.num_pages > 1 %} 
-            <div class="pagination" style="margin-top: 20px; margin-left: -20px; "> 
-                <span class="step-links"> 
-                    {% if products.has_previous %} 
-                        <a href= "?page={{ products.previous_page_number }}">newer entries &lt;&lt; </a> 
-                    {% endif %} 
-
-                    <span class="current"> 
-                        &nbsp;Page {{ products.number }} of {{ products.paginator.num_pages }} 
-                    </span> 
-
-                    {% if products.has_next %} 
-                        <a href="?page={{ products.next_page_number }}"> &gt;&gt; older entries</a> 
-                    {% endif %} 
-                </span> 
-            </div> 
-           {% endif %}
-
-
-Объекты Paginator
-------------------
-У класса Paginator есть конструктор:
-
-        class Paginator(object_list, per_page, orphans=0, allow_empty_first_page=True)
-
-Обязательные аргументы
-----------------------
-- object_list
-Список, кортеж, Django QuerySet, или другой контейнер, у которого есть метод count() или``__len__()``.
-
-- per_page
-Максимальное количество элементов на странице, без учёта остатка.
-
-Необязательные аргументы
-------------------------
-- orphans
-Минимальное количество элементов на последней странице, по умолчанию, ноль. Используйте, когда нежелательно отображать последнюю страницу почти пустой. Если последняя страница будет содержать количество элементов меньше или равно orphans, то эти элементы будут добавлены к предыдущей странице (которая станет последней). Например, для 23 элементов, per_page=10``и ``orphans=3, будет выдано две страницы; первая страница будет содержать 10 элементов, а вторая (и последняя) — 13.
-
-- allow_empty_first_page
-Позволять или нет первой странице быть пустой. Если указан False и object_list пустой, то будет вызвано исключение EmptyPage.
-
-Методы
--------
-- Paginator.page(number)
-Возвращает объект Page по переданному индексу (начинается с единицы). Вызывает исключение InvalidPage, если указанная страница не существует.
-
-Атрибуты
----------
-- Paginator.count
-Общее количество объектов, распределенных по всем страницам.
-
-При определении количества объектов, содержащихся в object_list, Paginator сначала пробует вызвать object_list.count(). Если у object_list нет метода count(), то Paginator попробует вызвать len(object_list). Такой подход позволяет объектам, подобным QuerySet Django, более эффективно использовать метод count() при его наличии.
-
-- Paginator.num_pages
-Общее количество страниц.
-
-- Paginator.page_range
-Диапазон номеров страниц, начинающийся с единицы, т.е., [1, 2, 3, 4].
-
-InvalidPage исключения
-----------------------
-- exception InvalidPage
-Базовый класс для исключений, которые вызываются когда происходит запрос страницы по несуществующему номеру.
-
-Метод Paginator.page() вызывает исключение, если номер запрошенной страницы является неправильным (например, не представлен целым числом) или не содержит объектов. В общем случае, достаточно обрабатывать исключение InvalidPage
-
-- exception PageNotAnInteger
-Вызывается, если page() получает значение, которое не является целым числом.
-
-- exception EmptyPage
-Вызывается, если page() получает правильное значение, но для указанной страницы нет объектов.
-
-Эти исключения являются потомками класса InvalidPage, таким образом, вы можете обрабатывать их с помощью простого except InvalidPage.
-
-Объекты Page
---------------
-Обычно создавать объекты Page вручную не требуется, так как вы получаете их с помощью метода Paginator.page().
-
-        class Page(object_list, number, paginator)
-
-Страница работает как срез Page.object_list при использовании len() или итерации по ней.
-
-Методы
-------
-- Page.has_next()
-Возвращает True, если следующая страница существует.
-
-- Page.has_previous()
-Возвращает True, если предыдущая страница существует.
-
-- Page.has_other_pages()
-Возвращает True, если существует следующая или предыдущая страница.
-
-- Page.next_page_number()
-Возвращает номер следующей страницы. Вызывает InvalidPage если следующая страница не существует.
-
-- Page.previous_page_number()
-Возвращает номер предыдущей страницы. Вызывает InvalidPage если предыдущая страница не существует.
-
-- Page.start_index()
-Возвращает индекс (начинается с единицы) первого объекта на странице относительно списка всех объектов. Например, для списка из пяти объектов при отображении двух объектов на странице, то для второй страницы метод start_index() вернёт 3.
-
-- Page.end_index()
-Возвращает индекс (начинается с единицы) последнего объекта на странице относительно списка всех объектов. Например, для списка из пяти объектов при отображении двух объектов на странице, то для второй страницы метод end_index() вернёт 4.
-
-Атрибуты
----------
-- Page.object_list
-Список объектов текущей страницы.
-
-- Page.number
-Номер (начинается с единицы) текущей страницы.
-
-- Page.paginator
-Соответствующий объект Paginator.
-
-
-Собственные шаблонные теги и фильтры
-====================================
-Шаблонизатор Django содержит большое количество встроенных тегов и фильтров. Тем не менее, вам может понадобиться добавить собственный функционал к шаблонам. Вы можете сделать это добавив собственную библиотеку тегов и фильтров используя Python, затем добавить ее в шаблон с помощью тега {% load %}.
-
-Добавление собственной библиотеки
----------------------------------
-Собственные теги и фильтры шаблонов должны определяться в приложении Django. Если они логически связаны с каким-то приложением, есть смысл добавить их в это приложение, иначе создайте новое приложение.
-
-Приложение должно содержать каталог templatetags на том же уровне что и models.py, views.py и др. Если он не существует, создайте его. Не забудьте создать файл __init__.py чтобы каталог мог использоваться как пакет Python. После добавления этого модуля, необходимо перезапустить сервер, перед тем как использовать теги или фильтры в шаблонах.
-
-templatetags
-------------
-теги и фильтры будут находиться в модуле пакета templatetags. Название модуля будет использоваться при загрузке библиотеки в шаблоне, так что убедитесь что оно не совпадает с названиями библиотек других приложений.
-
-Например, если теги/фильтры находятся в файле latest_products.py, ваше приложение может выглядеть следующим образом:
-
-        shop/
-            __init__.py
-            models.py
-            templatetags/
-                __init__.py
-                latest_products.py
-            views.py
-
-в шаблоне:
+Шаблон
 ----------
-
-        {% load latest_products %}
-
-Приложение содержащее собственные теги и фильтры должно быть добавлено в INSTALLED_APPS, чтобы тег {% load %} мог загрузить его. Это сделано в целях безопасности.
-
-Не имеет значение сколько модулей добавлено в пакет templatetags. тег {% load %} использует название модуля, а не название приложения.
-
-Библиотека тегов должна содержать переменную register равную экземпляру template.Library, в которой регистрируются все определенные теги и фильтры. 
-
-
-        # -*- coding: UTF-8 -*-
-        from django import template
-        from .models import Product
-
-        register=template.Library()
-
-
-Включающие теги
-================
-django.template.Library.inclusion_tag()
----------------------------------------
-это теги, которые выполняют другой шаблон и показывают результат. Например, интерфейс администратора Django использует включающий тег для отображения кнопок под формой на страницах добавления/редактирования объектов. Эти кнопки выглядят всегда одинаково, но ссылки зависят от текущего объекта – небольшой шаблон, который выполняется с данными из текущего объекта, удобно использовать в данном случае. (В приложении администратора это тег submit_row.)
-
-Такие теги называются “включающие теги”.
------------------------------------------
-создадим тег, который выводит список 6-и последних публикаций для объекта модели Product
-
-создадим функцию, которая возвращает словарь с данными. 
-
-```
-def latest_products():
-    products = Product.objects.order_by('-updated').filter(status='available')[:6]
-    return locals()
-```
-
-Using { } 
---------------
-```
-def latest_products():
-    return {
-            'products': Product.objects.order_by('-updated').filter(status='available')[:6],
-           }
-```
-locals():
-----------
-```
-def latest_products():
-    products = Product.objects.order_by('-updated').filter(status='available')[:6]
-    return locals()
-```
-
-создадим шаблон, который будет использоваться для генерации результата. Этот шаблон полностью относится к тегу: создатель тега определяет его, не создатель шаблонов(template designer).
-
-shop/product/_latest_products.html
-------------------------
-
-        <!-- _latest_products.html -->
-        <ul>
-          {% for p in products %}
-            <li><a href="{% url 'shop:detail' p.slug %}">{{ p.name }}</a>
-          {% endfor %}
-        </ul>
-
-
-создадим и зарегистрируем тег, используя метод inclusion_tag() объекта Library. 
-
-        # -*- coding: UTF-8 -*-
-        from django import template
-        from .models import Product
-
-        register=template.Library()
-         
-        @register.inclusion_tag('shop/product/_latest_products.html') # регистрируем тег и подключаем шаблон _latest_products
-
-        def latest_products():
-            products = Product.objects.order_by('-updated').filter(status='available')[:6]
-            return locals()
-
-shop/product/index.html
------------------------
+templates/userprofiles/registration.html
+---------------------------------------------
 
         {% extends "base.html" %}
-        {% load latest_products %}
+        {% block head_title %} {{ block.super }} - Register with Blog {% endblock %}
 
-            <h2>Latest Products</h2>
-              <div>
-                  {% latest_products %}
+        {% block content %}
+        <div class="container">
+            <div class="row">
+            <h2>Register with Janus Blog</h2>
+            <form action="." method="post" class="form-horisontal" role="form">
+              <div class="form-group">
+                {% csrf_token %}
+                <fieldset>
+                    {{ form.as_p }}
+                </fieldset>
               </div>
+              </div>
+              <div class="row">
+              <div class="form-group">
+                <fieldset class="submit-row">
+                    <p><button type="submit" class="btn btn-info">Create account</button></p>
+                </fieldset>
+              </div>
+            </form>
+            </div>
+        </div>
+        {% endblock %}
 
 
-shop/models.py
----------------
+RegistrationForm
+===========
+forms.py
+---------
 
-        @python_2_unicode_compatible
-        class Product(models.Model):
-            
-            STATUS_CHOICES = (
-                ('available', 'Available'),
-                ('sale', 'For Sale'),
-                ('onstock', 'On Stock'),
-                ('notavailbl', 'Not Available'),
-            )
+        # -*- coding: utf-8 -*-
+        from django import forms
+        from django.contrib.auth.models import User
 
-            category = models.ForeignKey(Category, related_name='products')
-            name = models.CharField(max_length=200, db_index=True)
-            slug = models.SlugField(max_length=200, db_index=True, unique=True)
+        class RegistrationForm(forms.Form):
+            username = forms.RegexField(label="Username", max_length=30,
+                regex=r'^[\w.-]+$', error_messages={'invalid': 'This value may contain only letters, numbers and ./-/_ characters.'})
+            email = forms.EmailField(label='E-mail')
+            password = forms.CharField(label='Password',
+                widget=forms.PasswordInput(render_value=False))
 
-            image = models.ImageField(upload_to='products/%Y/%m/%d', blank=True)
-            description = models.TextField(blank=True)
-            price = models.DecimalField(max_digits=10, decimal_places=2)
-            stock = models.PositiveIntegerField()
-            
-            status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='available')
-            created = models.DateTimeField(auto_now_add=True)
-            updated = models.DateTimeField(auto_now=True, help_text="Please use the following format: <em>YYYY-MM-DD</em>.")
+            def __init__(self, *args, **kwargs):
+                super(RegistrationForm, self).__init__(*args, **kwargs)
 
-            objects = models.Manager() # The default manager.
-            available = AvailabledManager() # The Dahl-specific manager.
-                
-            views = models.IntegerField(default=0)
-    
+            def save(self, *args, **kwargs):
+                new_user = User.objects.create_user(
+                        username=self.cleaned_data['username'],
+                        password=self.cleaned_data['password'],
+                        email=self.cleaned_data['email']
+                    )
 
-views.py
-----------
-        def product_detail(request, id, slug):
-            product = get_object_or_404(Product, id=id, slug=slug, status='available')
+                if hasattr(self, 'save_profile'):
+                    self.save_profile(new_user, *args, **kwargs)
 
-            try:
-                product.views = product.views + 1
-                product.save()
-            except:
-                pass
-
-models
-------
-        def save(self, *args, **kwargs):
-                self.slug = slugify(self.name)
-                super().save(*args, **kwargs)
+                return new_user
 
 
-shop/product/detail.html
-----------------
+Field.widget
+--------------
+Настройка классов виджета
+--------------------------------
+attrs
+-----
+Словарь, которые содержит HTML атрибуты, которые будут назначены сгенерированному виджету.
 
-        <p class="price">${{ product.price }}</p>
+forms.py
+---------
 
-        <p class="raiting">
+        # -*- coding: utf-8 -*-
+        from django import forms
+        from django.contrib.auth.models import User
 
-                {% if product.views > 1 %}
-                    ({{ product.views }} views)
-                {% elif product.views == 1 %}
-                    ({{ product.views }} view)
-                {% endif %}
-        </p>
+        class RegistrationForm(forms.Form):
+            username = forms.RegexField(label="Username", max_length=30,
+                regex=r'^[\w.-]+$', error_messages={'invalid': 'This value may contain only letters, numbers and ./-/_ characters.'})
+            email = forms.EmailField(label='E-mail')
+            password = forms.CharField(label='Password',
+                widget=forms.PasswordInput(render_value=False))
 
+            def __init__(self, *args, **kwargs):
+                super(RegistrationForm, self).__init__(*args, **kwargs)
 
-popular_products
-================
+                self.fields['username'].widget.attrs.update({'class' : 'form-control', 'placeholder' : 'Enter Your User Name'})
 
+                self.fields['email'].widget.attrs.update({'class' : 'form-control', 'placeholder' : 'johndoe@company.com'})
 
-        # -*- coding: UTF-8 -*-
-        from django import template
-        from blog.models import Product
+                self.fields['password'].widget.attrs.update({'class' : 'form-control'})
+                self.fields['password'].widget.attrs.update({'placeholder' : 'Easy to remember, hard to guess'})
 
-        register=template.Library()
-         
-        @register.inclusion_tag('shop/product/_popular_products.html') # регистрируем тег и подключаем шаблон _popular_products
+            def save(self, *args, **kwargs):
+                new_user = User.objects.create_user(
+                        username=self.cleaned_data['username'],
+                        password=self.cleaned_data['password'],
+                        email=self.cleaned_data['email']
+                    )
 
-        def popular_products():
-            products = Product.objects.filter(views__gte=5).filter(status='available')[:6]
-            return locals()
+                if hasattr(self, 'save_profile'):
+                    self.save_profile(new_user, *args, **kwargs)
 
-
-shop/product/_popular_products.html
-------------------------
-
-        <ul>
-          {% for p in products %}
-            <li><a href="{% url 'shop:detail' p.slug %}">{{ p.name }}</a>
-          {% endfor %}
-        </ul>
-
-
-Templates
-==========
-index.html
-----------
-
-        {% extends "base.html" %}
-        {% load popular_products %}
-
-                <h2>Popular Products</h2>
-                  <div>
-                  {% popular_products %}
-                  </div>
-
-Install django wysiwyg redactor:
-================================
-
-Pillow
-------
-
-    pip install Pillow
+                return new_user
 
 
-CKEDITOR
-=========
-settings.py
+Представления-классы для редактирования данных
+==============================================
+FormView
 -----------
-```
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+        class RegistrationView(FormView):
+            form_class = get_form_class('userprofiles.forms.RegistrationForm')
+            template_name = 'userprofiles/registration.html'
 
-    'django.contrib.humanize',
+            def form_valid(self, form):
+                form.save()
+                username = form.cleaned_data['username']
+                password = form.cleaned_data['password']
+                # return redirect(up_settings.REGISTRATION_REDIRECT)
+                url = reverse('users:userprofiles_registration_complete')
+                return HttpResponseRedirect(url)
 
-    'ckeditor',
-    'ckeditor_uploader',
+        registration = RegistrationView.as_view()
 
 
-CKEDITOR_JQUERY_URL = 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js'
+as_view()
+-----------
+Возвращает выполняемое(callable) представление, которое принимает запрос(request) и возвращает ответ(response):
 
-CKEDITOR_UPLOAD_PATH = "uploads/"
 
-CKEDITOR_UPLOAD_SLUGIFY_FILENAME = False
-CKEDITOR_RESTRICT_BY_USER = True
-CKEDITOR_BROWSE_SHOW_DIRS = True
-CKEDITOR_IMAGE_BACKEND = "pillow"
+        registration = RegistrationView.as_view()
 
-CKEDITOR_CONFIGS = {
-    'default': {
-        'skin': 'moono',
 
-        'toolbar_Basic': [
-            ['Source', '-', 'Bold', 'Italic']
-        ],
-        'toolbar_YouCustomToolbarConfig': [
-            {'name': 'document', 'items': ['Source', '-', 'Save', 'NewPage', 'Preview', 'Print', '-', 'Templates']},
-            {'name': 'clipboard', 'items': ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo']},
-            {'name': 'editing', 'items': ['Find', 'Replace', '-', 'SelectAll']},
-            {'name': 'forms',
-             'items': ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton',
-                       'HiddenField']},
-            '/',
-            {'name': 'basicstyles',
-             'items': ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat']},
-            {'name': 'paragraph',
-             'items': ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-',
-                       'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl',
-                       'Language']},
-            {'name': 'links', 'items': ['Link', 'Unlink', 'Anchor']},
-            {'name': 'insert',
-             'items': ['Image', 'Flash', 'Table', 'HorizontalRule', 'Smiley', 'SpecialChar', 'PageBreak', 'Iframe']},
-            '/',
-            {'name': 'styles', 'items': ['Styles', 'Format', 'Font', 'FontSize']},
-            {'name': 'colors', 'items': ['TextColor', 'BGColor']},
-            {'name': 'tools', 'items': ['Maximize', 'ShowBlocks']},
-            {'name': 'about', 'items': ['About']},
-            '/',  # put this to force next toolbar on new line
-            {'name': 'youcustomtools', 'items': [
-                # put the name of your editor.ui.addButton here
-                'Preview',
-                'Maximize',
+userprofiles/urls.py
+---------------------
 
-            ]},
-        ],
-        'toolbar': 'YouCustomToolbarConfig',  # put selected toolbar config here
-        # 'toolbarGroups': [{ 'name': 'document', 'groups': [ 'mode', 'document', 'doctools' ] }],
-        # 'height': 291,
-        # 'width': '100%',
-        # 'filebrowserWindowHeight': 725,
-        # 'filebrowserWindowWidth': 940,
-        # 'toolbarCanCollapse': True,
-        # 'mathJaxLib': '//cdn.mathjax.org/mathjax/2.2-latest/MathJax.js?config=TeX-AMS_HTML',
-        'tabSpaces': 4,
-        'extraPlugins': ','.join(
-            [
-                # you extra plugins here
-                'div',
-                'autolink',
-                'autoembed',
-                'embedsemantic',
-                'autogrow',
-                # 'devtools',
-                'widget',
-                'lineutils',
-                'clipboard',
-                'dialog',
-                'dialogui',
-                'elementspath'
-            ]),
-    }
-}
+        # -*- coding: utf-8 -*-
+        from django.conf.urls import url
+        from . import views
 
-```
-admin.py
---------
-
-        from ckeditor.widgets import CKEditorWidget
-
-        class ProductAdminForm(forms.ModelForm):
-            description = forms.CharField(widget=CKEditorWidget())
-            class Meta:
-                model = Product
-                fields = '__all__'
-                
-        class ProductAdmin(admin.ModelAdmin):
-            
-
-            form = ProductAdminForm
-
+        urlpatterns = [
+            url(r'^register/$', views.RegistrationView.as_view(), name='userprofiles_registration'),
+           ]
 
 urls.py
--------
+--------
 
-urlpatterns = [
+        urlpatterns = [
+            
+            url(r'^$', views.home, name='main'),
+            url(r'^shop/', include('shop.urls', namespace='shop')),
+            url(r'^ckeditor/', include('ckeditor_uploader.urls')),
+            url(r'^users/', include('userprofiles.urls', namespace="users")),
+            url(r'^admin/', admin.site.urls),
+        ]
+        if settings.DEBUG:
+            urlpatterns += static(settings.MEDIA_URL,
+                                  document_root=settings.MEDIA_ROOT)
 
-    url(r'^ckeditor/', include('ckeditor_uploader.urls')),
-]
+
+HttpResponseRedirect
+-------------------------
+Конструктор принимает один обязательный аргумент – путь для перенаправления. Это может быть полный URL (например, 'http://www.yahoo.com/search/') или абсолютный путь без домена (например, '/search/').
+url
+---
+Этот атрибут, доступный только для чтения, содержит URL для редиректа (аналог заголовка Location).
+
+        url = reverse('users:userprofiles_registration_complete')
+        return HttpResponseRedirect(url)
 
 
-autoescape
+userprofiles/views.py
+------------------------
+
+        class RegistrationCompleteView(TemplateView):
+            template_name = 'userprofiles/registration_complete.html'
+
+            def get_context_data(self, **kwargs):
+                return {
+                    'account_verification_active': False,
+                    'expiration_days': 7,
+                }
+        registration_complete = RegistrationCompleteView.as_view()
+
+
+userprofiles/registration_complete.html
+--------------------------------------------
+
+        {% extends "base.html" %}
+        {% block head_title %} {{ block.super }} - Register with Blog {% endblock %}
+
+        {% block content %}
+            <h1>Registration</h1>
+            {% if account_verification_active %}
+                <p>
+                    Your registration was successful. We send you a e-mail including a link.<br />
+                    Please click the link to activate your account. Thank you!<br />
+                    <br />
+                    The link is valid for {{ expiration_days }} days.
+                </p>
+            {% else %}
+                <p>
+                    Your registration was successful.
+                </p>
+            {% endif %}
+        {% endblock %}
+
+
+userprofiles/urls.py
+---------------------
+
+        # -*- coding: utf-8 -*-
+
+        from django.conf.urls import url
+        from . import views
+
+        urlpatterns = [
+            url(r'^register/$', views.RegistrationView.as_view(), name='userprofiles_registration'),
+            url(r'^register/complete/$', views.RegistrationCompleteView.as_view(), name='userprofiles_registration_complete'),
+           ]
+
+
+utils.py
+--------
+
+        from django.core.exceptions import ImproperlyConfigured
+
+        try:
+            from importlib import import_module
+        except ImportError:
+            from django.utils.importlib import import_module
+
+        def get_form_class(path):
+            i = path.rfind('.')
+            module, attr = path[:i], path[i + 1:]
+            try:
+                mod = import_module(module)
+            # except ImportError, e: # python 2.7
+            except ImportError as e: # python 3.4
+                raise ImproperlyConfigured( 'Error loading module %s: "%s"' % (module, e))
+            try:
+                form = getattr(mod, attr)
+            except AttributeError:
+                raise ImproperlyConfigured('Module "%s" does not define a form named "%s"' % (module, attr))
+            return form
+
+base.html
+---------
+        {% include 'includes/header.html'%}
+        {% include 'includes/mainmenu.html'%}
+             <div id="content">
+                {% block content %}
+                {% endblock %}
+            </div>
+        {% include 'includes/footer.html'%}
+         
+header.html
 -----------
 
-            {% autoescape off %}
-                <p> {{ item.content }} </p>
-            {% endautoescape %}
+        {% load staticfiles %}
+        <!doctype html>
+        <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
+        <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
+        <!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
+        <!--[if gt IE 8]><!--> <html class="no-js" lang=""> <!--<![endif]-->
+            <head>
+                <meta charset="utf-8">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+                <title>{% block title %}{% endblock %}</title>
+                <meta name="description" content="">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
+                <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+                
+                <style>
+                    body {
+                        padding-top: 50px;
+                        padding-bottom: 20px;
+                    }
+                </style>
+                <link rel="stylesheet" href="{% static 'css/bootstrap-theme.min.css' %}">
+                <link rel="stylesheet" href="{% static 'css/main.css' %}">
+                
+                <script src="{% static 'js/vendor/modernizr-2.8.3-respond-1.4.2.min.js' %}"></script>
+                <!--[if lt IE 8]>
+                    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+                <![endif]-->
+            </head>
+            <body>
+
+footer.html
+-----------
+        {% load staticfiles %}
+              <hr>
+
+              <footer>
+                <p>&copy; Company 2016</p>
+              </footer>
+            </div> <!-- /container -->        
+
+            <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+            <script>window.jQuery || document.write('<script src="static/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
+
+                <script src="{% static 'js/vendor/bootstrap.min.js' %}">
+                
+                <script src="{% static 'js/plugins.js' %}">
+                <script src="{% static 'js/main.js' %}">
+                
+
+                <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+                <script>
+                    (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+                    function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+                    e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+                    e.src='//www.google-analytics.com/analytics.js';
+                    r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+                    ga('create','UA-XXXXX-X','auto');ga('send','pageview');
+                </script>
+            </body>
+        </html>
+
+
+mainmenu.html
+-------------
+            <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+              <div class="container">
+                <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="/">Project name</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                  <ul class="nav navbar-nav">
+                    <li class="active"><a href="/">Home <span class="sr-only">(current)</span></a></li>
+                    <li><a href="/shop">Shop</a></li>
+                    
+
+                  </ul>
+                  <ul class="nav  navbar-nav navbar-right">
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'users:logout' %}">Logout</a></li>
+                    <li><a href="{% url 'users:profile' slug=user.username %}">{{ user.username }}</a></li>
+                    {% else %}
+                    <li><a href="{% url 'users:userprofiles_registration' %}">Register</a></li>
+                    <li><a href="{% url 'users:login' %}">Login</a></li>
+                  {% endif %}
+                 </ul>
+                </div><!--/.navbar-collapse -->
+              </div>
+            </nav>
