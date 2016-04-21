@@ -1,105 +1,1059 @@
-# tdd-django unit_10
-
-Аутентификация пользователей в Django
-=====================================
-Django поставляется с системой аутентификации пользователей. Она обеспечивает пользовательские аккаунты, группы, права и сессии на основе куки.
-
-Система аутентификации Django отвечает за оба аспекта: аутентификацию и авторизацию. аутентификация проверяет пользователя, а авторизация определяет, что аутентифицированный пользователь может делать.
-
-Система аутентификации состоит из:
-----------------------------------
-1. Пользователей
-
-2. Прав: Бинарные (да/нет) флаги, определяющие наличие у пользователя права выполнять определённые действия.
-
-3. Групп: Общий способ назначения меток и прав на множество пользователей.
-
-4. Настраиваемой системы хеширования паролей
-
-5. Инструментов для форм и представлений для аутентификации пользователей или для ограничения доступа к контенту
-
-Поддержка аутентификации скомпонована в виде модуля в django.contrib.auth. По умолчанию, требуемые настройки уже включены в settings.py, создаваемый с помощью команды django-admin startproject, и представляют собой две записи в параметре конфигурации INSTALLED_APPS:
-
-1. 'django.contrib.auth' содержит ядро системы аутентификации и её стандартные модели.
-
-2. 'django.contrib.contenttypes' является фреймворком типов, который позволяет правам быть назначенными на создаваемые вами модели.
-
-две записи в параметре конфигурации MIDDLEWARE_CLASSES:
--------------------------------------------------------
-1. SessionMiddleware управляет сессиями во время запросов.
-
-2. AuthenticationMiddleware ассоциирует пользователей с запросами с помощью сессий.
-
-При наличии этих настроек, применение команды manage.py migrate создаёт в базе данных необходимые для системы аутентификации таблицы, создаёт права для любых моделей всех зарегистрированных приложений.
+# tdd-django unit_11
 
 Использование системы аутентификации пользователя
 =================================================
+Django предоставляет возможности аутентификации и авторизации пользователей, обычно этот механизм называют системой аутентификации, т.к. эти функции связаны.
 
-Создание пользователей
+Объект пользователя
+===================
+Объекты User - основа системы аутентификации. Они представляют пользователей сайта и используются для проверки прав доступа, регистрации пользователей, ассоциации данных с пользователями. Для представления пользователей в системе аутентификации используется только один класс, таким образом 'суперпользователи' или 'персонал' - это такие же объекты пользователей, просто с определёнными атрибутами.
+
+Основные атрибуты пользователя:
+==============================
+- username
+- password
+- email
+- first_name
+- last_name
+- groups
+- user_permissions
+- is_staff
+- is_active
+- is_superuser
+- last_login
+- date_joined
+
+Смена пароля
+-------------
+Django не хранит пароль в открытом виде, хранится только хеш. Поэтому не советуем менять пароль напрямую. Именно по этой причине пользователь создается через специальную функцию.
+
+Пароль можно сменить несколькими способами:
+
+Команда manage.py changepassword *username* позволяет сменить пароль пользователя через консоль. Команда требует ввести пароль дважды. Если введённые значения совпадают, то пароль будет изменен. Если не указать имя пользователя, команда попробует найти пользователя с именем текущего системного пользователя.
+
+Вы можете изменить пароль программно, используя метод set_password():
+
+        >>> from django.contrib.auth.models import User
+        >>> u = User.objects.get(username='john')
+        >>> u.set_password('new password')
+        >>> u.save()
+
+Если вы используете интерфейс администратора Django, вы можете изменить пароль, используя админку.
+
+Django также предоставляет представления и формы, которые можно использовать при создании страниц для смены пароля пользователем.
+
+При смене пароля будут завершены все сессии пользователя, если вы используете SessionAuthenticationMiddleware.
+
+Аутентификация пользователей
+============================
+    authenticate(**credentials)
+Для аутентификации пользователя по имени и паролю используйте authenticate(). Параметры авторизации передаются как именованные аргументы, по умолчанию это username и password, если пароль и имя пользователя верны, будет возвращен объект User. Если пароль не правильный, authenticate() возвращает None. Например:
+
+        from django.contrib.auth import authenticate
+        user = authenticate(username='john', password='secret')
+        if user is not None:
+            # the password verified for the user
+            if user.is_active:
+                print("User is valid, active and authenticated")
+            else:
+                print("The password is valid, but the account has been disabled!")
+        else:
+            # the authentication system was unable to verify the username and password
+            print("The username and password were incorrect.")
+
+Это низкоуровневый API для аутентификации; например, он используется в RemoteUserMiddleware. Если вы не пишете свою систему авторизации, скорее всего вам не понадобится его использовать. Если вам нужно будет ограничить доступ только авторизованным пользователям, используйте декоратор login_required().
+Права доступа и авторизация
+----------------------------
+Django предоставляет простую систему проверки прав. Она позволяет добавлять права пользователю или группе пользователей.
+
+Эта система используется админкой Django, но вы можете использовать её и в своем коде.
+
+Админка использует проверку прав следующим образом:
+---------------------------------------------------
+- При доступе к странице добавления объекта проверяется наличие права “add” для объектов этого типа.
+
+- При доступе к страницам просмотра списка объектов и изменения объекта проверяется наличие права “change” для объектов этого типа.
+
+- При удалении объекта проверяется наличие права “delete” для объектов этого типа.
+
+Права доступа можно добавлять не только типу объекта, но и конкретному объекту. Переопределив методы has_add_permission(), has_change_permission() и has_delete_permission() класса ModelAdmin, можно проверять права для конкретного объекта.
+
+Модель User содержит связи многое ко многим с таблицами groups и user_permissions. Объект модели User работает со связанными моделями, как и другие модели Django:
+
+        myuser.groups = [group_list]
+        myuser.groups.add(group, group, ...)
+        myuser.groups.remove(group, group, ...)
+        myuser.groups.clear()
+        myuser.user_permissions = [permission_list]
+        myuser.user_permissions.add(permission, permission, ...)
+        myuser.user_permissions.remove(permission, permission, ...)
+        myuser.user_permissions.clear()
+Права доступа по умолчанию
+---------------------------
+Если добавить приложение django.contrib.auth в параметр конфигурации INSTALLED_APPS, оно добавит права доступа по умолчанию – “add”, “change” и “delete” – для каждой модели из установленных приложений.
+
+Эти права доступа создаются при выполнении команды manage.py migrate. При первом выполнении migrate, после добавления django.contrib.auth в INSTALLED_APPS, права доступа по умолчанию создаются для всех старых и новых моделей. Впоследствии команда назначает стандартные права на новые модели при каждом запуске manage.py migrate (функция, которая создаёт права, подключена к сигналу post_migrate).
+
+Предположим у вас есть приложение с app_label foo и модель Bar. Чтобы проверить права доступа, используйте:
+
+        add: user.has_perm('foo.add_bar')
+        change: user.has_perm('foo.change_bar')
+        delete: user.has_perm('foo.delete_bar')
+Модель Permission редко используется напрямую.
+
+Группы
+=======
+Модель django.contrib.auth.models.Group предоставляет возможность группировать пользователей, добавляя им набор прав доступа. Пользователь может принадлежать нескольким группам.
+
+Пользователь, добавленный в группу, автоматически получает все права доступа этой группы. Например, если группа Site editors содержит права доступа can_edit_home_page, любой пользователь в этой группе получить это право доступа.
+
+Также группы позволяют группировать пользователей, добавляя метки или дополнительные возможности. Например, вы можете создать группу 'Special users', и написать код, который предоставляет доступ к дополнительному функционалу сайта, или отправлять сообщения только пользователям этой группы.
+
+Программное создание прав доступа
+---------------------------------
+Кроме добавления своих прав доступа через класс Meta модели, вы также можете создать их напрямую. Например, создадим право доступа can_publish для модели BlogPost в приложении myapp:
+
+        from myapp.models import BlogPost
+        from django.contrib.auth.models import Permission
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(BlogPost)
+        permission = Permission.objects.create(codename='can_publish',
+                                               name='Can Publish Posts',
+                                               content_type=content_type)
+Теперь его можно добавить объекту User через атрибут user_permissions или к объекту Group через атрибут permissions.
+
+Кеширование прав доступа
+------------------------
+ModelBackend кэширует права доступа объекта User после первого запроса на их получение. Такой подход удобен для цикла запрос-ответ, т.к. права доступа редко проверяются сразу же после их изменения (например, в админке). Если вы изменяете и проверяете права доступа в одном запросе или в тестах, проще всего заново загрузить объект User из базы данных. Например:
+
+        from django.contrib.auth.models import Permission, User
+        from django.shortcuts import get_object_or_404
+
+        def user_gains_perms(request, user_id):
+            user = get_object_or_404(User, pk=user_id)
+            # any permission check will cache the current set of permissions
+            user.has_perm('myapp.change_bar')
+
+            permission = Permission.objects.get(codename='change_bar')
+            user.user_permissions.add(permission)
+
+            # Checking the cached permission set
+            user.has_perm('myapp.change_bar')  # False
+
+            # Request new instance of User
+            user = get_object_or_404(User, pk=user_id)
+
+            # Permission cache is repopulated from the database
+            user.has_perm('myapp.change_bar')  # True
+
+Аутентификация в запросах
+-------------------------
+Django использует сессию и промежуточный слой для работы системы аутентификации в объекте запроса.
+
+Этот механизм предоставляет атрибут request.user для каждого запроса, который возвращает текущего пользователя. Если текущий пользователь не авторизован, атрибут содержит экземпляр AnonymousUser, иначе экземпляр User.
+
+Различить их можно с помощью метода is_authenticated():
+
+        if request.user.is_authenticated():
+            # Do something for authenticated users.
+            ...
+        else:
+            # Do something for anonymous users.
+            ...
+Как авторизовать пользователя
+-----------------------------
+Если вы ходите привязать к сессии авторизованного пользователя, используйте функцию login().
+
+        login(request, user)
+
+Чтобы авторизовать пользователя в представлении, используйте функцию login(). Она принимает объект HttpRequest и объект User. Функция login() сохраняет идентификатор пользователя в сессии, используя Django приложение для работы с сессиями.
+
+Следует отметить, что любые данные установленные в анонимной сессии будут сохранены в сессии пользователя после его авторизации.
+
+пример показывает как использовать обе функции authenticate() и login():
+
+        from django.contrib.auth import authenticate, login
+
+        def my_view(request):
+            username = request.POST['username']
+            password = request.POST['password']
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    # Redirect to a success page.
+                else:
+                    # Return a 'disabled account' error message
+                    ...
+            else:
+                # Return an 'invalid login' error message.
+                ...
+Сначала вызывайте authenticate()
+---------------------------------
+Когда вы самостоятельно авторизуете пользователя, вы должны успешно выполнить его аутентификацию с помощью функции authenticate() перед вызовом функции login(). Функция authenticate() устанавливает атрибут у класса User, указывающий бэкенд относительно которого был успешно аутентифицирован данный пользователь (обратитесь к документации на бэкенды для подробностей), эта информация понадобится позже для процесса авторизации. При попытке авторизации объекта пользователя, который был получен из базы напрямую, будет выброшена ошибка.
+Как отменить авторизацию пользователя
+-------------------------------------
+        logout(request)
+Для отмены авторизации пользователя, который был авторизован с помощью функции django.contrib.auth.login(), следует использовать функцию django.contrib.auth.logout() в коде вашего представления. Функция принимает объект HttpRequest и не возвращает никаких значений. Например:
+
+        from django.contrib.auth import logout
+
+        def logout_view(request):
+            logout(request)
+            # Redirect to a success page.
+
+функция logout() не выбрасывает никаких ошибок, если пользователь не был ранее авторизован.
+
+При вызове функции logout() в рамках текущего запроса будут очищены все данные сессии. Все существующие данные будут стёрты. Это происходит для того, чтобы предотвратить возможность доступа к этим данным для другого пользователя, который будет использовать тот же браузер для своей авторизации. Если потребуется поместить некие данные в сессию, которые должны быть доступны пользователя сразу после отмены его авторизации, выполняйте это после вызова функции django.contrib.auth.logout().
+
+Ограничение доступа для неавторизованных пользователей
+------------------------------------------------------
+
+Самым простым способом ограничить доступ к страницам является использование метода request.user.is_authenticated() и, при необходимости, перенаправление на страницу авторизации:
+
+        from django.conf import settings
+        from django.shortcuts import redirect
+
+        def my_view(request):
+            if not request.user.is_authenticated():
+                return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+            # ...
+
+или отображение сообщения об ошибке:
+
+        from django.shortcuts import render
+
+        def my_view(request):
+            if not request.user.is_authenticated():
+                return render(request, 'myapp/login_error.html')
+            # ...
+Декоратор login_required
+------------------------
+        login_required(redirect_field_name='next', login_url=None)
+Для краткости кода вы можете использовать декоратор login_required():
+
+        from django.contrib.auth.decorators import login_required
+
+        @login_required
+        def my_view(request):
+            ...
+Функция login_required() делает следующее:
+------------------------------------------
+Если пользователь не авторизован, то перенаправляет его на URL, указанный в параметре конфигурации settings.LOGIN_URL, передавая текущий абсолютный путь в запросе. Например: /accounts/login/?next=/polls/3/.
+
+Если пользователь авторизован, то выполняет код представления. В коде представления не требуется выполнять проверку авторизован ли пользователь или нет.
+
+По умолчанию, в параметре "next" строки запроса хранится путь, по которому должен быть перенаправлен пользователь в результате успешной аутентификации. Если вам потребуется использовать другое имя для этого параметра, то воспользуйтесь необязательным аргументом redirect_field_name декоратора login_required():
+
+        from django.contrib.auth.decorators import login_required
+
+        @login_required(redirect_field_name='my_redirect_field')
+        def my_view(request):
+            ...
+
+если вы воспользуетесь аргументом redirect_field_name, то вам скорее всего потребуется внести изменения в ваш шаблон авторизации, так как переменная контекста шаблона, которая содержит путь перенаправления, будет использовать значение аргумента redirect_field_name в качестве своего ключа, а не стандартное значение "next".
+
+Декоратор login_required() также принимает необязательный аргумент login_url. Например:
+
+        from django.contrib.auth.decorators import login_required
+
+        @login_required(login_url='/accounts/login/')
+        def my_view(request):
+            ...
+если вы не укажите аргумент login_url, то вам потребуется проверить параметр конфигурации settings.LOGIN_URL и ваше представление для авторизации соответственно настроены. Например, пользуясь стандартным поведением, добавьте следующие строки к вашей схеме URL:
+
+        from django.contrib.auth import views as auth_views
+
+        url(r'^accounts/login/$', auth_views.login),
+Параметр конфигурации settings.LOGIN_URL также принимает имена представлений и именованные шаблоны URL. Это позволяет вам свободно переносить ваше представление для авторизации пользователя внутри схемы URL без необходимости изменения настроек.
+
+Декоратор login_required() не проверяет свойство is_active объекта пользователя.
+
+Если вы создаёте собственные представления для интерфейса администратора (или вам нужна та же аутентификация, что используются встроенными представлениями), то вам может пригодиться декоратор django.contrib.admin.views.decorators.staff_member_required() в качестве полезной альтернативы login_required().
+Примесь LoginRequired
+---------------------
+При использовании CBV представлений, вы можете получить поведение аналогичное login_required, используя примесь LoginRequiredMixin. Эта примесь должна быть указана в самом начале списка наследования.
+
+class LoginRequiredMixin
+------------------------
+Если представление использует эту примесь, все запросы от неаутентифицированных пользователей будут перенаправлены на страницу аутентификации или будет показана ошибка HTTP 403 Forbidden, это зависит от параметра raise_exception.
+
+Вы можете установить любой из параметров AccessMixin для управления обработкой неаутентифицированных пользователей:
+
+        from django.contrib.auth.mixins import LoginRequiredMixin
+
+        class MyView(LoginRequiredMixin, View):
+            login_url = '/login/'
+            redirect_field_name = 'redirect_to'
+
+Подобно декоратору login_required(), эта примесь не проверяет свойство is_active объекта пользователя.
+Ограничение доступа для авторизованных пользователей с помощью дополнительной проверки
+--------------------------------------------------------------------------------------
+
+Самым простым способом будет выполнение вашей проверки над request.user прямо в представлении. Например, эта проверка в представлении проверяет, что пользователь имеет адрес электронной почты на требуемом домене и, если это не так, перенаправляет его на страницу авторизации:
+
+        from django.shortcuts import redirect
+
+        def my_view(request):
+            if not request.user.email.endswith('@example.com'):
+                return redirect('/login/?next=%s' % request.path)
+            # ...
+        user_passes_test(func, login_url=None, redirect_field_name='next')
+
+Для удобства вы можете использовать декоратор user_passes_test, который выполняет перенаправление в случае, если проверяющая функция возвращает False:
+
+        from django.contrib.auth.decorators import user_passes_test
+
+        def email_check(user):
+            return user.email.endswith('@example.com')
+
+        @user_passes_test(email_check)
+        def my_view(request):
+            ...
+Декоратор user_passes_test() принимает обязательный аргумент: функцию, которая принимает объект User и возвращает True, если пользователю разрешён доступ к просмотру страницы. Следует отметить, что декоратор user_passes_test() не выполняет автоматически проверку, что User прошёл авторизацию.
+
+Декоратор user_passes_test() принимает для необязательных аргумента:
+
+login_url
+---------
+Позволяет определеть URL на который будут перенаправляться пользователя, которые нее смогут пройти проверку. Это может быть страница авторизации или по умолчанию это будет значение параметра конфигурации settings.LOGIN_URL, если вы не указали никакого значения.
+
+redirect_field_name
+-------------------
+Аналогично декоратору login_required(). Присвоение значения None удаляет соответствующее поле из URL, что может вам потребоваться при перенаправлении пользователей, которые не прошли проверку, на страницу отличную от страницы авторизации.
+
+Например:
+
+        @user_passes_test(email_check, login_url='/login/')
+        def my_view(request):
+            ...
+
+class UserPassesTestMixin
+
+При использовании CBV представлений, вы можете для этой цели применять UserPassesTestMixin.
+
+test_func()
+-----------
+Вы можете переопределить метод test_func() класса для того, чтобы указать тест, который будет выполнен. Далее, вы можете указать любой параметр AccessMixin для настройки обработки неаутентифицированных пользователей:
+
+        from django.contrib.auth.mixins import UserPassesTestMixin
+
+        class MyView(UserPassesTestMixin, View):
+
+            def test_func(self):
+                return self.request.user.email.endswith('@example.com')
+get_test_func()
+---------------
+Вы также можете переопределить метод get_test_func(), чтобы заставить примесь использовать по-другому именованную функцию для выполнения проверки (вместо test_func()).
+
+Цепочка из UserPassesTestMixin
+------------------------------
+Из-за особенностей реализации UserPassesTestMixin, вы не можете выстроить цепочку наследования. Следующий пример не работает:
+
+        class TestMixin1(UserPassesTestMixin):
+            def test_func(self):
+                return self.request.user.email.endswith('@example.com')
+
+        class TestMixin2(UserPassesTestMixin):
+            def test_func(self):
+                return self.request.user.username.startswith('django')
+
+        class MyView(TestMixin1, TestMixin2, View):
+            ...
+Если TestMixin1 вызовет super() и примет результат в работу, то TestMixin1 не будет больше работать в одиночку.
+Декоратор permission_required
+-----------------------------
+        permission_required(perm, login_url=None, raise_exception=False)
+Довольно частой задачей является проверка наличия определённого права у пользователя. Для решения этой задачи Django предоставляет удобный декоратор permission_required():
+
+        from django.contrib.auth.decorators import permission_required
+
+        @permission_required('polls.can_vote')
+        def my_view(request):
+            ...
+
+Декоратор также может принимать перечисление прав, в этом случае пользователь должен обладать всеми правами для того, чтобы получить доступ к представлению.
+
+декоратор permission_required() также принимает необязательный аргумент login_url:
+
+        from django.contrib.auth.decorators import permission_required
+
+        @permission_required('polls.can_vote', login_url='/loginpage/')
+        def my_view(request):
+            ...
+Аналогично декоратору login_required() , по умолчанию значение для аргумента login_url соответствует значению параметра конфигурации settings.LOGIN_URL.
+
+Если определён аргумент raise_exception, то декоратор будет выбрасывать исключение PermissionDenied с описанием 403 (HTTP Forbidden) представление вместо перенаправления на страницу авторизации.
+
+Если вам надо использовать raise_exception, но также предоставить пользователям шанс сначала аутентифицироваться, вы можете использовать декоратор login_required():
+
+        from django.contrib.auth.decorators import login_required, permission_required
+
+        @permission_required('polls.can_vote', raise_exception=True)
+        @login_required
+        def my_view(request):
+            ...
+
+Примесь PermissionRequiredMixin
+--------------------------------
+Для того, чтобы выполнить проверки для CBV представлений, вы можете использовать PermissionRequiredMixin:
+
+        class PermissionRequiredMixin
+
+Эта примесь, подобно декоратору permisison_required, проверяет, есть ли у пользователя, который пытается получить доступ к представлению, все необходимые права. Вы можете указать право (или перечисление прав) с помощью параметра permission_required:
+
+        from django.contrib.auth.mixins import PermissionRequiredMixin
+
+        class MyView(PermissionRequiredMixin, View):
+            permission_required = 'polls.can_vote'
+            # Or multiple of permissions:
+            permission_required = ('polls.can_open', 'polls.can_edit')
+Вы можете установить любые параметры AccessMixin для изменения обработки неаутентифированных пользователей.
+
+Вы также можете переопределить эти методы:
+
+get_permission_required()
+-------------------------
+Возвращает перечисления имён прав, используемых примесью. По умолчанию, это содержимое атрибута permission_required, при необходимости преобразованное в кортеж.
+
+has_permission()
+----------------
+Возвращает булево значение, есть ли у текущего пользователя право выполнить декорированное представление. По умолчанию, возвращается результат вызова метода has_perms() со списком прав, полученных от метода get_permission_required().
+
+Перенаправление неаутентифицированных запросов в CBV представлениях
+-------------------------------------------------------------------
+Дл упрощения обработки правил доступа в CBV представлениях, примесь AccessMixin может быть использовано для перенаправления пользователя на страницу аутентификации или выбросить ошибку HTTP 403 Forbidden.
+
+class AccessMixin
+-----------------
+login_url
+---------
+Стандартное значение для get_login_url(). По умолчанию, None, в этом случае метод get_login_url() возвратит settings.LOGIN_URL.
+
+permission_denied_message
+-------------------------
+Стандартное значение для get_permission_denied_message(). По умолчанию, пустая строка.
+
+redirect_field_name
+--------------------
+Стандартное значение для get_redirect_field_name(). По умолчанию, "next".
+
+raise_exception
+---------------
+Если этот атрибут установлен в True, то вместо перенаправления будет выброшено исключение PermissionDenied. По умолчанию, False.
+
+get_login_url()
+---------------
+Возвращает URL, на который будут перенаправляться пользователи не прошедшие тест. Возвращает значение атрибута login_url, если оно определено, или settings.LOGIN_URL.
+
+get_permission_denied_message()
+-------------------------------
+При raise_exception равном True, этот метод может быть использован для управления сообщением об ошибке, которое будет передано в обработчик для отображения пользователю. По умолчанию, возврашает значение атрибута permission_denied_message.
+
+get_redirect_field_name()
+-------------------------
+Возвращает имя параметра запроса, содержащий URL, на который должен быть перенаправлен пользователь в случае успешной авторизации. Если вы установите его в None, то параметр запроса не будет добавлен. По умолчанию, возвращает значение атрибута redirect_field_name.
+
+handle_no_permission()
 ----------------------
-        Самый простой способ создать пользователя – использовать метод create_user():
+В зависимости от значения raise_exception, метод либо выбрасывает исключение PermissionDenied или перенаправляет пользователя на login_url, необязательно используя redirect_field_name, если оно установлено.
 
-        from django.contrib.auth.models import User
-        user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
+Сброс сессии при изменении пароля
+---------------------------------
+Данная защитная мера применяется только в случае, если активировано SessionAuthenticationMiddleware в параметре конфигурации MIDDLEWARE_CLASSES. Оно активировано, если файл settings.py был сгенерирован с помощью команды startproject на Django ≥ 1.7.
 
-        # At this point, user is a User object that has already been saved
-        # to the database. You can continue to change its attributes
-        # if you want to change other fields.
-        user.last_name = 'Lennon'
-        user.save()
+Проверка сессии станет обязательной в Django 1.10 вне зависимости от того, активировано ли SessionAuthenticationMiddleware. Если вы работаете над проектом до Django 1.7 или он был сгенерирован с помощью шаблона, который не включает SessionAuthenticationMiddleware, рассмотрите вариант активации этой возможности прежде чем продолжить чтение соглашений по обновлению.
+Если ваша AUTH_USER_MODEL унаследована от класса AbstractBaseUser или реализует свой собственный метод get_session_auth_hash(), то аутентифицированные сессии будут содержать хэш, возвращённый этим методом. В случае AbstractBaseUser, это будет HMAC от поля с паролем. Если активирован SessionAuthenticationMiddleware, Django проверяет, что хеш, отправленный с каждым запросом, совпадает с хешом, вычисленным на стороне сервера. Это позволяет пользователю отключиться от всех его сессий с помощью изменения их пароля.
 
-Создание суперпользователя
---------------------------
-Суперпользователя можно создать с помощью команды createsuperuser:
+Стандартные представления для изменения пароля, поставляемые с Django, функция django.contrib.auth.views.password_change() и представление user_change_password в пакете django.contrib.auth, обновляют в сессии хэш пароля так, чтобы соответствующий пользователь не терял авторизацию. Если вы реализуете собственное представление для изменения пароля и желаете сохранить такое поведение, используйте эту функцию:
 
-    $ python manage.py createsuperuser --username=joe --email=joe@example.com
+update_session_auth_hash(request, user)
+---------------------------------------
+Данная функция принимает текущий запрос и обновлённый объект пользователя из которого будет извлечён новый хэш сессии и соответственно обновляет хэш сессии. Пример использования:
 
-Команда попросит ввести пароль. Пользователь будет создан сразу же по завершению команды. Если не указывать --username или the --email, команда попросит ввести их.
+        from django.contrib.auth import update_session_auth_hash
+
+        def password_change(request):
+            if request.method == 'POST':
+                form = PasswordChangeForm(user=request.user, data=request.POST)
+                if form.is_valid():
+                    form.save()
+                    update_session_auth_hash(request, form.user)
+            else:
+                ...
+Если вы обновляете существующий сайт и требуется активировать SessionAuthenticationMiddleware без необходимости повторной авторизации всех ваших пользователей, вам сначала следует обновиться до Django 1.7 и подождать некоторое время, чтобы сессии были пересозданы естественным образом по мере авторизации пользователей, сессии будут содержать хэш, описанный ранее. Для всех пользователи, которые не были авторизованы и для которых были обновлены сессии с помощью проверочного хэша, будет сброшена текущая сессия и им потребуется выполнить повторную авторизацию.
+
+Так как метод get_session_auth_hash() использует параметр конфигурации SECRET_KEY, то обновление этого параметра приведёт к отмене всех существующих сессий на сайте.
+Представления аутентификации
+----------------------------
+Django предоставляет несколько представлений, с помощью которых вы можете осуществлять управление авторизацией пользователей и их паролями. Представления используют ряд соответствующих форм, но вы можете передавать и свои формы.
+
+Django не предоставляет стандартного шаблона для представлений аутентификации. Вы должны создать свой собственный шаблон для представлений, которые планируете использовать. 
+
+Использование представлений
+---------------------------
+Существует несколько разных методов для реализации данных представлений в вашем проекте. Самым простым способом будет подключение схемы URL из django.contrib.auth.urls в вашу схему, например:
+
+        urlpatterns = [
+            url('^', include('django.contrib.auth.urls'))
+        ]
+добавить следующие шаблоны URL:
+
+        ^login/$ [name='login']
+        ^logout/$ [name='logout']
+        ^password_change/$ [name='password_change']
+        ^password_change/done/$ [name='password_change_done']
+        ^password_reset/$ [name='password_reset']
+        ^password_reset/done/$ [name='password_reset_done']
+        ^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$ [name='password_reset_confirm']
+        ^reset/done/$ [name='password_reset_complete']
+Представления добавляют имя для URL для упрощения ссылок на них. 
+
+Если вам требуется больше контроля над вашими URL, вы можете указывать специальное представление в вашей схеме URL:
+
+        from django.contrib.auth import views as auth_views
+
+        urlpatterns = [
+            url('^change-password/', auth_views.password_change)
+        ]
+Представления принимают необязательные аргументы, которые вы можете использовать для изменения их поведения. Например, если требуется изменить имя шаблона, который будет использоваться представлением, вы можете указать аргумент template_name. Для этого надо указать именованные аргументы в схеме URL и они будут переданы в представление. Например:
+
+        urlpatterns = [
+            url(
+                '^change-password/',
+                auth_views.password_change,
+                {'template_name': 'change-password.html'}
+            )
+        ]
+Все представления возвращают экземпляр TemplateResponse, который позволяет легко изменять содержимое отклика перед его рендеринг7ом. Для этого следует обернуть представление внутри вашего собственного представления:
+
+        from django.contrib.auth import views
+
+        def change_password(request):
+            template_response = views.password_change(request)
+            # Do something with `template_response`
+            return template_response
+
+Все представления для аутентификации
+------------------------------------
+
+        login(request, template_name=`registration/login.html`, redirect_field_name=, authentication_form, current_app, extra_context)
 
 
-UserProfile:
+Необязательные аргументы:
+
+- template_name: Путь до шаблона, который будет использовать представление при авторизации пользователя. По умолчанию, registration/login.html.
+
+- redirect_field_name: Имя GET поля, содержащего URL на который будет произведёно перенаправление после успешной авторизации. По умолчанию, next.
+
+- authentication_form: Вызываемый объект (обычно, просто класс формы), использующийся для аутентификации. По умолчанию, AuthenticationForm.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+Вот, что делает представление django.contrib.auth.views.login:
+
+- При вызове через GET, оно отображает форму для аутентификации, которая отправляет введённые данные через POST на тот же URL. 
+
+- При вызове через POST с аутентификационными данными пользователя, оно пытается авторизовать пользователя. При успешной авторизации, представление перенаправляет на URL, указанный в next. Если параметр next не был предоставлен, происходит перенаправление на URL, содержащийся в параметре конфигурации settings.LOGIN_REDIRECT_URL (по умолчанию, /accounts/profile/). При невозможности авторизации, представление снова показывает форму.
+
+Вашей обязанностью является предоставление HTML кода для шаблона, который по умолчанию называется registration/login.html. Данный шаблон принимает через контекст четыре переменных:
+
+- form: Объект Form, который представляет AuthenticationForm.
+
+- next: URL, на который будет осуществлено перенаправление после успешной авторизации. Можно также передавать строку запроса.
+
+- site: Текущий Site, соответствующий параметру конфигурации SITE_ID. Если вы не активировали соответствующее приложение, переменной будет присвоен экземпляр RequestSite, который получает имя сайта и домен из текущего HttpRequest.
+
+- site_name: Псевдоним для site.name. Если вы не активировали соответствующее приложение, переменной будет присвоено значение request.META['SERVER_NAME']. Для подробностей о работе с сайтами обратитесь к Фреймворк для сайтов.
+
+Если потребуется отказаться от вызова шаблона registration/login.html, вы можете передать в представление параметр template_name через дополнительные аргументы URL с вашей схеме. Например, эта строка URL будет использовать шаблон myapp/login.html:
+
+        url(r'^accounts/login/$', auth_views.login, {'template_name': 'myapp/login.html'}),
+Вы также можете указать имя для GET поля, которое будет содержать URL для перенаправления после успешной авторизации пользователя, передав его в аргументе redirect_field_name в представление. По умолчанию, next.
+
+Здесь показан пример содержимого шаблона registration/login.html, который вы можете использовать в качестве отправной точки. Он предполагает, что у вас есть шаблон base.html, который определяет блок content:
+
+        {% extends "base.html" %}
+
+        {% block content %}
+
+        {% if form.errors %}
+        <p>Your username and password didn't match. Please try again.</p>
+        {% endif %}
+
+        {% if next %}
+            {% if user.is_authenticated %}
+            <p>Your account doesn't have access to this page. To proceed,
+            please login with an account that has access.</p>
+            {% else %}
+            <p>Please login to see this page.</p>
+            {% endif %}
+        {% endif %}
+
+        <form method="post" action="{% url 'django.contrib.auth.views.login' %}">
+        {% csrf_token %}
+        <table>
+        <tr>
+            <td>{{ form.username.label_tag }}</td>
+            <td>{{ form.username }}</td>
+        </tr>
+        <tr>
+            <td>{{ form.password.label_tag }}</td>
+            <td>{{ form.password }}</td>
+        </tr>
+        </table>
+
+        <input type="submit" value="login" />
+        <input type="hidden" name="next" value="{{ next }}" />
+        </form>
+
+        {# Assumes you setup the password_reset view in your URLconf #}
+        <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
+
+        {% endblock %}
+Если у вас реализован собственный механизм аутентификации (обратитесь к Собственная аутентификация) вы можете передать свою форму аутентификации в представление через параметр authentication_form. Данная форма должна принимать именованный аргумент request в её методе __init__ и предоставлять метод get_user, который должен возвращать объект аутентифицированного пользователя (метод будет вызываться только после успешной аутентификации).
+
+Отмена авторизации пользователя.
+---------------------------------
+        logout(request, next_page=None, template_name='registration/logged_out.html', redirect_field_name='next', current_app=None, extra_context=None)
+
+Необязательные аргументы:
+
+- next_page: URL, на который будет осуществлено перенаправление.
+
+- template_name: Путь до шаблона, который будет использовать представление при прекращении авторизации пользователя. По умолчанию, registration/logged_out.html.
+
+- redirect_field_name: Имя GET поля, содержащего URL на который будет произведёно перенаправление после отмены авторизации. По умолчанию, next. Переопределяет next_page, если данный параметр был передан в GET.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+
+Контекст шаблона:
+-----------------
+- title: Локализованная строка “Logged out”.
+
+- site: Текущий Site, соответствующий параметру конфигурации SITE_ID. Если вы не активировали соответствующее приложение, переменной будет присвоен экземпляр RequestSite, который получает имя сайта и домен из текущего HttpRequest.
+
+- site_name: Псевдоним для site.name. Если вы не активировали соответствующее приложение, переменной будет присвоено значение request.META['SERVER_NAME']. Для подробностей о работе с сайтами обратитесь к Фреймворк для сайтов.
+
+- current_app: Подсказка, указывающая на приложение к которому принадлежит текущее представление. Обратитесь к стратегии разрешения URL пространства имён для получения подробностей.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+- logout_then_login(request, login_url=None, current_app=None, extra_context=None)
+Отменяет авторизацию пользователя, затем перенаправляет на страницу авторизации.
+
+Имя URL: Значения по умолчанию нет
+
+Необязательные аргументы:
+
+- login_url: URL страницы авторизации, на которую будет выполнено перенаправление. По умолчанию, settings.LOGIN_URL.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+- password_change(request, template_name='registration/password_change_form.html', post_change_redirect=None, password_change_form=PasswordChangeForm, current_app=None, extra_context=None)
+Позволяет пользователю изменить его пароль.
+
+Имя URL: password_change
+
+Необязательные аргументы:
+
+- template_name: Путь до шаблона, который будет использовать представление при изменении пароля. По умолчанию, registration/password_change_form.html.
+
+- post_change_redirect: URL, на который будет производится перенаправление после успешного изменения пароля.
+
+- password_change_form: Собственная форма для изменения пароля, которая должна принимать именованный аргумент user. Форма должна вызывать функцию для изменения пароля пользователя. По умолчанию, PasswordChangeForm.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+
+Контекст шаблона:
+-----------------
+- form: Форма для изменения пароля (обратитесь к password_change_form выше).
+
+- password_change_done(request, template_name='registration/password_change_done.html', current_app=None, extra_context=None)
+Страница, отображаемая после того, как пользователь изменил свой пароль.
+
+Имя URL: password_change_done
+
+Необязательные аргументы:
+
+- template_name: Путь до шаблона. По умолчанию, registration/password_change_done.html.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+password_reset(request, is_admin_site=False, template_name='registration/password_reset_form.html', email_template_name='registration/password_reset_email.html', subject_template_name='registration/password_reset_subject.txt', password_reset_form=PasswordResetForm, token_generator=default_token_generator, post_reset_redirect=None, from_email=None, current_app=None, extra_context=None, html_email_template_name=None, extra_email_context=None)
+
+Позволяет пользователю сбросить свой пароль, генерируя одноразовую ссылку, которая может быть использована для сброса пароля, и отправляя её на зарегистрированную электронную почто пользователя.
+
+Если предоставленный адрес электронной почты не существует в системе, представление не будет выполнять отправку электронного сообщения, но и пользователь не получит никакого сообщения об ошибке. Это предотвращает утечку информации к потенциальным хацкерам. Если вам необходимо предоставлять сообщение об ошибке для этого случая, вы можете унаследовать форму PasswordResetForm и использовать аргумент password_reset_form.
+
+Пользователь, отмеченный флагом отменённого пароля (см. set_unusable_password()), не может запросить сброс пароля. Так сделано, чтобы предотвратить неправильное использование при работе с внешними источниками аутентификации, например, с LDAP. Следует отметить, что они не получат никаких сообщений об ошибках, так как это вскрыло бы наличие аккаунта, и никакого сообщения на почту не будет отправлено.
+
+Имя URL: password_reset
+
+Необязательные аргументы:
+
+- template_name: Путь до шаблона, который будет использоваться для отображения формы сброса пароля. По умолчанию, registration/password_reset_form.html.
+
+- email_template_name: Путь до шаблона, который используется при генерации сообщения со ссылкой для сброса пароля, отправляемого на адрес электронной почты. По умолчанию, registration/password_reset_email.html.
+
+- subject_template_name: Путь до шаблона, который используется при генерации заголовка сообщения со ссылкой для сброса пароля, отправляемого на адрес электронной почты. По умолчанию registration/password_reset_subject.txt.
+
+- password_reset_form: Форма, которая будет использоваться для получения адреса электронной почты пользователя для сброса его пароля. По умолчанию, PasswordResetForm.
+
+- token_generator: Экземпляр класса для проверки одноразовой ссылки. По умолчанию, default_token_generator, который является экземпляром django.contrib.auth.tokens.PasswordResetTokenGenerator.
+
+- post_reset_redirect: URL, на который будет произведено перенаправление после успешного запроса на сброс пароля.
+
+- from_email: Корректный адрес электронной почты. По умолчанию Django использует DEFAULT_FROM_EMAIL.
+
+- current_app: Подсказка, указывающая на приложение к которому принадлежит текущее представление. Обратитесь к стратегии разрешения URL пространства имён для получения подробностей.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+- html_email_template_name: Путь до шаблона, который будет использоваться при генерации text/html блока электронного сообщения с ссылкой для сброса пароля. По умолчанию, сообщение в формате HTML не отправляется.
+
+- extra_email_context: Словарь с контекстными данными, которые будут доступны в контексте шаблона сообщения.
+
+Контекст шаблона:
+
+    form: Форма (смотрите password_reset_form выше) для сброса пароля пользователя.
+
+Контекст шаблона электронной почты:
+
+email: Псевдоним для user.email
+
+- user: Текущий User, соответствующий полю email формы. Толька активные пользователи имеют возможность сбрасывать свои пароли passwords (User.is_active is True).
+
+- site_name: Псевдоним для site.name. Если вы не активировали соответствующее приложение, переменной будет присвоено значение request.META['SERVER_NAME']. Для подробностей о работе с сайтами обратитесь к Фреймворк для сайтов.
+
+- domain: Псевдоним для site.domain. Если вы не используете приложение для работы с сайтами, то значением будет request.get_host().
+
+- protocol: http или https
+
+- uid: Первичный ключ пользователя, закодированный в base 64.
+
+- token: Токен для проверки корректности ссылки для сброса пароля.
+
+Пример registration/password_reset_email.html (шаблон тела письма):
+
+        Someone asked for password reset for email {{ email }}. Follow the link below:
+        {{ protocol}}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+Такой же контекст используется для шаблона заголовка сообщения. Заголовок должен быть представлен одной строкой простого текста.
+
+- password_reset_done(request, template_name='registration/password_reset_done.html', current_app=None, extra_context=None)
+Эта страница отображается после отправки пользователю письма с ссылкой для сброса его пароля. Данное представление вызывается по умолчанию, если представлению password_reset() не было явно передан URL post_reset_redirect.
+
+Имя URL: password_reset_done
+
+Если предоставленный адрес электронной почты не существует в системе, пользователь не активирован или имеет деактивированный пароль, то пользователь будет перенаправляться на это представление, но никаких писем ему отправляться не будет.
+Необязательные аргументы:
+
+- template_name: Путь до шаблона. По умолчанию, registration/password_reset_done.html.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+- password_reset_confirm(request, uidb64=None, token=None, template_name='registration/password_reset_confirm.html', token_generator=default_token_generator, set_password_form=SetPasswordForm, post_reset_redirect=None, current_app=None, extra_context=None)
+Представляет форму для ввода нового пароля.
+
+Имя URL: password_reset_confirm
+
+Необязательные аргументы:
+
+- uidb64: Идентификатор пользователя закодированный в base 64. По умолчанию, None.
+
+- token: Токен для проверки корректности пароля. По умолчанию, None.
+
+- template_name: Путь до шаблона, который использует представление для подтверждения пароля. По умолчанию, registration/password_reset_confirm.html.
+
+- token_generator: Эеземпляр класса для проверки пароля. По умолчанию, default_token_generator, это экземпляр django.contrib.auth.tokens.PasswordResetTokenGenerator.
+
+- set_password_form: Форма, которая будет использоваться для установки пароля. По умолчанию, SetPasswordForm.
+
+- post_reset_redirect: URL, на который будет произведено перенаправление после выполнения сброса пароля.По умолчанию, None.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+Контекст шаблона:
+
+- form: Форма (см. set_password_form выше) для установки нового пароля для пользователя.
+
+- validlink: Булево значение. True, если ссылка (комбинация uidb64 и token) корректна и не была ещё использована.
+
+- password_reset_complete(request, template_name='registration/password_reset_complete.html', current_app=None, extra_context=None)
+Представление, которое информирует пользователя об успешном изменении пароля.
+
+Имя URL: password_reset_complete
+
+Необязательные аргументы:
+
+- template_name: Путь до шаблона. По умолчанию, registration/password_reset_complete.html.
+
+- extra_context: Словарь с контекстными данными, которые будут добавлены в текущий контекст, перед его передачей в шаблон.
+
+Вспомогательные функции
+- redirect_to_login(next, login_url=None, redirect_field_name='next')
+Перенаправляет на страницу аутентификации и, в случае её успешного прохождения, затем перебрасывает на другой URL.
+
+Обязательные аргументы:
+
+- next: URL на который происходит перенаправление после успешной авторизации.
+
+Необязательные аргументы:
+
+- login_url: URL страницы авторизации, на которую будет выполнено перенаправление. По умолчанию, settings.LOGIN_URL.
+
+- redirect_field_name: Имя GET поля, содержащего URL на который будет произведёно перенаправление после отмены авторизации. Переопределяет next. если данный параметр был передан в GET.
+
+Встроенные формы
+================
+Если вы не желаете использовать встроенные представления, но и формы переписывать не хотите, то система аутентификации предоставляет несколько встроенных форм, расположенных в django.contrib.auth.forms:
+
+Встроенные формы делают некоторые предположения о модели пользователя, с которой они работают. Если вы используете собственную модель пользователя, может потребоваться определить собственные формы для системы аутентификации. 
+class AdminPasswordChangeForm
+-----------------------------
+Форма, используемая в интерфейса администратора, для изменения пароля пользователя.
+
+Принимает user в качестве первого неименованного параметра.
+
+class AuthenticationForm
+------------------------
+Форма для аутентификации пользователя.
+
+Принимает request в качестве первого неименованного аргумента, который сохраняется в экземпляре формы для использования подклассами.
+
+confirm_login_allowed(user)
+---------------------------
+По умолчанию, форма AuthenticationForm игнорирует пользователей у которых флаг is_active установлен в False. Вы можете изменить это поведение на проверку некого права пройти аутентификацию для пользователей. Выполните это с помощью своей формы, которая унаследована от AuthenticationForm и переопределяет метод confirm_login_allowed(). Этот метод должен выбрасывать исключение ValidationError в случае, если указанный пользователь не может проходить аутентификацию.
+
+Например, позволяем всем пользователям проходить аутентификацию, невзирая на их статус активности:
+
+        from django.contrib.auth.forms import AuthenticationForm
+
+        class AuthenticationFormWithInactiveUsersOkay(AuthenticationForm):
+            def confirm_login_allowed(self, user):
+                pass
+Или позволяем только некоторым активным пользователям проходить аутентификацию:
+
+        class PickyAuthenticationForm(AuthenticationForm):
+            def confirm_login_allowed(self, user):
+                if not user.is_active:
+                    raise forms.ValidationError(
+                        _("This account is inactive."),
+                        code='inactive',
+                    )
+                if user.username.startswith('b'):
+                    raise forms.ValidationError(
+                        _("Sorry, accounts starting with 'b' aren't welcome here."),
+                        code='no_b_users',
+                    )
+class PasswordChangeForm
+------------------------
+Форма, через которую пользователь может менять свой пароль.
+
+class PasswordResetForm
+-----------------------
+Форма для генерации и отправки одноразовой ссылки для сброса пользовательского пароля.
+
+- send_email(subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name=None)
+
+Параметры:  
+    subject_template_name – шаблон для заголовка.
+    email_template_name – шаблон для тела письма.
+    context – контекст передаётся в subject_template, email_template и html_email_template (если он не None).
+    from_email – адрес электронной почты отправителя.
+    to_email – адрес электронной почты пользователя.
+    html_email_template_name – шаблон для HTML тела письма, по умолчанию, None, в этом случае отсылается обычный текст.
+    По умолчанию, save() наполняет context теми же переменными, что и функция password_reset(), передавая их в контекст электронного сообщения.
+
+class SetPasswordForm
+----------------------
+Форма, которая позволяет пользователю изменять свой пароль без ввода старого пароля.
+
+class UserChangeForm
+--------------------
+Форма, используемая в интерфейсе администратора для изменения информации о пользователе и его списка прав.
+
+class UserCreationForm
+----------------------
+Форма для создания нового пользователя.
+
+Аутентификационные данные в шаблонах
+------------------------------------
+Авторизованный пользователь и его права доступны в шаблонном контексте при использовании RequestContext.
+
+Техническая особенность
+-----------------------
+Технически, эти переменные становятся доступными в шаблонном контексте, только если вы используете RequestContext и активирован контекстный процессор 'django.contrib.auth.context_processors.auth'. По умолчанию проект так и настроен. 
+
+Пользователи
 ============
+При рендеринге RequestContext, авторизованный пользователь, неважно будет это экземпляр User или AnonymousUser, сохраняется в шаблонной переменной {{ user }}:
 
-        ./manage.py startapp userprofiles
+        {% if user.is_authenticated %}
+            <p>Welcome, {{ user.username }}. Thanks for logging in.</p>
+        {% else %}
+            <p>Welcome, new user. Please log in.</p>
+        {% endif %}
+Эта шаблонная переменная не доступна, если не используется RequestContext.
 
-settings.py
-------------
+Права
+=====
+Права авторизованного пользователя хранятся в шаблонной переменной {{ perms }}. Она связана с экземпляром django.contrib.auth.context_processors.PermWrapper, который реализует доступ к правам.
 
-        # Application definition
-        INSTALLED_APPS = [
-            'django.contrib.admin',
-            'django.contrib.auth',
-            'django.contrib.contenttypes',
-            'django.contrib.sessions',
-            'django.contrib.messages',
-            'django.contrib.staticfiles',
+В объекте {{ perms }} каждый атрибут — это “прокси” к методу User.has_module_perms. Этот пример отобразит True, если авторизованный пользователь любое право в приложении foo:
 
-            'ckeditor',
-            'ckeditor_uploader',
-            'shop',
-            'userprofiles',
+        {{ perms.foo }}
+Каждый атрибут второго уровня — это “прокси” к User.has_perm. Этот пример отобразит True, если авторизованный пользователь имеет право foo.can_vote:
+
+        {{ perms.foo.can_vote }}
+Таким образом вы можете проверять права в шаблонном выражении {% if %}:
+
+        {% if perms.foo %}
+            <p>You have permission to do something in the foo app.</p>
+            {% if perms.foo.can_vote %}
+                <p>You can vote!</p>
+            {% endif %}
+            {% if perms.foo.can_drive %}
+                <p>You can drive!</p>
+            {% endif %}
+        {% else %}
+            <p>You don't have permission to do anything in the foo app.</p>
+        {% endif %}
+Также позможен поиск прав с помощью выражения {% if in %}. Например:
+
+        {% if 'foo' in perms %}
+            {% if 'foo.can_vote' in perms %}
+                <p>In lookup works, too.</p>
+            {% endif %}
+        {% endif %}
+
+Управление паролями в Django
+============================
+
+Как Django хранит пароли
+-------------------------
+Django предоставляет гибкую систему хранения паролей и по умолчанию использует PBKDF2.
+
+Атрибут password объекта User является строкой следующего формата:
+
+        <algorithm>$<iterations>$<salt>$<hash>
+
+Данная строка показывает компоненты, которые используются для хранения пользовательского пароля и разделены знаком доллара, а именно: хэширующий алгоритм, количество итераций алгоритма (work factor), случайная соль и полученный хэш пароля. Алгоритмом может быть любой из ряда однонаправленных хэширующих алгоритмов, которые использует Django; см. далее. Итерации описывают количество применений алгоритма для получения хэша. Соль является случайными данным, а сам хэш получается в результате работы однонаправленной функции.
+
+По умолчанию, Django использует алгоритм PBKDF2 с хэшем SHA256, механизм защиты паролей рекомендованный NIST. Этого должно хватить для большинства пользователей: достаточная защита, требующая большой объём вычислительного времени для взлома.
+
+Тем не менее, в зависимости от ваших требований, вы можете выбрать другой алгоритм или даже реализовать собственный алгоритм, который будет соответствовать вашим требованиям к безопасности. Итак, большинство пользователей не должны думать об этом, если вы сомневаетесь, значит вам это точно не надою
+
+Django выбирает алгоритм для использования в соответствии с указанием переменной конфигурации PASSWORD_HASHERS. Переменная содержит список классов реализующих алгоритмы хэширования, которые поддерживает Django. Первая запись этого списка (речь о settings.PASSWORD_HASHERS[0]) будет использоваться для сохранения паролей, а все остальные записи являются проверенными средствами, которые могут быть применены для проверки существующих паролей. Это означает, что вам потребуется использовать другой алгоритм хэширования, вам потребуется просто указать его первым в параметре конфигурации PASSWORD_HASHERS.
+
+По умолчанию PASSWORD_HASHERS содержит:
+
+        PASSWORD_HASHERS = [
+            'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+            'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+            'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+            'django.contrib.auth.hashers.BCryptPasswordHasher',
+            'django.contrib.auth.hashers.SHA1PasswordHasher',
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+            'django.contrib.auth.hashers.CryptPasswordHasher',
+        ]
+Это означает, что Django будет использовать PBKDF2 для сохранения всех паролей, но будет поддерживать проверку паролей, сохранённых с помощью PBKDF2SHA1, bcrypt, SHA1 и так далее. 
+
+Использование bcrypt с Django
+-----------------------------
+Bcrypt является популярным алгоритмом для хранения паролей, который специально разработан для хранения “долгих” паролей. Данный алгоритм не выбран в качестве стандартного в Django так как он требует использования внешних библиотек, но раз он используется многими, то Django поддерживает его, требуя минимальных усилий по его установке.
+
+Для использования Bcrypt в качестве алгоритма по умолчанию, выполните следующие действия:
+
+Установите bcrypt library. Это можно сделать с помощью команды pip install django[bcrypt] или скачайте библиотеку и установите её с помощью команды python setup.py install.
+
+Измените PASSWORD_HASHERS так, чтобы BCryptSHA256PasswordHasher был указан первым. То есть, в файле конфигурации надо сделать так:
+
+        PASSWORD_HASHERS = [
+            'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+            'django.contrib.auth.hashers.BCryptPasswordHasher',
+            'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+            'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+            'django.contrib.auth.hashers.SHA1PasswordHasher',
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+            'django.contrib.auth.hashers.CryptPasswordHasher',
         ]
 
-userprofiles/models.py
---------------------------
+теперь Django по умолчанию будет использовать Bcrypt в качестве алгоритма хранения паролей.
 
-        from django.db import models
-        from django.utils.encoding import python_2_unicode_compatible
-        from django.contrib.auth.models import User
-        from django.db.models.signals import post_save
-        
+Обрезание паролей с помощью BCryptPasswordHasher
+------------------------------------------------
+Разработчики алгоритма bcrypt обрезают все пароли до 72 символов, что означает bcrypt(password_with_100_chars) == bcrypt(password_with_100_chars[:72]). Оригинальный BCryptPasswordHasher не использует особую обработку и, следовательно, также имеет аналогичное ограничение на длину пароля. BCryptSHA256PasswordHasher исправляет это поведение, сначала хэшируя пароль с помощью sha256. Это действие предотвращает обрезание пароля, рекоментуем использовать эту реализацию вместо BCryptPasswordHasher. Причина применения такого обрезания проста, длина пароля обычного пользователя не превышает 72 символа и, даже будучи обрезанным до 72 символов, такой пароль всё равно требует значительных вычислительных ресурсов для его прямого подбора. Тем не менее, мы рекомендуем использовать BCryptSHA256PasswordHasher в любом случае по принципу “запас карман не тянет”.
+Другие реализации bcrypt
+-------------------------
+Существует несколько других реализаций алгоритма, которые позволяют использовать bcrypt в Django. Django не поддерживает из из коробки. Для активации поддержки, вам потребуется привести хэши в вашей базе данных к виду bcrypt$(raw bcrypt output). Например:
+        bcrypt$$2a$12$NT0I31Sa7ihGEWpka9ASYrEFkhuTNeBQ2xfZskIiiJeyFXhRgS.Sy.
+Увеличение сложности хэша
+-------------------------
+Алгоритмы PBKDF2 и bcrypt используют ряд итераций или округлений для хэшей. Это значительно замедляют действия атакующих, усложняя выполнение атаки на хэшированные пароли. Однако, по мере увеличения вычислительной мощности, количество этих итераций следует увеличивать. Мы установили достаточное значение по умолчанию (и будем его увеличивать с каждым новым релизом Django), но вы можете пожелать увиличить или уменьшить это значение самостоятельно, в зависимости от вашей политики безопасности и вычислительной мощности, имеющейся в наличии. Чтобы сделать это, следует унаследоваться от класса нужного алгоритма и переопределить параметры iterations. Например, для увеличения количества итераций в алгоритме PBKDF2:
+
+Унаследуйтесь от django.contrib.auth.hashers.PBKDF2PasswordHasher:
+
+        from django.contrib.auth.hashers import PBKDF2PasswordHasher
+
+        class MyPBKDF2PasswordHasher(PBKDF2PasswordHasher):
+            """
+            A subclass of PBKDF2PasswordHasher that uses 100 times more iterations.
+            """
+            iterations = PBKDF2PasswordHasher.iterations * 100
+Сохраните это в ваш проект. Например, вы можете разместить это в файле подобном myproject/hashers.py.
+
+Добавьте новый алгоритм хэширования в начало списка конфигурационного параметра PASSWORD_HASHERS:
+
+        PASSWORD_HASHERS = [
+            'myproject.hashers.MyPBKDF2PasswordHasher',
+            'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+            'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+            'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+            'django.contrib.auth.hashers.BCryptPasswordHasher',
+            'django.contrib.auth.hashers.SHA1PasswordHasher',
+            'django.contrib.auth.hashers.MD5PasswordHasher',
+            'django.contrib.auth.hashers.CryptPasswordHasher',
+        ]
+теперь Django будет использовать большее количество итераций при сохранении паролей с помощью PBKDF2.
+
+Обновление паролей
+------------------
+При аутентификации пользователей, если их пароли сохранены с помощью алгоритма, отличающегося от стандартного, то Django будет автоматически применять стандартный алгоритм хэширования. Это означает, что старые установки Django автоматически получат обновление в области аутентификации пользователей, и это также означает, что вы можете переключаться на новые (и более лучшие) алгоритмы хранения паролей по мере их изобретения.
+
+Ручное управление паролями пользователей
+-----------------------------------------
+Модуль django.contrib.auth.hashers предоставляет набор функций для создания и проверки хэшированных паролей. Вы можете использовать эти функции независимо от модели User.
+
+check_password(password, encoded)
+---------------------------------
+Если требуется вручную аутентифицировать пользователя с помощью сравнения открытого пароля с захэшированным паролем из базы данных, используйте вспомогательную функцию check_password(). Она принимает два аргумента: открытый пароль и полное значение поля password из базы данных, возвращает True при совпадении и False в противном случае.
+
+make_password(password, salt=None, hasher='default')
+----------------------------------------------------
+Создаёт хэшированный пароль в формате, используемом этим приложением. Принимает один обязательный аргумент: открытый пароль. Опционально, если вам не надо использовать стандартные настройки (первая запись списка PASSWORD_HASHERS), вы можете указать “соль” и алгоритм, который следует использовать для хэширования, Сейчас поддерживаются следующие алгоритмы: 'pbkdf2_sha256', 'pbkdf2_sha1', 'bcrypt_sha256' (см. Использование bcrypt с Django), 'bcrypt', 'sha1', 'md5', 'unsalted_md5' (в целях обратной совместимости) и 'crypt', если соответствующая библиотека установлена в системе. Если аргумент с паролем содержит None, возвращается бесполезный пароль, который никогда не будет пропущен функцией check_password().
+
+is_password_usable(encoded_password)
+------------------------------------
+Проверяет, является ли переданная строка хэшированным паролем, который имеет шанс пройти проверку с помощью функции check_password().
+
+model
+
         @python_2_unicode_compatible
-        class UserProfile(models.Model):
+        class Profile(models.Model):
             # This line is required. Links UserProfile to a User model instance.
             user = models.OneToOneField(User)
 
             # The additional attributes we wish to include.
-
-            location = models.CharField(max_length=140, blank=True)
-            gender = models.CharField(max_length=140, blank=True)
+            
+            location = models.CharField(max_length=140, blank=True)  
+            gender = models.CharField(max_length=140, blank=True)  
             age = models.IntegerField(default=0, blank=True)
             company = models.CharField(max_length=50, blank=True)
-
+                
             website = models.URLField(blank=True)
             profile_picture = models.ImageField(upload_to='thumbpath', blank=True)
 
@@ -107,668 +1061,393 @@ userprofiles/models.py
             def __str__(self):
                 return self.user.username
 
-        def create_profile(sender, instance, created, **kwargs):
-            if created:
-                profile, created = UserProfile.objects.get_or_create(user=instance)
+admin
+        admin.site.register(Profile)
 
-        # Signal while saving user
-        post_save.connect(create_profile, sender=User)
-
-
-
-get_or_create(defaults=None, **kwargs)
---------------------------------------
-Удобный метод для поиска объекта по заданным параметрам поиска kwargs (может быть пустым, если все поля содержат значения по умолчанию), и создания нового при необходимости.
-
-Возвращает кортеж (object, created), где object полученный или созданный объект и created – булево значение, указывающее был ли создан объект.
-
-Этот метод удобно использовать для скриптов импорта данных. Например:
-
-        try:
-            obj = Person.objects.get(first_name='John', last_name='Lennon')
-        except Person.DoesNotExist:
-            obj = Person(first_name='John', last_name='Lennon', birthday=date(1940, 10, 9))
-            obj.save()
-Такой способ становится весьма громоздким при увеличении количества полей модели. Пример выше может быть переписан с использованием метода get_or_create():
-
-        obj, created = Person.objects.get_or_create(first_name='John', last_name='Lennon',
-                          defaults={'birthday': date(1940, 10, 9)})
-
-Все именованные аргументы переданные в get_or_create() — кроме одного не обязательного defaults — будут использованы при вызове get(). Если объект найден, get_or_create() вернет этот объект и False. Если найдено несколько объектов - будет вызвано исключение MultipleObjectsReturned. Если объект не найден, get_or_create() создаст и сохранит новый объект, возвращая новый объект и True. Новый объект будет создан примерно за таким алгоритмом:
-
-        params = {k: v for k, v in kwargs.items() if '__' not in k}
-        params.update(defaults)
-        obj = self.model(**params)
-        obj.save()
-
-Это означает, что будут выбраны именованные аргументы кроме 'defaults' и не содержащие двойное подчеркивание (которые указывают на не-точный поиск). Затем добавляются значения из defaults, перезаписывая ключи при необходимости, полученные данные используются как аргументы для конструктора класса модели. Как уже указывалось выше, это упрощенный алгоритм, но все важные детали указаны. 
-
-Если модель содержит поле defaults и вы хотите использовать его в параметрах поиска в get_or_create(), просто используйте 'defaults__exact':
-
-    Foo.objects.get_or_create(defaults__exact='bar', defaults={'defaults': 'baz'})
-
-Метод get_or_create() использует аналогичное поведение с ошибками что и метод create(), если вы самостоятельно определяете значение первичного ключа. Если объект должен быть создан и значение первичного ключа уже существует в базе данных, будет вызвано исключение IntegrityError.
-
-Этот метод атомарный при правильном использовании, правильной настройке и работе БД. Однако, если уникальность полей не контролируется на уровне БД(unique или unique_together), этот метод склонен к “гонке-состояний” и в БД могут попасть не уникальные данные(при нескольких процессах запросы могут одновременно отправиться на выполнения к БД, а там уже ничего не проверяется).
-
-При использовании MySQL, убедитесь что используете READ COMMITTED вместо REPEATABLE READ (по умолчанию), иначе get_or_create может вызывать IntegrityError, но объект не будет возвращен последующим вызовом get().
-
-Наконец, несколько слов об использовании get_or_create() в представлениях Django. Пожалуйста используйте его только для POST запросов, если только у вас нет основательных причин не делать этого. Запросы GET не должны влиять на данные; используйте запрос POST для изменения данных. 
-
-Вы можете использовать get_or_create() с атрибутами ManyToManyField и обратными внешними связями. При это запросы будут ограничены контекстом связи. Это может вызвать некоторые проблемы при создании объектов.
-
-Возьмем следующие модели:
-
-        class Chapter(models.Model):
-            title = models.CharField(max_length=255, unique=True)
-
-        class Book(models.Model):
-            title = models.CharField(max_length=256)
-            chapters = models.ManyToManyField(Chapter)
-
-Вы можете использовать get_or_create() для поля chapters модели Book, но будут учитывать только объекты связанные с конкретной книгой:
-
-        >>> book = Book.objects.create(title="Ulysses")
-        >>> book.chapters.get_or_create(title="Telemachus")
-        (<Chapter: Telemachus>, True)
-        >>> book.chapters.get_or_create(title="Telemachus")
-        (<Chapter: Telemachus>, False)
-        >>> Chapter.objects.create(title="Chapter 1")
-        <Chapter: Chapter 1>
-        >>> book.chapters.get_or_create(title="Chapter 1")
-        # Raises IntegrityError
-
-Это произошло, потому что мы пытались получить или создать “Chapter 1” для книги “Ulysses”, но ни один объект не был найден, т.к. он не связан с этой книгой, и мы получили ошибку при попытке его создать т.к. поле title должно быть уникальным.
-
-
-Прослушивание сигналов
-======================
-Для того, чтобы принять сигнал, Вам необходимо с помощью метода Signal.connect() зарегистрировать функцию receiver, которая вызывается, когда сигнал послан:
-
-        Signal.connect(receiver[, sender=None, weak=True, dispatch_uid=None])
-Параметры:  
-- receiver – Функция, которая будет привязана к этому сигналу. Смотрите Функции-получатели.
-- sender – Указывает конкретного отправителя. Смотрите Сигналы, получаемые от определённых отправителей..
-- weak – Django сохраняет обработчики сигналов используя слабые ссылки(weak references). Поэтому, если функция-обработчик является локальной функцией, сборщик мусора может удалить ее. Чтобы избежать этого, передайте weak=False в connect().
-- dispatch_uid – Уникальный идентификатор получателя сигнала. На случай, если назначение обработчика может вызываться несколько раз. Смотрите Предотвращение дублирования сигналов.
-
-Функции-получатели
-------------------
-Во-первых, мы должны определить функцию-получатель. Получатель должен быть Python функцией или методом:
-
-        def my_callback(sender, **kwargs):
-            print("Request finished!")
-Заметьте, что функция принимает аргумент sender, а также аргументы (**kwargs) в формате словаря; все обработчики сигналов должны принимать подобные аргументы.
-
-Все сигналы имеют возможность посылать именованные аргументы и могут изменить их набор в любой момент. Сигнал request_finished документирован как не посылающий аргументов, и у нас может появиться искушение записывать наш обработчик сигнала в виде my_callback(sender).
-
-Регистрация функции-получателя
-------------------------------
-Есть два способа, которыми Вы можете подключить получатель к сигналу. Вы можете вручную вызвать connect:
-
-        from django.core.signals import request_finished
-
-        request_finished.connect(my_callback)
-Кроме того, вы можете использовать декоратор receiver() при определении вашего получателя:
-
-        receiver(signal)
-Параметры:  signal – Сигнал или список обрабатываемых сигналов.
-Вот как можно использовать декоратор:
-
-        from django.core.signals import request_finished
-        from django.dispatch import receiver
-
-        @receiver(request_finished)
-        def my_callback(sender, **kwargs):
-            print("Request finished!")
-Теперь наша функция my_callback будет вызываться каждый раз, когда запрос завершается.
-
-Код обработчиков сигналов и подключения может находиться где угодно. Но мы рекомендуем избегать корневого модуля приложения и models, чтобы сократить побочный эффект при импорте приложения.
-
-На практике, обработчики сигналов лежат в модуле signals приложения, к которому они относятся. Подключение к сигналам выполняется в методе ready() конфигурационного класса приложения. При использовании декоратора receiver() просто импортируйте модуль signals в ready().
-
-Т.к. ready() не существует в предыдущих версиях Django, регистрацию обработчиков сигналов обычно выполняют в модуле models.
-
-Метод ready() можно выполнить более одного раза во время тестировани, таким образом, вам может потребоваться защитить ваши сигналы от дублирования, особенно, если вы планируете отправлять их из тестов.
-Сигналы, получаемые от определённых отправителей.
--------------------------------------------------
-Некоторые сигналы могу быть посланы много раз, но Вам будет нужно получать только определённое подмножество этих сигналов. Например, рассмотрим django.db.models.signals.pre_save - сигнал, посылаемый перед сохранением модели. Бывает, что Вам не нужно знать о сохранении любой модели, Вас интересует только одна конкретная модель:
-
-В этих случаях Вы можете получать только сигналы, посланные определёнными отправителями. В случае django.db.models.signals.pre_save отправитель будет сохраняемой моделью некоторого класса, так что вы можете указать, что вы хотите получать только сигналы, посылаемые этой моделью:
-
-        from django.db.models.signals import pre_save
-        from django.dispatch import receiver
-        from myapp.models import MyModel
-
-
-        @receiver(pre_save, sender=MyModel)
-        def my_handler(sender, **kwargs):
-            ...
-Функция my_handler будет вызвана только при сохранении объекта класса MyModel.
-
-Предотвращение дублирования сигналов
--------------------------------------
-В некоторых случаях модуль, в котором Вы подключаете сигналы, может быть импортирован несколько раз. Это может привести к тому, что получатель сигнала будет зарегистрирован несколько раз, и таким образом, вызов сигнала произойдет несколько раз при наступлении одного и того же события.
-
-Такое поведение может приводить к проблемам (например, если происходит отправка электронной почты всякий раз, когда посылается сигнал о сохранении модели), поэтому передавайте некоторый уникальный идентификатор в качестве значения аргумента dispatch_uid для идентификации в функции-получателе. Обычно, этот идентификатор является строкой, хотя подойдёт любой хешируемый объект. В итоге функция-получатель будет привязана к сигналу единожды для каждого уникального значения dispatch_uid.
-
-        from django.core.signals import request_finished
-
-        request_finished.connect(my_callback, dispatch_uid="my_unique_identifier")
-Создание и посылка сигналов.
----------------------------
-Вы можете создавать свои собственные сигналы в ваших приложениях.
-
-Создание сигналов
------------------
-        class Signal([providing_args=list])
-Все сигналы являются экземплярами класса django.dispatch.Signal, где providing_args – список названий аргументов сигнала, которые будут доступны слушателям. Этот аргумент предназначен просто для документирования, никакой проверки, передаёт ли сигнал эти параметры, не выполняется.
-
-Например:
-
-        import django.dispatch
-
-        pizza_done = django.dispatch.Signal(providing_args=["toppings", "size"])
-Это объявление сигнала pizza_done, который предоставит получателям аргументы toppings и size.
-
-Вы можете задать в этом списке аргументов любые значения передаваемых параметров.
-
-Отправка сигналов
-------------------
-В Django существует два способа отправки сигналов.
-
-        Signal.send(sender, **kwargs)
-        Signal.send_robust(sender, **kwargs)
-Для отправки сигнала необходимо вызвать Signal.send() или Signal.send_robust(). Вы обязательно должны указать аргумент ``sender``(обычно это класс), кроме того можно указать сколько угодно других именованных аргументов.
-
-Например, вот как может выглядеть отправка сигнала pizza_done:
-
-        class PizzaStore(object):
-            ...
-
-            def send_pizza(self, toppings, size):
-                pizza_done.send(sender=self.__class__, toppings=toppings, size=size)
-                ...
-И send(), и send_robust() возвращают список кортежей пар [(receiver, response), ... ]. Каждый кортеж содержит вызываемую функцию и ее ответ.
-
-send() отличается от send_robust() способом обработки исключений, генерируемых функцией-получателем. send() не ловит никаких исключений, сгенерированных в получателе, позволяя исключению проваливаться дальше. Таким образом, не все получатели могут получить сигнал при возникновении ошибки.
-
-send_robust() перехватывает все ошибки, наследуемые от класса Exception языка Python, и гарантирует, что сигнал дойдёт до всех получателей. Если произойдёт ошибка в одном из них, экземпляр исключения будет помещён в кортежную пару, для получателя, который соответствует вызываемой ошибке.
-
-Трассировочная информация доступна через атрибут __traceback__ ошибок, возвращаемых при вызове send_robust().
-
-Отключение сигнала
-------------------
-        Signal.disconnect([receiver=None, sender=None, weak=True, dispatch_uid=None])
-Чтобы отключить получатель от сигнала, вызовите Signal.disconnect(). Аргументы те же, что и у Signal.connect(). Метод возвращает True в случае, если получатель был отключен и False - если нет.
-
-В аргументе receiver указывается получатель, который должен перестать получать сигнал. Аргумент может содержать None, если для идентификации получателя используется dispatch_uid.
-
-Migrations
-------------
-
-        ./manage.py makemigrations userprofiles
-        Migrations for 'userprofiles':
-          0001_initial.py:
-            - Create model UserProfile
-        ./manage.py migrate
-        Operations to perform:
-          Apply all migrations: sessions, blog, admin, userprofiles, contenttypes, auth
-        Running migrations:
-          Rendering model states... DONE
-          Applying userprofiles.0001_initial... OK
-
-Объект InlineModelAdmin
-=======================
-Интерфейс администратора позволяет редактировать связанные объекты на одной странице с родительским объектом. Это называется “inlines”.
-
-Вы можете редактировать userprofile на странице редактирования user.
-
-Вы добавляете “inlines” к модели добавив их в ModelAdmin.inlines:
-userprofiles/admin.py
--------------------------
-
-        from django.contrib import admin
-        from .models import UserProfile
-        from django.contrib.auth.admin import UserAdmin
-        from django.contrib.auth import get_user_model
-
-        class UserProfileInline(admin.StackedInline):
-            model = UserProfile
-            can_delete = False
-
-        class UserProfileAdmin(UserAdmin):
-            inlines=(UserProfileInline, )
-
-        admin.site.unregister(get_user_model())
-        admin.site.register(get_user_model(), UserProfileAdmin)
-
-
-Django предоставляет два подкласса InlineModelAdmin:
-------------------------------------------------------------------
-  1. TabularInline
-  2. StackedInline
-  Разница между ними только в используемом шаблоне.
-
-Создание форм в Django Класс Form
-=================================
-
+forms
         from django import forms
         from django.contrib.auth.models import User
+        from .models import Profile
 
-        class RegistrationForm(forms.Form):
-            username = forms.RegexField(label="Username", max_length=30,
-                regex=r'^[\w.-]+$', error_messages={'invalid': 'This value may contain only letters, numbers and ./-/_ characters.'})
-            email = forms.EmailField(label='E-mail')
-            password = forms.CharField(label='Password',
-                widget=forms.PasswordInput(render_value=False))
+        class UserForm(forms.ModelForm):
+            password = forms.CharField(widget=forms.PasswordInput())
 
-Максимальное количество символом в значении мы указали с помощью параметра max_length. Он используется для двух вещей. Будет добавлен атрибут maxlength="30" в HTML тег input (теперь браузер не позволит пользователю ввести больше символов, чем мы указали). Также Django выполнит проверку введенного значения, когда получит запрос с браузера с введенными данными.
+            class Meta:
+                model = User
+                fields = ('username', 'email', 'password', 'first_name', 'last_name')
 
-Экземпляр Form содержит метод is_valid(), который выполняет проверку всех полей формы. Если все данные правильные, это метод:
-- вернет True
-- добавит данные формы в атрибут cleaned_data.
-
-После рендеринга наша форма будет выглядеть следующим образом:
-
-
-        <p><label for="id_username">Username:</label> <input class="form-control" id="id_username" maxlength="30" name="username" placeholder="Enter Your User Name" type="text" /></p>
-        <p><label for="id_email">E-mail:</label> <input class="form-control" id="id_email" name="email" placeholder="johndoe@company.com" type="email" /></p>
-        <p><label for="id_password">Password:</label> <input class="form-control" id="id_password" name="password" placeholder="Easy to remember, hard to guess" type="password" /></p>
-
-Обратите внимание, она не содержит тег form, или кнопку отправки. Вам необходимо самостоятельно их добавить в шаблоне.
-
-Представление
---------------
-Данные формы отправляются обратно в Django и обрабатываются представлением, обычно тем же, которое и создает форму. Это позволяет повторно использовать часть кода.
-
-Для обработки данных формой нам необходимо создать ее в представлении для URL, на который браузер отправляет данные формы:
-
-        # -*- coding: utf-8 -*-
-        from django.contrib.auth import authenticate, login
-        from django.shortcuts import redirect
-        from django.views.generic import FormView, TemplateView
-
-        from userprofiles.utils import get_form_class
-        from django.core.urlresolvers import reverse
-        from django.http import HttpResponseRedirect, HttpResponse
-
-        class RegistrationView(FormView):
-            form_class = get_form_class('userprofiles.forms.RegistrationForm')
-            template_name = 'userprofiles/registration.html'
-
-            def form_valid(self, form):
-                form.save()
-                username = form.cleaned_data['username']
-                password = form.cleaned_data['password']
-
-                # return redirect(up_settings.REGISTRATION_REDIRECT)
-                url = reverse('users:userprofiles_registration_complete')
-                return HttpResponseRedirect(url)
-
-        registration = RegistrationView.as_view()
+        class UserProfileForm(forms.ModelForm):
+            class Meta:
+                model = UserProfile
+                exclude = ['user']
+                #fields = '__all__'
 
 
-Если в представление пришел GET запрос, будет создана пустая форма и добавлена в контекст шаблона для последующего рендеринга. Это мы и ожидаем получить первый раз открыв страницу с формой.
-
-Если форма отправлена через POST запрос, представление создаст форму с данными из запроса: form = RegistrationForm(request.POST) Это называется “привязать данные к форме” (теперь это связанная с данными форма).
-
-Шаблон
-----------
-templates/userprofiles/registration.html
----------------------------------------------
-
-        {% extends "base.html" %}
-        {% block head_title %} {{ block.super }} - Register with Blog {% endblock %}
-
-        {% block content %}
-        <div class="container">
-            <div class="row">
-            <h2>Register with Janus Blog</h2>
-            <form action="." method="post" class="form-horisontal" role="form">
-              <div class="form-group">
-                {% csrf_token %}
-                <fieldset>
-                    {{ form.as_p }}
-                </fieldset>
-              </div>
-              </div>
-              <div class="row">
-              <div class="form-group">
-                <fieldset class="submit-row">
-                    <p><button type="submit" class="btn btn-info">Create account</button></p>
-                </fieldset>
-              </div>
-            </form>
-            </div>
-        </div>
-        {% endblock %}
-
-
-RegistrationForm
-===========
-forms.py
+views.py:
 ---------
 
-        # -*- coding: utf-8 -*-
-        from django import forms
-        from django.contrib.auth.models import User
+        from blog.forms import UserForm, UserProfileForm
 
-        class RegistrationForm(forms.Form):
-            username = forms.RegexField(label="Username", max_length=30,
-                regex=r'^[\w.-]+$', error_messages={'invalid': 'This value may contain only letters, numbers and ./-/_ characters.'})
-            email = forms.EmailField(label='E-mail')
-            password = forms.CharField(label='Password',
-                widget=forms.PasswordInput(render_value=False))
+        def register(request):
 
-            def __init__(self, *args, **kwargs):
-                super(RegistrationForm, self).__init__(*args, **kwargs)
+            # A boolean value for telling the template whether the registration was successful.
+            # Set to False initially. Code changes value to True when registration succeeds.
+            registered = False
 
-            def save(self, *args, **kwargs):
-                new_user = User.objects.create_user(
-                        username=self.cleaned_data['username'],
-                        password=self.cleaned_data['password'],
-                        email=self.cleaned_data['email']
-                    )
+            # If it's a HTTP POST, we're interested in processing form data.
+            if request.method == 'POST':
+                # Attempt to grab information from the raw form information.
+                # Note that we make use of both UserForm and UserProfileForm.
+                user_form = UserForm(data=request.POST)
+                profile_form = UserProfileForm(data=request.POST)
 
-                if hasattr(self, 'save_profile'):
-                    self.save_profile(new_user, *args, **kwargs)
+                # If the two forms are valid...
+                if user_form.is_valid() and profile_form.is_valid():
+                    # Save the user's form data to the database.
+                    user = user_form.save()
 
-                return new_user
+                    # Now we hash the password with the set_password method.
+                    # Once hashed, we can update the user object.
+                    user.set_password(user.password)
+                    user.save()
+
+                    # Now sort out the UserProfile instance.
+                    # Since we need to set the user attribute ourselves, we set commit=False.
+                    # This delays saving the model until we're ready to avoid integrity problems.
+                    profile = profile_form.save(commit=False)
+                    profile.user = user
+
+                    # Did the user provide a profile picture?
+                    # If so, we need to get it from the input form and put it in the UserProfile model.
+                    if 'profile_picture' in request.FILES:
+                        profile.profile_picture = request.FILES['profile_picture']
+
+                    # Now we save the UserProfile model instance.
+                    profile.save()
+
+                    # Update our variable to tell the template registration was successful.
+                    registered = True
+
+                # Invalid form or forms - mistakes or something else?
+                # Print problems to the terminal.
+                # They'll also be shown to the user.
+                else:
+                    print (user_form.errors, profile_form.errors)
+
+            # Not a HTTP POST, so we render our form using two ModelForm instances.
+            # These forms will be blank, ready for user input.
+            else:
+                user_form = UserForm()
+                profile_form = UserProfileForm()
+
+            # Render the template depending on the context.
+            return render(request,
+                    'profile/register.html',
+                    {'user_form': user_form, 'profile_form': profile_form, 'registered': registered} )
+
+        def user_login(request):
+
+            # If the request is a HTTP POST, try to pull out the relevant information.
+            if request.method == 'POST':
+                # Gather the email and password provided by the user.
+                # This information is obtained from the login form.
+                        # We use request.POST.get('<variable>') as opposed to request.POST['<variable>'],
+                        # because the request.POST.get('<variable>') returns None, if the value does not exist,
+                        # while the request.POST['<variable>'] will raise key error exception
+                username = request.POST.get('username')
+                password = request.POST.get('password')
+
+                # Use Django's machinery to attempt to see if the email/password
+                # combination is valid - a User object is returned if it is.
+                user = authenticate(username=username, password=password)
+
+                # If we have a User object, the details are correct.
+                # If None (Python's way of representing the absence of a value), no user
+                # with matching credentials was found.
+                if user:
+                    # Is the account active? It could have been disabled.
+                    if user.is_active:
+                    # If the account is valid and active, we can log the user in.
+                        # We'll send the user back to the homepage.
+                        login(request, user)
+                        return HttpResponseRedirect('/profile/')
+                    else:
+                        # An inactive account was used - no logging in!
+                        return HttpResponse("Your Blog account is disabled.")
+                else:
+               # Bad login details were provided. So we can't log the user in.
+                    print ("Invalid login details: {0}, {1}".format(username, password))
+                    return HttpResponse("Invalid login details supplied.")
+
+            # The request is not a HTTP POST, so display the login form.
+            # This scenario would most likely be a HTTP GET.
+            else:
+                # No context variables to pass to the template system, hence the
+                # blank dictionary object...
+                # return render(request, 'profile/login.html', {})
+                return render(request, 'profile/index.html', {})
 
 
-Field.widget
---------------
-Настройка классов виджета
---------------------------------
-attrs
------
-Словарь, которые содержит HTML атрибуты, которые будут назначены сгенерированному виджету.
+        @login_required
+        def restricted(request):
+            return HttpResponse("Since you're logged in, you can see this text!")
 
-forms.py
----------
+        # Use the login_required() decorator to ensure only those logged in can access the view.
 
-        # -*- coding: utf-8 -*-
-        from django import forms
-        from django.contrib.auth.models import User
+        @login_required
+        def user_logout(request):
+            # Since we know the user is logged in, we can now just log them out.
+            logout(request)
 
-        class RegistrationForm(forms.Form):
-            username = forms.RegexField(label="Username", max_length=30,
-                regex=r'^[\w.-]+$', error_messages={'invalid': 'This value may contain only letters, numbers and ./-/_ characters.'})
-            email = forms.EmailField(label='E-mail')
-            password = forms.CharField(label='Password',
-                widget=forms.PasswordInput(render_value=False))
-
-            def __init__(self, *args, **kwargs):
-                super(RegistrationForm, self).__init__(*args, **kwargs)
-
-                self.fields['username'].widget.attrs.update({'class' : 'form-control', 'placeholder' : 'Enter Your User Name'})
-
-                self.fields['email'].widget.attrs.update({'class' : 'form-control', 'placeholder' : 'johndoe@company.com'})
-
-                self.fields['password'].widget.attrs.update({'class' : 'form-control'})
-                self.fields['password'].widget.attrs.update({'placeholder' : 'Easy to remember, hard to guess'})
-
-            def save(self, *args, **kwargs):
-                new_user = User.objects.create_user(
-                        username=self.cleaned_data['username'],
-                        password=self.cleaned_data['password'],
-                        email=self.cleaned_data['email']
-                    )
-
-                if hasattr(self, 'save_profile'):
-                    self.save_profile(new_user, *args, **kwargs)
-
-                return new_user
+            # Take the user back to the homepage.
+            return HttpResponseRedirect('/profile/')
 
 
-Представления-классы для редактирования данных
-==============================================
-FormView
------------
-
-        class RegistrationView(FormView):
-            form_class = get_form_class('userprofiles.forms.RegistrationForm')
-            template_name = 'userprofiles/registration.html'
-
-            def form_valid(self, form):
-                form.save()
-                username = form.cleaned_data['username']
-                password = form.cleaned_data['password']
-                # return redirect(up_settings.REGISTRATION_REDIRECT)
-                url = reverse('users:userprofiles_registration_complete')
-                return HttpResponseRedirect(url)
-
-        registration = RegistrationView.as_view()
-
-
-as_view()
------------
-Возвращает выполняемое(callable) представление, которое принимает запрос(request) и возвращает ответ(response):
-
-
-        registration = RegistrationView.as_view()
-
-
-userprofiles/urls.py
----------------------
-
-        # -*- coding: utf-8 -*-
         from django.conf.urls import url
+
         from . import views
 
         urlpatterns = [
-            url(r'^register/$', views.RegistrationView.as_view(), name='userprofiles_registration'),
-           ]
+            url(r'^register/$', views.register, name='register'),
+            url(r'^login/$', views.user_login, name='login'), 
+            url(r'^restricted/', views.restricted, name='restricted'),
+            url(r'^logout/$', views.user_logout, name='logout'),
+        ]
+
+
+Registration Template
+======================
+
+templates/profile/register.html:
+------------------------------
+        {% extends "base.html" %}
+        {% block head_title %} {{ block.super }} - Register with Auth {% endblock %}
+
+        {% block content %}
+            <h2>Register with Janus Auth</h2>
+            {% if registered %}
+                Janus says: <strong>thank you for registering!</strong>
+                <a href="/blog/">Return to the homepage.</a><br />
+                {% else %}
+                Janus says: <strong>register here!</strong><br />
+
+                <form id="user_form" method="post" action="/profile/register/"
+                        enctype="multipart/form-data">
+
+                    {% csrf_token %}
+
+                    <!-- Display each form. The as_p method wraps each element in a paragraph
+                         (<p>) element. This ensures each element appears on a new line,
+                         making everything look neater. -->
+                    {{ user_form.as_p }}
+                    {{ profile_form.as_p }}
+
+                    <!-- Provide a button to click to submit the form. -->
+                  <input type="submit" name="submit" value="Register" />
+                </form>
+                {% endif %}
+
+        {% endblock %}
+
+
+profile/views.py:
+--------------
+
+        from django.contrib.auth import authenticate, login
+
+        from django.http import HttpResponseRedirect, HttpResponse
+
+        def user_login(request):
+
+            # If the request is a HTTP POST, try to pull out the relevant information.
+            if request.method == 'POST':
+                # Gather the username and password provided by the user.
+                # This information is obtained from the login form.
+                        # We use request.POST.get('<variable>') as opposed to request.POST['<variable>'],
+                        # because the request.POST.get('<variable>') returns None, if the value does not exist,
+                        # while the request.POST['<variable>'] will raise key error exception
+                username = request.POST.get('username')
+                password = request.POST.get('password')
+
+                # Use Django's machinery to attempt to see if the username/password
+                # combination is valid - a User object is returned if it is.
+                user = authenticate(username=username, password=password)
+
+                # If we have a User object, the details are correct.
+                # If None (Python's way of representing the absence of a value), no user
+                # with matching credentials was found.
+                if user:
+                    # Is the account active? It could have been disabled.
+                    if user.is_active:
+                    # If the account is valid and active, we can log the user in.
+                        # We'll send the user back to the homepage.
+                        login(request, user)
+                        return HttpResponseRedirect('/profile/')
+                    else:
+                        # An inactive account was used - no logging in!
+                        return HttpResponse("Your Blog account is disabled.")
+                else:
+               # Bad login details were provided. So we can't log the user in.
+                    print ("Invalid login details: {0}, {1}".format(username, password))
+                    return HttpResponse("Invalid login details supplied.")
+
+            # The request is not a HTTP POST, so display the login form.
+            # This scenario would most likely be a HTTP GET.
+            else:
+                # No context variables to pass to the template system, hence the
+                # blank dictionary object...
+                return render(request, 'profile/index.html', {})
+                # return render(request, 'profile/login.html', {})
+
+
+Login Template
+==============
+templates/profile/login.html:
+--------------------------
+
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <!-- Is anyone getting tired of repeatedly entering the header over and over?? -->
+                <title>profile</title>
+            </head>
+
+            <body>
+                <h1>Login to profile</h1>
+
+                <form id="login_form" method="post" action="/profile/login/">
+                    {% csrf_token %}
+                    Username: <input type="text" name="username" value="" size="50" />
+                    <br />
+                    Password: <input type="password" name="password" value="" size="50" />
+                    <br />
+
+                    <input type="submit" value="submit" />
+                </form>
+
+            </body>
+        </html>
+
+
+includes/mainmenu.html
+----------------------
+
+        <form class="navbar-form navbar-right" role="form" method="post" action="/profile/login/">
+            {% csrf_token %}
+            <div class="form-group">
+              <input type="text" placeholder="Username" name="username" class="form-control">
+            </div>
+            <div class="form-group">
+              <input type="password" placeholder="Password" name="password" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Sign in</button>
+          </form>
+
+
+Аутентификация пользователей
+============================
+Для аутентификации пользователя по имени и паролю используйте authenticate(). Параметры авторизации передаются как именованные аргументы, по умолчанию это username и password, если пароль и имя пользователя верны, будет возвращен объект User. Если пароль не правильный, authenticate() возвращает None.
+
+        from django.contrib.auth import authenticate
+        user = authenticate(username='john', password='secret')
+        if user is not None:
+            # the password verified for the user
+            if user.is_active:
+                print("User is valid, active and authenticated")
+            else:
+                print("The password is valid, but the account has been disabled!")
+        else:
+            # the authentication system was unable to verify the username and password
+            print("The username and password were incorrect.")
+
+Если вам нужно будет ограничить доступ только авторизованным пользователям, используйте декоратор login_required().
+
+
+{% if user.is_authenticated %}
+===============================
+
+        <h1>Janus says... hello {{ user.username }}!</h1>
+        {% else %}
+        <h1>Janus says... hello world!</h1>
+        {% endif %}
+
+Restricting Access
+==================
+
+views.py:
+----------
+
+        from django.contrib.auth.decorators import login_required
+
+        @login_required
+        def restricted(request):
+            return HttpResponse("Since you're logged in, you can see this text!")
 
 urls.py
 --------
 
         urlpatterns = [
-            
-            url(r'^$', views.home, name='main'),
-            url(r'^shop/', include('shop.urls', namespace='shop')),
-            url(r'^ckeditor/', include('ckeditor_uploader.urls')),
-            url(r'^users/', include('userprofiles.urls', namespace="users")),
-            url(r'^admin/', admin.site.urls),
+
+            url(r'^register/$', views.register, name='register'),
+            url(r'^login/$', views.user_login, name='login'), 
+            url(r'^restricted/', views.restricted, name='restricted'),
+
         ]
-        if settings.DEBUG:
-            urlpatterns += static(settings.MEDIA_URL,
-                                  document_root=settings.MEDIA_ROOT)
+
+logout
+======
+views.py:
+----------
+
+        from django.contrib.auth import logout
+
+        # Use the login_required() decorator to ensure only those logged in can access the view.
+        @login_required
+        def user_logout(request):
+            # Since we know the user is logged in, we can now just log them out.
+            logout(request)
+
+            # Take the user back to the homepage.
+            return HttpResponseRedirect('/')
 
 
-HttpResponseRedirect
--------------------------
-Конструктор принимает один обязательный аргумент – путь для перенаправления. Это может быть полный URL (например, 'http://www.yahoo.com/search/') или абсолютный путь без домена (например, '/search/').
-url
----
-Этот атрибут, доступный только для чтения, содержит URL для редиректа (аналог заголовка Location).
-
-        url = reverse('users:userprofiles_registration_complete')
-        return HttpResponseRedirect(url)
-
-
-userprofiles/views.py
-------------------------
-
-        class RegistrationCompleteView(TemplateView):
-            template_name = 'userprofiles/registration_complete.html'
-
-            def get_context_data(self, **kwargs):
-                return {
-                    'account_verification_active': False,
-                    'expiration_days': 7,
-                }
-        registration_complete = RegistrationCompleteView.as_view()
-
-
-userprofiles/registration_complete.html
---------------------------------------------
-
-        {% extends "base.html" %}
-        {% block head_title %} {{ block.super }} - Register with Blog {% endblock %}
-
-        {% block content %}
-            <h1>Registration</h1>
-            {% if account_verification_active %}
-                <p>
-                    Your registration was successful. We send you a e-mail including a link.<br />
-                    Please click the link to activate your account. Thank you!<br />
-                    <br />
-                    The link is valid for {{ expiration_days }} days.
-                </p>
-            {% else %}
-                <p>
-                    Your registration was successful.
-                </p>
-            {% endif %}
-        {% endblock %}
-
-
-userprofiles/urls.py
----------------------
-
-        # -*- coding: utf-8 -*-
-
-        from django.conf.urls import url
-        from . import views
+urls.py:
+-------------
 
         urlpatterns = [
-            url(r'^register/$', views.RegistrationView.as_view(), name='userprofiles_registration'),
-            url(r'^register/complete/$', views.RegistrationCompleteView.as_view(), name='userprofiles_registration_complete'),
-           ]
+            url(r'^register/$', views.register, name='register'),
+            url(r'^login/$', views.user_login, name='login'), 
+            url(r'^restricted/', views.restricted, name='restricted'),
+            url(r'^logout/$', views.user_logout, name='logout'),
+
+        ]
 
 
-utils.py
---------
+includes/mainmenu.html
+-----------------------
 
-        from django.core.exceptions import ImproperlyConfigured
+            <div id="navbar" class="navbar-collapse collapse">
 
-        try:
-            from importlib import import_module
-        except ImportError:
-            from django.utils.importlib import import_module
-
-        def get_form_class(path):
-            i = path.rfind('.')
-            module, attr = path[:i], path[i + 1:]
-            try:
-                mod = import_module(module)
-            # except ImportError, e: # python 2.7
-            except ImportError as e: # python 3.4
-                raise ImproperlyConfigured( 'Error loading module %s: "%s"' % (module, e))
-            try:
-                form = getattr(mod, attr)
-            except AttributeError:
-                raise ImproperlyConfigured('Module "%s" does not define a form named "%s"' % (module, attr))
-            return form
-
-base.html
----------
-        {% include 'includes/header.html'%}
-        {% include 'includes/mainmenu.html'%}
-             <div id="content">
-                {% block content %}
-                {% endblock %}
-            </div>
-        {% include 'includes/footer.html'%}
-         
-header.html
------------
-
-        {% load staticfiles %}
-        <!doctype html>
-        <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
-        <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
-        <!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
-        <!--[if gt IE 8]><!--> <html class="no-js" lang=""> <!--<![endif]-->
-            <head>
-                <meta charset="utf-8">
-                <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-                <title>{% block title %}{% endblock %}</title>
-                <meta name="description" content="">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-                <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-                
-                <style>
-                    body {
-                        padding-top: 50px;
-                        padding-bottom: 20px;
-                    }
-                </style>
-                <link rel="stylesheet" href="{% static 'css/bootstrap-theme.min.css' %}">
-                <link rel="stylesheet" href="{% static 'css/main.css' %}">
-                
-                <script src="{% static 'js/vendor/modernizr-2.8.3-respond-1.4.2.min.js' %}"></script>
-                <!--[if lt IE 8]>
-                    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-                <![endif]-->
-            </head>
-            <body>
-
-footer.html
------------
-        {% load staticfiles %}
-              <hr>
-
-              <footer>
-                <p>&copy; Company 2016</p>
-              </footer>
-            </div> <!-- /container -->        
-
-            <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-            <script>window.jQuery || document.write('<script src="static/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-
-                <script src="{% static 'js/vendor/bootstrap.min.js' %}">
-                
-                <script src="{% static 'js/plugins.js' %}">
-                <script src="{% static 'js/main.js' %}">
-                
-
-                <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
-                <script>
-                    (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
-                    function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
-                    e=o.createElement(i);r=o.getElementsByTagName(i)[0];
-                    e.src='//www.google-analytics.com/analytics.js';
-                    r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
-                    ga('create','UA-XXXXX-X','auto');ga('send','pageview');
-                </script>
-            </body>
-        </html>
-
-
-mainmenu.html
--------------
-            <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-              <div class="container">
-                <div class="navbar-header">
-                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                  </button>
-                  <a class="navbar-brand" href="/">Project name</a>
-                </div>
-                <div id="navbar" class="navbar-collapse collapse">
-                  <ul class="nav navbar-nav">
-                    <li class="active"><a href="/">Home <span class="sr-only">(current)</span></a></li>
-                    <li><a href="/shop">Shop</a></li>
-                    
-
-                  </ul>
+                 
                   <ul class="nav  navbar-nav navbar-right">
                     {% if user.is_authenticated %}
-                    <li><a href="{% url 'users:logout' %}">Logout</a></li>
-                    <li><a href="{% url 'users:profile' slug=user.username %}">{{ user.username }}</a></li>
+                    <li><a href="/profile/logout/">Logout</a></li>
                     {% else %}
-                    <li><a href="{% url 'users:userprofiles_registration' %}">Register</a></li>
-                    <li><a href="{% url 'users:login' %}">Login</a></li>
+                    <li><a href="/profile/register">Register</a></li>
+
+                    <form class="navbar-form navbar-right" role="form" method="post" action="/profile/login/">
+                    {% csrf_token %}
+                    <div class="form-group">
+                      <input type="text" placeholder="Username" name="username" class="form-control">
+                    </div>
+                    <div class="form-group">
+                      <input type="password" placeholder="Password" name="password" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-success">Sign in</button>
+                  </form>
                   {% endif %}
                  </ul>
+                  
                 </div><!--/.navbar-collapse -->
-              </div>
-            </nav>
+
+
