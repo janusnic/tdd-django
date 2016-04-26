@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static %}
+{% load bootstrap3 %}
 
-{% block title %}{{ product.name }}{% endblock %}
+{% load static %}
 
 {% block content %}
     <div class="container">
@@ -22,6 +22,7 @@
         </div>
 
     <div id="main" class="col-md-8 product-list">
+    {% block title %}<h3>{{ product.name }}</h3>{% endblock %}
     
     <div class="product-detail">
         <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no_image.png" %}{% endif %}">
@@ -46,6 +47,41 @@
         
         {{ product.description|linebreaks }}
     </div>
+
+    <h3>Recent reviews</h3>
+
+         {% if product.review_set.all %}
+            <div class="row">
+                {% for review in product.review_set.all %}
+                <div class="col-xs-6 col-lg-4">
+                    <em>{{ review.comment }}</em>
+                    <h6>Rated {{ review.rating }} of 5 by {{ review.user_name }}</h6>
+                    <h5><a href="{% url 'reviews:review_detail' product.id %}">
+                    Read more
+                    </a></h5>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No reviews for this wine yet</p>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+               <h3>Add your review</h3>
+                {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+               
+                <form action="{% url 'shop:add_review' product.id %}" method="post" class="form">
+                    {% csrf_token %}
+                    {% bootstrap_form review_form layout='inline' %}
+                    {% buttons %}
+                    <button type="submit" class="btn btn-primary">
+                      {% bootstrap_icon "star" %} Add
+                    </button>
+                    {% endbuttons %}
+                </form>
+            {% else %}
+            <p>Login required <a href="{% url 'users:login' %}">Login</a></p> 
+            {% endif %}
  </div>
 </div>
 <hr>

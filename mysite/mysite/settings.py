@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'ckeditor_uploader',
     'shop',
     'userprofiles',
+    'bootstrap3',
+    'reviews',
 ]
 
 MIDDLEWARE_CLASSES = [

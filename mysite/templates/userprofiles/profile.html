@@ -6,8 +6,10 @@
             {% block aside %}
                    <h2>Menu</h2>
                     <ul>
+                      <li><a href="{% url 'reviews:user_review_list' user.username %}">Hello {{ user.username }}</a></li>
                       <li><a href='{% url "users:profile" user.username %}'>My profile</a></li>
                       <li><a href='{% url "users:edit_profile" %}'>Edit my profile</a></li>
+
 
                     </ul>
             {% endblock aside %}
