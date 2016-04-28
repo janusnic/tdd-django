@@ -1,0 +1,112 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-04-28 11:44+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: mysite/settings.py:139
+msgid "Ukrainian"
+msgstr "Українська"
+
+#: mysite/settings.py:140
+msgid "English"
+msgstr "Англійська"
+
+#: pages/models.py:22
+msgid "Published"
+msgstr "Оприлюднено"
+
+#: pages/models.py:23
+msgid "Hidden"
+msgstr "Приховане"
+
+#: pages/models.py:24
+msgid "Draft"
+msgstr "Чернетка"
+
+#: pages/models.py:31
+msgid "author"
+msgstr "дописувач"
+
+#: pages/models.py:34
+msgid "parent"
+msgstr "предок"
+
+#: pages/models.py:35
+msgid "creation date"
+msgstr ""
+
+#: pages/models.py:37
+msgid "publication date"
+msgstr ""
+
+#: pages/models.py:38
+msgid ""
+"When the page should go\n"
+"            live. Status must be \"Published\" for page to go live."
+msgstr ""
+
+#: pages/models.py:40
+msgid "publication end date"
+msgstr ""
+
+#: pages/models.py:41
+msgid ""
+"When to expire the page.\n"
+"            Leave empty to never expire."
+msgstr ""
+
+#: pages/models.py:44
+msgid "last modification date"
+msgstr ""
+
+#: pages/models.py:46
+msgid "status"
+msgstr ""
+
+#: pages/models.py:47
+msgid "template"
+msgstr ""
+
+#: pages/models.py:50
+msgid "delegate to"
+msgstr ""
+
+#: pages/models.py:53
+msgid "freeze date"
+msgstr ""
+
+#: pages/models.py:54
+msgid ""
+"Don't publish any content\n"
+"            after this date."
+msgstr ""
+
+#: pages/models.py:71
+msgid "page"
+msgstr ""
+
+#: pages/models.py:72
+msgid "pages"
+msgstr ""
+
+#: pages/models.py:98
+msgid ""
+"Get the calculated status of the page based on :attr: Page."
+"publication_date, :attr: Page.publication_end_date and :attr: Page.status"
+msgstr ""

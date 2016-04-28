@@ -17,19 +17,26 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
-
+from filebrowser.sites import site
 from home import views
+from django.conf.urls.i18n import i18n_patterns
 
 urlpatterns = [
     
     url(r'^$', views.home, name='main'),
     url(r'^shop/', include('shop.urls', namespace='shop')),
     url(r'^reviews/', include('reviews.urls', namespace='reviews')),
-    
+    url(r'^tinymce/', include('tinymce.urls')),
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
     url(r'^users/', include('userprofiles.urls', namespace="users")),
-    url(r'^admin/', admin.site.urls),
+    
 ]
+
+urlpatterns += i18n_patterns(
+    url(r'^admin/filebrowser/', include(site.urls)),
+    url(r'^grappelli/', include('grappelli.urls')), # grappelli URLS
+    url(r'^admin/', admin.site.urls),
+)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,
                           document_root=settings.MEDIA_ROOT)

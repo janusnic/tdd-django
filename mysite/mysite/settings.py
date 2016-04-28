@@ -33,23 +33,29 @@ DEFAULT_CHARSET = 'utf-8'
 # Application definition
 
 INSTALLED_APPS = [
+    'grappelli',
+    'filebrowser',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mptt',
     'ckeditor',
     'ckeditor_uploader',
+    'tinymce',
     'shop',
     'userprofiles',
     'bootstrap3',
     'reviews',
+    'pages',
 ]
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -71,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
                 'shop.processors.context_processors.cart',
             ],
         },
@@ -109,12 +116,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+AUTH_USER_MODEL = 'auth.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'uk'
 
 TIME_ZONE = 'UTC'
 
@@ -124,13 +131,28 @@ USE_L10N = True
 
 USE_TZ = True
 
+from django.utils.translation import gettext_lazy as _
+
+# uk-UA   Ukrainian
+
+LANGUAGES = (
+    ('uk', _('Ukrainian')),
+    ('en', _('English')),
+    
+)
+
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, 'locale/'),
+)
+
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
 
-# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'public')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
@@ -153,3 +175,22 @@ EMAIL_HOST = 'localhost'
 EMAIL_HOST_USER = 'janusnic@gmail.com'
 
 EMAIL_PORT = 1025
+
+FILEBROWSER_MEDIA_ROOT = MEDIA_ROOT 
+FILEBROWSER_MEDIA_URL = MEDIA_URL 
+FILEBROWSER_STATIC_ROOT = STATIC_ROOT 
+FILEBROWSER_STATIC_URL = STATIC_URL 
+URL_FILEBROWSER_MEDIA = STATIC_URL + 'filebrowser/' 
+PATH_FILEBROWSER_MEDIA = STATIC_ROOT + 'filebrowser/' 
+
+
+APP_TITLE = 'Janus CMS'
+
+GRAPPELLI_ADMIN_TITLE = APP_TITLE
+
+GRAPPELLI_INDEX_DASHBOARD = 'app.dashboard.CustomIndexDashboard'
+
+MENU_CHOICES = (
+    (0, 'Top'),
+    (1, 'Left'),
+)
