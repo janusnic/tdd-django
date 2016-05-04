@@ -15,3 +15,9 @@ PAGE_SHOW_START_DATE = getattr(settings, 'PAGE_SHOW_START_DATE', False)
 # data could cause some weirdness.  If you must do this, you should update
 # your database and null any pages with ``publication_end_date`` set.
 PAGE_SHOW_END_DATE = getattr(settings, 'PAGE_SHOW_END_DATE', False)
+
+ADMIN_MEDIA_PREFIX = getattr(settings, 'ADMIN_MEDIA_PREFIX', '/static/admin/')
+
+# where to upload flag images /media/FLAG_UPLOAD_DIR
+FLAG_UPLOAD_DIR = getattr(settings, 'FLAG_UPLOAD_DIR', settings.MEDIA_ROOT)
+

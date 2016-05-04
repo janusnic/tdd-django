@@ -33,6 +33,7 @@ DEFAULT_CHARSET = 'utf-8'
 # Application definition
 
 INSTALLED_APPS = [
+    'grappelli.dashboard',
     'grappelli',
     'filebrowser',
     'django.contrib.admin',
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     'bootstrap3',
     'reviews',
     'pages',
+    
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -188,9 +190,13 @@ APP_TITLE = 'Janus CMS'
 
 GRAPPELLI_ADMIN_TITLE = APP_TITLE
 
-GRAPPELLI_INDEX_DASHBOARD = 'app.dashboard.CustomIndexDashboard'
+GRAPPELLI_INDEX_DASHBOARD = 'pages.dashboard.PagesDashboard'
 
 MENU_CHOICES = (
     (0, 'Top'),
     (1, 'Left'),
 )
+
+TINYMCE_DEFAULT_CONFIG = {
+    'theme': "advanced",
+}
