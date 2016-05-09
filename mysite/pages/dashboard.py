@@ -22,7 +22,9 @@ class PagesDashboard(Dashboard):
                 models=(
                     
                     'pages.language.models.*',
-                    
+                    'pages.menu.models.*',
+                    'pages.layouts.models.*',
+                    'pages.site.models.*',
                 ),
             )
         )

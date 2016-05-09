@@ -13,6 +13,10 @@ from . import settings
 import uuid
 from .language.models import *
 from .metadata.models import *
+from .menu.models import *
+from .site.models import *
+from .layouts.models import *
+
 
 @python_2_unicode_compatible
 class Page(MPTTModel):
