@@ -24,6 +24,8 @@ from django.conf.urls.i18n import i18n_patterns
 urlpatterns = [
     
     url(r'^$', views.home, name='main'),
+    # url(r'^home/', include('home.urls', namespace='home')),
+    url(r'', include('social.apps.django_app.urls', namespace='social')),
     url(r'^shop/', include('shop.urls', namespace='shop')),
     url(r'^reviews/', include('reviews.urls', namespace='reviews')),
     url(r'^tinymce/', include('tinymce.urls')),

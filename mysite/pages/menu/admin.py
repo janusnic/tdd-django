@@ -6,7 +6,7 @@ from pages.settings import ADMIN_MEDIA_PREFIX
 from .models import *
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect, get_object_or_404
-from django.conf.urls import patterns
+from django.conf.urls import url
 from django.utils.html import format_html
 class MenuAdmin(admin.ModelAdmin):
 
@@ -45,11 +45,10 @@ class MenuItemAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         admin_view = self.admin_site.admin_view
-        urls = patterns(
-            '',
-            (r'^(?P<item_pk>\d+)/move_up/$', admin_view(self.move_up)),
-            (r'^(?P<item_pk>\d+)/move_down/$', admin_view(self.move_down)),
-        )
+        urls = [
+            url(r'^(?P<item_pk>\d+)/move_up/$', admin_view(self.move_up)),
+            url(r'^(?P<item_pk>\d+)/move_down/$', admin_view(self.move_down)),
+        ]
 
         return urls + super(MenuItemAdmin, self).get_urls()
 

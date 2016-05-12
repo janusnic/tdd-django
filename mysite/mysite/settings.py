@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social.apps.django_app.default',
     'mptt',
     'ckeditor',
     'ckeditor_uploader',
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'bootstrap3',
     'reviews',
     'pages',
+    'home',
     
 ]
 
@@ -78,13 +80,44 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
+                'django.core.context_processors.i18n',
+                'django.core.context_processors.media',
+                'django.core.context_processors.static',
+                'django.core.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.request',
                 'shop.processors.context_processors.cart',
+                'social.apps.django_app.context_processors.backends',
+                'social.apps.django_app.context_processors.login_redirect',
             ],
         },
     },
 ]
+
+AUTHENTICATION_BACKENDS = (
+   'social.backends.facebook.FacebookOAuth2',
+   'social.backends.google.GoogleOAuth2',
+   'social.backends.twitter.TwitterOAuth',
+   'django.contrib.auth.backends.ModelBackend',
+)
+
+
+SOCIAL_AUTH_TWITTER_KEY = 'gTVg6h1fPPK0qyUj2Z7M5lKmW'
+SOCIAL_AUTH_TWITTER_SECRET = 'EGNPWNHuYqZ74sK08EtsKwIzA4I5HIbpXhcdeFfe1DainSuApL'
+
+
+# Your access token: Access token
+TWITTER_OAUTH_TOKEN = '74156305-bI1Vr3AtcZWa5THY8RPyZQYF8SXhkYDJnM21Hh7X9'
+# Your access token: Access token secret
+TWITTER_OAUTH_SECRET = 'VTy3S2enJFZGrjv4KRA7FK0TaSK2c9s7iMw8pbqje6eYF'
+# OAuth settings: Consumer key
+TWITTER_CONSUMER_KEY = 'gTVg6h1fPPK0qyUj2Z7M5lKmW'
+# OAuth settings: Consumer secret
+TWITTER_CONSUMER_SECRET = 'EGNPWNHuYqZ74sK08EtsKwIzA4I5HIbpXhcdeFfe1DainSuApL'
+
+
+#Access Token    74156305-OhEDIv0gyHtgkbYxKwQZkDqxIbZeghOQi4CuYnABC
+#Access Token Secret R2QuHtjZyJDT3NpjlQqBwhZGLgEvdxNHHTrWDNY6QUqfK
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 

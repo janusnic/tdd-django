@@ -1,3 +1,8 @@
-from django.db import models
+from __future__ import unicode_literals
+from appconf import AppConf
 
-# Create your models here.
+
+class TwitterConf(AppConf):
+    class Meta:
+        prefix = 'twitter'
+        required = ['OAUTH_TOKEN', 'OAUTH_SECRET', 'CONSUMER_KEY', 'CONSUMER_SECRET']
