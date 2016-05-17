@@ -80,12 +80,12 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.core.context_processors.i18n',
-                'django.core.context_processors.media',
-                'django.core.context_processors.static',
-                'django.core.context_processors.tz',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request',
+                
                 'shop.processors.context_processors.cart',
                 'social.apps.django_app.context_processors.backends',
                 'social.apps.django_app.context_processors.login_redirect',
@@ -105,6 +105,8 @@ AUTHENTICATION_BACKENDS = (
 SOCIAL_AUTH_TWITTER_KEY = 'gTVg6h1fPPK0qyUj2Z7M5lKmW'
 SOCIAL_AUTH_TWITTER_SECRET = 'EGNPWNHuYqZ74sK08EtsKwIzA4I5HIbpXhcdeFfe1DainSuApL'
 
+SOCIAL_AUTH_FACEBOOK_KEY = '229179783950067'
+SOCIAL_AUTH_FACEBOOK_SECRET = 'e29a1d4c0f20ebf83d4cf08c985e8e43'
 
 # Your access token: Access token
 TWITTER_OAUTH_TOKEN = '74156305-bI1Vr3AtcZWa5THY8RPyZQYF8SXhkYDJnM21Hh7X9'

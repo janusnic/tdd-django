@@ -15,14 +15,15 @@ class PageAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'title',
+                ('title', 'link'),
                 'slug',
                 'author',
                 'parent',
+                'page_content',
                 'publication_date',
                 'publication_end_date',
                 'last_modification_date',
-                'status',
+                ('status','index'),
                 'template',
                 'delegate_to',
                 'freeze_date',
@@ -30,10 +31,18 @@ class PageAdmin(admin.ModelAdmin):
                 'redirect_to',
             )
         }),
+        ('Advanced options', {
+            'classes': ('collapse',),
+            'fields': ('metadata_set',)
+        }),
     )
+    prepopulated_fields = {"slug": ("title",)}
 
+    
     actions = [activate, deactivate]
     
+
+ 
 
 admin.site.register(Page, PageAdmin)
 

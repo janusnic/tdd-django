@@ -19,6 +19,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from filebrowser.sites import site
 from home import views
+from pages import views as pages_views
 from django.conf.urls.i18n import i18n_patterns
 
 urlpatterns = [
@@ -28,6 +29,7 @@ urlpatterns = [
     url(r'', include('social.apps.django_app.urls', namespace='social')),
     url(r'^shop/', include('shop.urls', namespace='shop')),
     url(r'^reviews/', include('reviews.urls', namespace='reviews')),
+    url(r'^pages/(?P<url>.*)$', pages_views.main_view),
     url(r'^tinymce/', include('tinymce.urls')),
     url(r'^ckeditor/', include('ckeditor_uploader.urls')),
     url(r'^users/', include('userprofiles.urls', namespace="users")),

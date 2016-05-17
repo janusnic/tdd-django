@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
 from django.conf import settings as django_settings
 from mptt.models import MPTTModel
-
+from django.utils.text import slugify
 from .utils import get_now
 from . import settings
 import uuid
@@ -16,6 +16,9 @@ from .metadata.models import *
 from .menu.models import *
 from .site.models import *
 from .layouts.models import *
+from .layouts import get_template
+
+
 
 
 @python_2_unicode_compatible
@@ -33,9 +36,16 @@ class Page(MPTTModel):
 
     # used to identify pages across different databases
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
+    link = models.OneToOneField(MenuItem, verbose_name=_('Link'))
 
     title = models.CharField(_('Page title'), max_length=500)
     slug = models.SlugField(max_length=200, db_index=True, unique=True)
+    page_content = models.TextField(_('Page content'), blank=True)
+    index = models.BooleanField(
+        _('Index page'),
+        help_text=_('This page will be landing page for language specified for link (menu item)'),
+        blank=True, default=False
+    )
 
     metadata_set = models.ForeignKey(MetaSet, verbose_name=('Meta set'), null=True, blank=True)
 
@@ -137,6 +147,63 @@ class Page(MPTTModel):
             return self.title
         return "Page without id"
 
+    def have_posts(self):
+        """
+        checks if Page has any Posts
+
+        @return bool
+        """
+        if self.content_set.count():
+            return True
+
+        return False
+
+    def get_url(self):
+        """
+        returns url for this page
+
+        @return string
+        """
+        url_scheme = '/{country_code}/pages/{link_url}'
+        result = url_scheme.format(country_code=self.link.lang.country_code, link_url=self.link.url)
+
+        return result
+    
+    @property
+    def items_per_menu(self):
+        """
+        Counts the number of items
+        in this (sub)menu - makes sure the items
+        displayed are lower than template's
+        maximum characters in menu.
+        It will try to match maximum posiible items
+        per all paginated posts but lowest possible value
+        is 1.
+        """
+        template = get_template()
+        max_characters = template[1]
+
+        submenu_items = self.content_set.order_by('-creation_date')
+        lengths = [len(item.title) for item in submenu_items]
+
+        items = 0
+        items_sum = 0
+        pages_items = []
+
+        for i in lengths:
+            if items_sum < max_characters:
+                items_sum += i
+                items += 1
+            else:
+                items_sum = 0
+                pages_items.append(items)
+                items = 0
+
+        if not pages_items:
+            return 1
+
+        return min(pages_items)    
+
 
 @python_2_unicode_compatible
 class Content(models.Model):
@@ -145,18 +212,33 @@ class Content(models.Model):
     for a particular language`.
     """
     page = models.ForeignKey(Page, verbose_name=_('Page'))
+    title = models.CharField(_('Post title'), max_length=200, unique=True)
     type = models.CharField(_('type'), max_length=100, blank=False,
         db_index=True)
     body = models.TextField(_('Post content'))
+    active = models.BooleanField(_('Active'), blank=True, default=True)
     creation_date = models.DateTimeField(_('creation date'), editable=False,
         default=get_now)
     comments = models.BooleanField(_('Enable comments'), blank=True)
 
     def __str__(self):
-        return u"{0} :: {1}".format(self.page.slug(), self.body[0:15])
+        return self.title
 
 
     class Meta:
         get_latest_by = 'creation_date'
         verbose_name = _('Content')
         verbose_name_plural = _('Contents')
+
+    def get_url(self):
+        """
+        creates url for Post
+
+        @return string
+        """
+        url_scheme = '/pages/{country_code}/{link_url}/~{post_title}'
+
+        title = slugify(self.title)
+        result = url_scheme.format(country_code=self.page.link.lang.country_code, link_url=self.page.link.url, post_title=title)
+
+        return result

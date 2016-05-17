@@ -172,7 +172,7 @@ class MenuItem(models.Model):
         @return bool
         """
         if page_url == self.url or (
-            self.page.index and self.page.active and page_url is None
+            self.page.index and self.page.status==1 and page_url is None
         ):
 
             return True
@@ -188,7 +188,7 @@ class MenuItem(models.Model):
             return self.url
 
         else:
-            return '/{}/{}'.format(self.lang.country_code, self.url)
+            return '/pages/{}/{}'.format(self.lang.country_code, self.url)
 
     class Meta:
 
