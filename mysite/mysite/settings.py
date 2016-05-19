@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'reviews',
     'pages',
     'home',
+    'fts',
+    'polls',
     
 ]
 

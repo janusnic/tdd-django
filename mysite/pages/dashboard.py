@@ -40,6 +40,15 @@ class PagesDashboard(Dashboard):
 
         self.children.append(
             modules.ModelList(
+                _('Polls'),
+                column=1,
+                collapsible=True,
+                models=('polls.models.*', )
+            )
+        )
+
+        self.children.append(
+            modules.ModelList(
                 _('SEO'),
                 column=2,
                 collapsible=True,
