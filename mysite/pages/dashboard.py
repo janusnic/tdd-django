@@ -56,7 +56,14 @@ class PagesDashboard(Dashboard):
             )
         )
 
-
+        self.children.append(
+            modules.ModelList(
+                _('Gallery'),
+                column=2,
+                collapsible=True,
+                models=('gallery.models.*', )
+            )
+        )
         self.children.append(
             modules.AppList(
                 _('Administration'),

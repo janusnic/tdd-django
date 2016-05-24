@@ -1,0 +1,35 @@
+{% extends 'main.html' %}
+
+{% load i18n %}
+
+{% block title %}{{ photo.album.name }}{% endblock %}
+{% block header %}{{ photo.album.name }}{% endblock %}
+
+{% block pagination %}
+    <ul class="paginator">
+        <li class="prev">
+            {% if paginator.has_previous %}
+                <a href="{{ paginator.previous_url }}" data-navigate="left">&larr;&nbsp;{% trans 'Prev' %}</a>
+            {% else %}
+                <span>&larr;&nbsp;{% trans 'Prev' %}</span>
+            {% endif %}
+        </li>
+        <li class="count">{{ paginator.index }} {% trans 'of' %} {{ paginator.count }}</li>
+        <li class="next">
+            {% if paginator.has_next %}
+                <a href="{{ paginator.next_url }}" data-navigate="right">{% trans 'Next' %}&nbsp;&rarr;</a>
+            {% else %}
+                <span>{% trans 'Next' %}&nbsp;&rarr;</span>
+            {% endif %}
+        </li>
+    </ul>
+{% endblock %}
+
+
+{% block content %}
+    <div class="photo">
+        <img src="{{ photo.file_medium.url }}" alt="{{ photo.name }}">
+
+        <div class="name">{{ photo.name }}</div>
+    </div>
+{% endblock %}

@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
 import os
-
+from os import path
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,10 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.humanize',
     'django.contrib.staticfiles',
     'social.apps.django_app.default',
     'mptt',
     'ckeditor',
+    #'pipeline',
     'ckeditor_uploader',
     'tinymce',
     'shop',
@@ -55,6 +57,7 @@ INSTALLED_APPS = [
     'home',
     'fts',
     'polls',
+    'gallery',
     
 ]
 
@@ -68,9 +71,12 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
+    #'mysite.assets.CompileAssetsMiddleware',
 ]
 
 ROOT_URLCONF = 'mysite.urls'
+
 
 TEMPLATES = [
     {
@@ -92,6 +98,7 @@ TEMPLATES = [
                 'social.apps.django_app.context_processors.backends',
                 'social.apps.django_app.context_processors.login_redirect',
             ],
+             
         },
     },
 ]
@@ -185,7 +192,6 @@ LOCALE_PATHS = (
 )
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
@@ -195,8 +201,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'public')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+PHOTOS_PER_PAGE = 10
 
 CART_SESSION_ID = 'cart'
 

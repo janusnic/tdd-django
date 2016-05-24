@@ -22,12 +22,17 @@ from home import views
 from pages import views as pages_views
 from django.conf.urls.i18n import i18n_patterns
 
+#from gallery.views import IndexPageView
+
 urlpatterns = [
     
     url(r'^$', views.home, name='main'),
-    # url(r'^home/', include('home.urls', namespace='home')),
+    #url(r'^$', IndexPageView.as_view(template_name='gallery/index.html')),
+    
     url(r'', include('social.apps.django_app.urls', namespace='social')),
     url(r'^shop/', include('shop.urls', namespace='shop')),
+    url(r'^polls/', include('polls.urls', namespace='polls')),
+    url(r'^gallery/', include('gallery.urls', namespace='gallery')),
     url(r'^reviews/', include('reviews.urls', namespace='reviews')),
     url(r'^pages/(?P<url>.*)$', pages_views.main_view),
     url(r'^tinymce/', include('tinymce.urls')),

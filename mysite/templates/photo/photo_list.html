@@ -1,0 +1,30 @@
+{% extends 'main.html' %}
+
+{% load i18n %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block header %}{{ page_title }}{% endblock %}
+
+{% block actions %}
+    {% if view.actions_template_name %}
+        {% include view.actions_template_name %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <ul class="photos">
+        {% for photo in photo_list %}
+            {# could get here by either album detail (maybe in location), person detail, or search #}
+            {% if location %}
+                {% url 'photo' pk=photo.pk album_pk=album.pk location_pk=location.pk as url %}
+            {% elif person %}
+                {% url 'photo' pk=photo.pk person_pk=person.pk as url %}
+            {% elif query %}
+                {% url 'photo' pk=photo.pk query=query as url %}
+            {% else %}
+                {% url 'photo:photodetail' pk=photo.pk as url %}
+            {% endif %}
+            <li><a href="{{ url }}"><img src="{{ photo.file_thumb.url }}" alt="{{ photo.name }}"></a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

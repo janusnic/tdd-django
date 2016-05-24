@@ -1,1367 +1,550 @@
-# tdd-django unit_18
+# tdd-django unit_19
 
-Тестирование модели
-===================
-Selenium Web Driver (далее WD), входящий в Selenium 2.0, - это библиотека, эмулирующая браузер и позволяющая работать с элементами web-форм. В отличие от Selenium Server не требует предварительного запуска сервера, обрабатывающего команды Selenium.
+Class Based Views - Django
+==========================
 
-ссылки:
--------
-http://seleniumhq.org/docs/03_webdriver.html - официальная документация по WD;
-http://selenium2.ru/docs/webdriver.html#webdriver - Selenium 2.0 и WebDriver, начало работы;
-http://automated-testing.info - сайт, на котором много технических статей по использованию инструментов тестирования, в том числе Selenium WD.
-
-Классы, их методы и свойства
-============================
-Основные импорты:
-----------------
-    from selenium import webdriver # работа с браузером
-    from selenium.webdriver.support.ui import WebDriverWait # ожидания различных событий
-    from selenium.webdriver.support.ui import Select # работа со списками
-    from selenium.webdriver.common.action_chains import ActionChains # различные действия
-
-Примеры запуска браузера:
--------------------------
-
-    ffp = webdriver.FirefoxProfile(ff_Profile) # Установка профиля мозиллы, где ff_Profile - это путь к каталогу с профилем.
-
-    page = webdriver.Firefox(firefox_profile=ffp, timeout=5)) # page - экземпляр класса <class 'selenium.webdriver.firefox.webdriver.WebDriver'>. Фактически - это окно браузера.
-
-    page.maximize_window() # разворачивание окна браузера во весь экран
-
-
-Список методов и свойств:
--------------------------
+Gallery
+=======
     
-    ['NATIVE_EVENTS_ALLOWED', '__class__', '__delattr__', '__dict__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_unwrap_value', '_wrap_value', 'add_cookie', 'back', 'close', 'create_web_element', 'current_url', 'current_window_handle', 'delete_all_cookies', 'delete_cookie', 'desired_capabilities', 'execute', 'execute_async_script', 'execute_script', 'find_element', 'find_element_by_class_name', 'find_element_by_css_selector', 'find_element_by_id', 'find_element_by_link_text', 'find_element_by_name', 'find_element_by_partial_link_text', 'find_element_by_tag_name', 'find_element_by_xpath', 'find_elements', 'find_elements_by_class_name', 'find_elements_by_css_selector', 'find_elements_by_id', 'find_elements_by_link_text', 'find_elements_by_name', 'find_elements_by_partial_link_text', 'find_elements_by_tag_name', 'find_elements_by_xpath', 'firefox_profile', 'forward', 'get', 'get_cookie', 'get_cookies', 'get_screenshot_as_base64', 'get_screenshot_as_file', 'get_window_position', 'get_window_size', 'implicitly_wait', 'maximize_window', 'name', 'orientation', 'page_source', 'quit', 'refresh', 'save_screenshot', 'set_page_load_timeout', 'set_script_timeout', 'set_window_position', 'set_window_size', 'start_client', 'start_session', 'stop_client', 'switch_to_active_element', 'switch_to_alert', 'switch_to_default_content', 'switch_to_frame', 'switch_to_window', 'title', 'window_handles']
+    manage.py startapp gallery
 
+models.py
+---------
 
-manage.py startapp fts
-----------------------
+        from django.db import models
+        from django.core.urlresolvers import reverse
 
-    mysite
-    |-- fts
-    |   |-- __init__.py
-    |   |-- models.py
-    |   |-- tests.py
-    |   `-- views.py
-    |-- manage.py
-    `-- mysite
-        |-- __init__.py
-        |-- settings.py
-        |-- urls.py
-        `-- wsgi.py
+        from .fields import ThumbnailImageField
 
+        class Item(models.Model):
+            name = models.CharField(max_length=250)
+            description = models.TextField()
 
+            class Meta:
+                ordering = ['name']
 
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
+            def __str__(self):
+                return self.name
 
-    from django.test import LiveServerTestCase
-    from selenium import webdriver
+            def get_absolute_url(self):
+                return reverse('gallery:item_object', args=[str(self.id)])
 
-    class PollsTest(LiveServerTestCase):
+        class Photo(models.Model):
+            item = models.ForeignKey(Item)
+            title = models.CharField(max_length=100)
+            image = ThumbnailImageField(upload_to='photos')
+            caption = models.CharField(max_length=250, blank=True)
 
-        def setUp(self):
-            self.browser = webdriver.Firefox()
-            self.browser.implicitly_wait(3)
+            class Meta:
+                ordering = ['title']
 
-        def tearDown(self):
-            self.browser.quit()
+            def __str__(self):
+                return self.title
 
-        def test_can_create_new_poll_via_admin_site(self):
-            # Nerd opens his web browser, and goes to the admin page
-            self.browser.get(self.live_server_url + '/admin/')
+            def get_absolute_url(self):
+                return reverse('gallery:photo_object', args=[str(self.id)])
 
-            # he sees the familiar 'Janus CMS' heading
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('Janus CMS', body.text)
+fields.py
+---------
 
-            # TODO: use the admin site to create a Poll
-            self.fail('finish this test for Janus CMS')
+        from django.db.models.fields.files import ImageField, ImageFieldFile
+        from PIL import Image
+        import os
 
+        def _add_thumb(s):
+            """
+            Changes the string which contains file name
+            by inserting '.thumb' before file extension (which changes to .jpg)
+            """
+            parts = s.split('.')
+            parts.insert(-1, 'thumb')
+            if parts[-1].lower() not in ['jpeg', 'jpg']:
+                parts[-1] = 'jpg'
+            return '.'.join(parts)
 
-./manage.py test fts
---------------------
+        class ThumbnailImageFieldFile(ImageFieldFile):
+            def _get_thumb_path(self):
+                return _add_thumb(self.path)
+            thumb_path = property(_get_thumb_path)
 
-    Creating test database for alias 'default'...
-    F
-    ======================================================================
-    FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 25, in test_can_create_new_poll_via_admin_site
-        self.fail('finish this test')
-    AssertionError: finish this test
+            def _get_thumb_url(self):
+                return _add_thumb(self.url)
+            thumb_url = property(_get_thumb_url)
 
-    ----------------------------------------------------------------------
-    Ran 1 test in 5.376s
+            def save(self, name, content, save=True):
+                super(ThumbnailImageFieldFile, self).save(name, content, save)
+                img = Image.open(self.path)
+                img.thumbnail(
+                    (self.field.thumb_width, self.field.thumb_height),
+                    Image.ANTIALIAS
+                )
+                img.save(self.thumb_path, 'JPEG')
 
-    FAILED (failures=1)
-    Destroying test database for alias 'default'...
+            def delete(self, save=True):
+                if os.path.exists(self.thumb_path):
+                    os.remove(self.thumb_path)
+                super(ThumbnailImageFieldFile, self).delete(save)
 
+        class ThumbnailImageField(ImageField):
+            """
+            This field has the same behaviour as ImageField, 
+            but additionally saves thumbnail of a picture
+            """
+            attr_class = ThumbnailImageFieldFile
 
-Покрытие тестами админки для модели Polls
---------------------------------------------
+            def __init__(self, thumb_width=128, thumb_height=128, *args, **kwargs):
+                self.thumb_width = thumb_width
+                self.thumb_height = thumb_height
+                super(ThumbnailImageField, self).__init__(*args, **kwargs)
 
-    * ``find_elements_by_name`` - для поска полей input по имени
-      
-    * ``send_keys`` - установка значения полю и нажатие RETURN
-      
-    * ``find_elements_by_link_text`` - возвращает список WebElements
-
-Метод send_keys() - печать в поля ввода
----------------------------------------
-Примеры использования:
-
-        # Ввод текста в поле формы, найденного по xPath:
-        login = page.find_element_by_xpath("//input[@id='UserName']")
-        login.send_keys('my_login') 
-        # Или можно сразу:
-        page.find_element_by_xpath("//input[@id='UserName']").send_keys('my_login')
-
-Поиск
-=====
-Чтобы найти все элементы, удовлетворяющие условию поиска, используйте следующие методы (возвращается список):
-
-        find_elements_by_name
-        find_elements_by_xpath
-        find_elements_by_link_text
-        find_elements_by_partial_link_text
-        find_elements_by_tag_name
-        find_elements_by_class_name
-        find_elements_by_css_selector
-
-
-Помимо общедоступных (public) методов существует два приватных (private) метода, которые при знании указателей объектов страницы могут быть очень полезны: find_element and find_elements.
-
-Пример использования:
-
-        from selenium.webdriver.common.by import By
-
-        driver.find_element(By.XPATH, '//button[text()="Some text"]')
-        driver.find_elements(By.XPATH, '//button')
-
-Для класса By доступны следующие атрибуты:
-
-        ID = "id"
-        XPATH = "xpath"
-        LINK_TEXT = "link text"
-        PARTIAL_LINK_TEXT = "partial link text"
-        NAME = "name"
-        TAG_NAME = "tag name"
-        CLASS_NAME = "class name"
-        CSS_SELECTOR = "css selector"
-
-Поиск по Id
+settings.py
 -----------
-Используйте этот способ, когда известен id элемента. Если ни один элемент не удовлетворяет заданному значению id, будет вызвано исключение NoSuchElementException.
 
-Для примера, рассмотрим следующий исходный код страницы:
+        PROJECT_APPS = (
 
-        <html>
-         <body>
-          <form id="loginForm">
-           <input name="username" type="text" />
-           <input name="password" type="password" />
-           <input name="continue" type="submit" value="Login" />
-          </form>
-         </body>
-        <html>
+            'gallery',
+        )
 
-Элемент form может быть определен следующим образом:
 
-        login_form = driver.find_element_by_id('loginForm')
+        MEDIA_URL = '/media/'
+        MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
-Поиск по Name
+
+Migrations
 -------------
-Используйте этот способ, когда известен атрибут name элемента. Результатом будет первый элемент с искомым значением атрибута name. Если ни один элемент не удовлетворяет заданному значению name, будет вызвано исключение NoSuchElementException.
 
-Для примера, рассмотрим следующий исходный код страницы:
+    manage.py migrate
 
-        <html>
-         <body>
-          <form id="loginForm">
-           <input name="username" type="text" />
-           <input name="password" type="password" />
-           <input name="continue" type="submit" value="Login" />
-           <input name="continue" type="button" value="Clear" />
-          </form>
-        </body>
-        <html>
 
-Элементы с именами username и password могут быть определены следующим образом:
+admin.py
+---------
+        from django.contrib import admin
+        from .models import Item, Photo
 
-        username = driver.find_element_by_name('username')
-        password = driver.find_element_by_name('password')
+        class PhotoInline(admin.StackedInline):
+            model = Photo
 
-Следующий код получит кнопку “Login”, находящуюся перед кнопкой “Clear”:
+        class ItemAdmin(admin.ModelAdmin):
+            inlines = [PhotoInline]
 
-        continue = driver.find_element_by_name('continue')
-    
+        admin.site.register(Item, ItemAdmin)
+        admin.site.register(Photo)
 
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-    from django.test import TestCase
-    from django.test import LiveServerTestCase
-    from selenium import webdriver
-    # we need the special ``Keys``class to send a carriage return to the password field.
-    from selenium.webdriver.common.keys import Keys
-
-    class PollsTest(LiveServerTestCase):
-
-        def setUp(self):
-            self.browser = webdriver.Firefox()
-            self.browser.implicitly_wait(3)
-
-        def tearDown(self):
-            self.browser.quit()
-
-        def test_can_create_new_poll_via_admin_site(self):
-            # Nerd opens her web browser, and goes to the admin page
-            self.browser.get(self.live_server_url + '/admin/')
-
-            # He sees the familiar 'Janus CMS' heading
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('Janus CMS', body.text)
-
-            # Nerd types in his username and passwords and hits return
-            username_field = self.browser.find_element_by_name('username')
-            username_field.send_keys('admin')
-
-            password_field = self.browser.find_element_by_name('password')
-            password_field.send_keys('adm1n')
-            password_field.send_keys(Keys.RETURN)
-
-            # his username and password are accepted, and he is taken to
-            # the Site Administration page
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('Site administration', body.text)
-
-            # He now sees a couple of hyperlink that says "Polls"
-            polls_links = self.browser.find_elements_by_link_text('Polls')
-            self.assertEquals(len(polls_links), 2)
-
-            # TODO: use the admin site to create a Poll
-            self.fail('finish this test for Janus CMS')      
-
-
-./manage.py test fts
---------------------
-
-    Creating test database for alias 'default'...
-    F
-    ======================================================================
-    FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 36, in test_can_create_new_poll_via_admin_site
-        self.assertIn('Site administration', body.text)
-    AssertionError: 'Site administration' not found in 'Janus CMS\nLogin\nPlease enter the correct username and password for a staff account. Note that both fields may be case-sensitive.\nUsername\nPassword'
-
-    ----------------------------------------------------------------------
-    Ran 1 test in 7.359s
-
-    FAILED (failures=1)
-    Destroying test database for alias 'default'...
-
-username и password не работаюе  - мы их задавали литералами
-
-
-Создаем test fixture
------------------------
-
-    mkdir fts/fixtures
-    ./manage.py dumpdata auth.User --indent=2 > fts/fixtures/admin_user.json
-
-JSON representation пользователей
----------------------------------
-
-.. sourcecode:: python
-    :filename: mysite/fts/fixtures/admin_user.json
-
-    [
-    {
-      "model": "auth.user",
-      "pk": 1,
-      "fields": {
-        "password": "pbkdf2_sha256$24000$yCMN0c8j8BhJ$9MA7TwwoWnDVQOeact5TSNk5On7L752QwenweaX4o8A=",
-        "last_login": "2016-05-17T06:51:43.460Z",
-        "is_superuser": true,
-        "username": "janus",
-        "first_name": "",
-        "last_name": "",
-        "email": "janusnic@gmail.com",
-        "is_staff": true,
-        "is_active": true,
-        "date_joined": "2016-03-29T06:46:44.898Z",
-        "groups": [],
-        "user_permissions": []
-      }
-    },
-    {
-      "model": "auth.user",
-      "pk": 2,
-      "fields": {
-        "password": "pbkdf2_sha256$24000$GZ4WMkrEL44H$PBuLXSmfGOI9j53AN+QGPYamJiD8n/bWtqe/kVDwHiA=",
-        "last_login": "2016-04-26T08:52:09.595Z",
-        "is_superuser": false,
-        "username": "boo",
-        "first_name": "",
-        "last_name": "",
-        "email": "boo@localhost.com",
-        "is_staff": false,
-        "is_active": true,
-        "date_joined": "2016-04-26T07:46:54.120Z",
-        "groups": [],
-        "user_permissions": []
-      }
-    },
-    {
-      "model": "auth.user",
-      "pk": 3,
-      "fields": {
-        "password": "!bMOYmV4uADNU742wtymeCdAevqjEiTDKUcwuIHeQ",
-        "last_login": "2016-05-11T12:48:19.057Z",
-        "is_superuser": false,
-        "username": "janusnic",
-        "first_name": "Janus",
-        "last_name": "Nicon",
-        "email": "",
-        "is_staff": false,
-        "is_active": true,
-        "date_joined": "2016-05-11T11:45:23.887Z",
-        "groups": [],
-        "user_permissions": []
-      }
-    }
-    ]
-
-
-
-Загрузим fixture в тест. 
-------------------------
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-    from django.test import LiveServerTestCase
-    from selenium import webdriver
-    from selenium.webdriver.common.keys import Keys
-
-    class PollsTest(LiveServerTestCase):
-        fixtures = ['admin_user.json']
-
-        def setUp(self):
-            [...]
-
-https://docs.djangoproject.com/en/1.9/topics/testing/#fixture-loading
-
-./manage.py test fts
-
-    Creating test database for alias 'default'...
-    F
-    ======================================================================
-    FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 43, in test_can_create_new_poll_via_admin_site
-        self.assertEquals(len(polls_links), 2)
-    AssertionError: 0 != 2
-
-    ----------------------------------------------------------------------
-    Ran 1 test in 12.558s
-
-    FAILED (failures=1)
-    Destroying test database for alias 'default'...
-
-.. sourcecode:: python
-    :filename: mysite/settings.py
-
-
-    INSTALLED_APPS = [
-        'home',
-        'fts',
-        'polls',
-    ]
-
-.. sourcecode:: python
-    :filename: mysite/polls/tests.py
-
-    from django.test import TestCase
-    from django.utils import timezone
-    from polls.models import Choice, Poll
-
-    class PollModelTest(TestCase):
-        def test_creating_a_new_poll_and_saving_it_to_the_database(self):
-            # start by creating a new Poll object with its "question" and
-            # "pub_date" attributes set
-            poll = Poll()
-            poll.question = "What's up?"
-            poll.pub_date = timezone.now()
-
-            # check we can save it to the database
-            poll.save()
-
-            # now check we can find it in the database again
-            all_polls_in_database = Poll.objects.all()
-            self.assertEquals(len(all_polls_in_database), 1)
-            only_poll_in_database = all_polls_in_database[0]
-            self.assertEquals(only_poll_in_database, poll)
-
-            # and check that it's saved its two attributes: question and pub_date
-            self.assertEquals(only_poll_in_database.question, "What's up?")
-            self.assertEquals(only_poll_in_database.pub_date, poll.pub_date)
-
-
-manage.py test polls
-
-          File "/home/janus/github/tdd-django/mysite/polls/tests.py", line 3, in <module>
-            from polls.models import Choice, Poll
-        ImportError: cannot import name 'Choice'
-
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
-    
-    from django.db import models
-
-    class Poll(object):
-        pass 
-
-    class Choice(object):
-        pass
-
-manage.py test polls
-
-      File "/home/janus/github/tdd-django/mysite/polls/tests.py", line 14, in test_creating_a_new_poll_and_saving_it_to_the_database
-        poll.save()
-    AttributeError: 'Poll' object has no attribute 'save'
-
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
-
-    class Poll(models.Model):
-        pass
-
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
-
-    manage.py test polls
-
-    from django.db import models
-
-    class Poll(models.Model):
-        question = models.CharField(max_length=200)
-        pub_date = models.DateTimeField()
-
-    class Choice(models.Model):
-        pass
-
-./manage.py test polls
-
-        Creating test database for alias 'default'...
-        .
-        ----------------------------------------------------------------------
-        Ran 1 test in 0.001s
-
-        OK
-        Destroying test database for alias 'default'...
-
-Зарегистрируем модель в admin.py
---------------------------------
-
-    python manage.py test fts
-
-.. sourcecode:: python
-    :filename: mysite/polls/admin.py
-
-    from django.contrib import admin
-    from polls.models import Poll
-
-    admin.site.register(Poll)
-
-
-.. sourcecode:: python
-    :filename: mysite/pages/dashdoard.py
+dashboard.py
+------------
 
         self.children.append(
             modules.ModelList(
-                _('Polls'),
-                column=1,
+                _('Gallery'),
+                column=2,
                 collapsible=True,
-                models=('polls.models.*', )
+                models=('gallery.models.*', )
             )
         )
 
 
-./manage.py test fts
+Общие представления и отображение объектов
+===========================================
 
-        ----------------------------------------------------------------------
-        Traceback (most recent call last):
-          File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 43, in test_can_create_new_poll_via_admin_site
-            self.assertEquals(len(polls_links), 2)
-        AssertionError: 1 != 2
+Django предлагает полезный и удобный набор встроенных общих представлений-классов, который позволяют отображать список объектов или конкретный объект.
 
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
 
-        # He now sees a couple of hyperlink that says "Polls"
-        polls_links = self.browser.find_elements_by_link_text('Polls')
-        self.assertEquals(len(polls_links), 1)
+TemplateView
+============
+Самый простой класс. Существует, чтобы просто отрендерить шаблон. 
 
-        # TODO: use the admin site to create a Poll
-        self.fail('finish this test for Janus CMS')
+Иногда нужно сделать для проекта статическую страницу, что-то вроде "Об авторе" или "О компании". Там просто нужно вывести определенную информацию, которая в дальнейшем редко будет меняться или совсем не будет. Создавать отдельное приложение не имеет смысла и забивать в базу всю информацию - тоже. 
 
-./manage.py test fts
+Пишем в urls.py:
 
-    Traceback (most recent call last):
-      File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 46, in test_can_create_new_poll_via_admin_site
-        self.fail('finish this test for Janus CMS')
-    AssertionError: finish this test for Janus CMS
-
-
-Настраиваем admin site
-=======================
-
-Выясним что нужно для построения теста
---------------------------------------
-
-    python manage.py runserver
-
-    http://localhost:8000/admin/``. Login
-
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-        # he now sees a couple of hyperlink that says "Polls"
-        polls_links = self.browser.find_elements_by_link_text('Polls')
-        self.assertEquals(len(polls_links), 2)
-
-        # The second one looks more exciting, so he clicks it
-        polls_links[0].click()
-
-        # he is taken to the polls listing page, which shows he has
-        # no polls yet
-        body = self.browser.find_element_by_tag_name('body')
-        self.assertIn('0 total', body.text)
-
-        # he sees a link to 'add' a new poll, so he clicks it
-        new_poll_link = self.browser.find_element_by_link_text('Add poll')
-        new_poll_link.click()
-
-        # TODO: use the admin site to create a Poll
-        self.fail('finish this test for Janus CMS')
-
-
-./manage.py test fts
-
-    Creating test database for alias 'default'...
-    F
-    ======================================================================
-    FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 58, in test_can_create_new_poll_via_admin_site
-        self.fail('finish this test for Janus CMS')
-    AssertionError: finish this test for Janus CMS
-
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-        # he sees some input fields for "Question" and "Date published"
-        body = self.browser.find_element_by_tag_name('body')
-        self.assertIn('Question', body.text)
-        self.assertIn('Pub date', body.text)
-
-
-"Date Published", much nicer.
-
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
-
-    from django.db import models
-
-    class Poll(models.Model):
-        question = models.CharField(max_length=200)
-        pub_date = models.DateTimeField(verbose_name='Date published')
-
-    class Choice(models.Model):
-        pass
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-        # he sees some input fields for "Question" and "Date published"
-        body = self.browser.find_element_by_tag_name('body')
-        self.assertIn('Question', body.text)
-        self.assertIn('Date published', body.text)
-
-
-
-Метод get() - переход по URL
----------------------------
-
-Примеры использования:
-
-    page = webdriver.Firefox(firefox_profile=ffp, timeout=5)) # открываем браузер
-    page.get('google.com') # Переходим на Google.
-
-    # Переходим по ссылке, содержащейся в теге а, для которого есть текстовое описание 'Настройка синхронизации':
-    page.get(page.find_element_by_xpath("//a[contains(text(),'Настройка синхронизации')]").get_attribute('href'))
-
-
-Метод get_screenshot_as_file() - снятие скриншота web-страницы в .png-файл
---------------------------------------------------------------------------
-Примеры использования:
-
-        # Снять скриншот с текущего экземпляра браузера:
-        ffp = webdriver.FirefoxProfile(ff_Profile) # указываем профиль
-        page = webdriver.Firefox(firefox_profile=ffp, timeout=5)) # открываем браузер
-        page.get_screenshot_as_file('full_path.png') # делаем скриншот
-
-Метод switch_to_alert() - переключение на окно сообщения
---------------------------------------------------------
-Примеры использования:
-
-    alert = page.switch_to_alert() # Переключаемся на окно алерта. switch_to_alert возвращает класс Alert:
-    alert.text # Возвращает текст алерта.
-    alert.dismiss() # Выполняет действие "отказаться" от алерта.
-    alert.accept() # Выполняет действие "принять" алерт.
-    alert.send_keys() # Выполняет действие "напечатать" в окне алерта.
-
-
-Свойство text  - возвращает текстовое значение элемента web-страницы
---------------------------------------------------------------------
-Примеры использования:
-
-        # Получение текстового значения некоторой ссылки, искомой по xpath:
-        link = page.find_element_by_xpath("//tr[@class='odd-row']/td/a")
-        a = link.text
-        # Или можно сразу получить это значение:
-        b = page.find_element_by_xpath("//tr[@class='odd-row']/td/a").text
-
-Свойство tag_name - имя тега элемента web-страницы
---------------------------------------------------
-Примеры использования:
-
-        # Получение имени тега, для некоторого элемента, найденного по xpath:
-        element = page.find_element_by_xpath("//div[@id='main']/..//input[@id='Title']")
-        a = element.tag_name # получим имя тега, в данном случае a = 'input'
-        # Или можно сразу:
-        b = page.find_element_by_xpath("//div[@id='main']/..//input[@id='Title']").tag_name
-
-Метод clear() - очистка текстового содержимого элемента
--------------------------------------------------------
-Примеры использования:
-
-        # Удаляем текст, введенный в input:
-        page.find_element_by_xpath("//input[@id='Login']").clear()
-
-Метод get_attribute() - получить имя некоторого атрибута для тега элемента web-страницы
----------------------------------------------------------------------------------------
-Примеры использования:
-
-        # 1. Получение значения атрибута, для некоторого тега найденного по xpath:
-        tag = page.find_element_by_xpath("//div[@id='main']/..//input[@id='Title']")
-        a = tag.get_attribute('value') # Получаем значение атрибута 'value' для тега input
-        # Или можно сразу:
-        b = page.find_element_by_xpath("//div[@id='main']/..//input[@id='Title']").get_attribute('value')
-
-        # 2. Переход по ссылке для пункта меню "Настройка синхронизации":
-        page.get(page.find_element_by_xpath("//a[contains(text(),'Настройка синхронизации')]").get_attribute('href'))
-
-
-Метод click() - щелчок левой кнопки на элементе
------------------------------------------------
-Примеры использования:
-
-        # Щелчок левой кнопки мыши на иконку выпадающего списка, найденную по xpath:
-        element = page.find_element_by_xpath("//img[@id='osSelect']")
-        element.click()
-        # Или можно сразу:
-        page.find_element_by_xpath("//img[@id='osSelect']").click()
-
-Метод is_displayed() - проверка видимости элемента
---------------------------------------------------
-Примеры использования:
-
-        # 1. Определение того, является ли элемент, найденный по xpath, видимым на форме:
-        element = page.find_element_by_xpath("//div[@id='treeWrapper']") # В данном случае определяется, виден ли выпадающий список
-        flag = element.is_displayed() # flag = True - если элемент видим, flag = False - если нет
-        # Или можно сразу:
-        flag = page.find_element_by_xpath("//div[@id='treeWrapper']").is_displayed()
-
-        # 2. Использование в блоке ожидания появления элемента на форме:
-        WebDriverWait(page, 5).until(
-            lambda element: element.find_element_by_xpath("//div[@id='treeWrapper']").is_displayed(),
-            'Timeout while waiting popup-tree list.') # Ждём 5 сек. пока не появится выпадающий список, иначе - пишем сообщение.
-
-find_element_by_xpath
----------------------
-Для идентификации элементов на web-форме, чаще всего при работе с Selenium используют xPath
-Метод find_element_by_xpath() - поиск элемента web-страницы по xPath
-
-Примеры использования:
-----------------------
-    # Обращение к элементам страницы по xpath:
-    login = page.find_element_by_xpath("//input[@id='UserName']")
-    pwd = page.find_element_by_xpath("//input[@id='Password']")
-
-
-    # Печать в поля ввода:
-    login.send_keys(self.login)
-    pwd.send_keys(self.password)
-
-    # Или можно сразу:
-    page.find_element_by_xpath("//*[@type='submit']").click()
-    
-Метод until() - проверка выполнения логического условия
--------------------------------------------------------
-Примеры использования:
-
-        opTimeout = 5 # задаём таймаут 5 сек.
-        # Ждем появления некоторых элементов на форме, найденных по xpath, с указанным таймаутом. Until() принимает в качестве параметра логическое условие.
-        # В данном случае - ожидается появление надписи 'Основные параметры' и кнопки Сохранить внизу страницы. Если они не появятся, в лог запишется сообщение:
-        WebDriverWait(page, opTimeout).until(lambda element: 
-            (element.find_element_by_xpath("//div[@id='main']/..//div[contains(text(), 'Основные параметры')]")) and
-            (element.find_element_by_xpath("//div[@id='main']/..//input[@id='save']")), 'Таймаут! Элементы на форме не появились!')
-
-Метод select_by_index() - выбор строк в селекторе по индексу
--------------------------------------------------------------
-Примеры использования:
-
-        # Обращение к существующей строке селектора по индексу, если селектор найден по xPath:
-        Select(page.find_element_by_xpath("//select[@id='SelectedAttackType']")).select_by_index(1) # Выбирает 2-ю строку в селекторе (отсчет с нуля).
-
-Метод select_by_value() - выбор строк в селекторе по значению
--------------------------------------------------------------
-        Примеры использования:
-        # Обращение к существующей строке селектора по значению атрибута value, если селектор найден по xPath:
-
-        Select(page.find_element_by_xpath("//select[@id='SelectedStatusId']")).select_by_value(2) # Выбирает строку в селекторе с value=2.
-
-Метод move_to_element() - перемещение курсора мыши на элемент
--------------------------------------------------------------
-Примеры использования:
-
-        # Переместить мышь на элемент, найденный по xPath:
-        administrationTab = page.find_element_by_xpath("//ul[@class='dropdown']/li[11]/div") # Ищем выпадающее меню.
-        hover = ActionChains(page).move_to_element(administrationTab) # Действие по перемещению мыши сохраняется в объекте ActionChains. Затем нужно использовать метод perform()
-
-Метод perform() - выполнение сохраненных действий
--------------------------------------------------
-Примеры использования:
-
-        # Переместить мышь на пункт меню и подождать выпадающее меню:
-        administrationTab = page.find_element_by_xpath("//ul[@class='dropdown']/li[11]/div") # Ищем выпадающее меню.
-        hover = ActionChains(page).move_to_element(administrationTab) # Сохраняем действие в объекте ActionChains.
-        hover.perform() # применяем действие
-        # Ждем, пока выпадающее меню не откроется, то есть не станет видимой одна из его ссылок:
-        WebDriverWait(page, opTimeout).until(
-            lambda el: el.find_element_by_xpath("//a[@href='/polidon2/ScheduledEntity']").is_displayed(),
-            'Timeout while we are wait pop-up menu.')
-    
-
-http://seleniumhq.org/docs/03_webdriver.html
-http://code.google.com/p/selenium/source/browse/trunk/py/selenium/webdriver/remote/webdriver.py
-
-
-.. sourcecode:: html
-    :filename: html source for admin site
-
-    <label for="id_question" class="required">Question:</label>
-    <input id="id_question" type="text" class="vTextField" name="question" maxlength="200" />
-
-    <label for="id_pub_date_0" class="required">Date published:</label>
-    <p class="datetime">
-        Date: 
-        <input id="id_pub_date_0" type="text" class="vDateField" name="pub_date_0" size="10" />
-        <br />
-        Time:
-        <input id="id_pub_date_1" type="text" class="vTimeField" name="pub_date_1" size="8" />
-    </p>
-                        
-
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-        # he sees some input fields for "Question" and "Date published"
-        body = self.browser.find_element_by_tag_name('body')
-        self.assertIn('Question', body.text)
-        self.assertIn('Date published', body.text)
-
-        # he types in an interesting question for the Poll
-        question_field = self.browser.find_element_by_name('question')
-        question_field.send_keys("How awesome is Test-Driven Development?")
-
-        # he sets the date and time of publication - it'll be a new year's
-        # poll!
-        date_field = self.browser.find_element_by_name('pub_date_0')
-        date_field.send_keys('18/05/16')
-        time_field = self.browser.find_element_by_name('pub_date_1')
-        time_field.send_keys('00:00')
-
-
-Можно использовать CSS selector для поска кнопки "Save"
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-        # Gertrude clicks the save button
-        save_button = self.browser.find_element_by_css_selector("input[value='Save']")
-        save_button.click()
-
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-        # he is returned to the "Polls" listing, where he can see his
-        # new poll, listed as a clickable link
-        new_poll_links = self.browser.find_elements_by_link_text(
-                "How awesome is Test-Driven Development?"
+        from django.conf.urls import patterns, url
+        from django.views.generic import TemplateView
+        urlpatterns = paterns('',
+            ...
+            url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
+            ...
         )
-        self.assertEquals(len(new_poll_links), 1)
 
-        # Satisfied, he goes back to sleep
+просто пишем шаблон about.html и вставляем туда любую статическую информацию
 
 
-./manage.py test fts
+template_name 
+-------------
+В нем хранится имя шаблона, который нужно отрендерить. Для класса TemplateView этот параметр обязательный, другие классы имеют механизм автоматического формирования имени шаблона.
 
-        Creating test database for alias 'default'...
-        F
-        ======================================================================
-        FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-        ----------------------------------------------------------------------
-        Traceback (most recent call last):
-          File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 83, in test_can_create_new_poll_via_admin_site
-            self.assertEquals(len(new_poll_links), 1)
-        AssertionError: 0 != 1
+Для примера, можно создать дочерний класс и определить шаблон в нем:
 
+        # views.py
+        from django.views.generic import TemplateView
 
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
+        class AboutView(TemplateView):
+        template_name = 'about.html'
 
-    from django.db import models
+        # urls.py
+        from app.views import AboutView
+        ...
+        url(r'^about/', AboutView.as_view(), name='about'),
 
-    class Poll(models.Model):
-        question = models.CharField(max_length=200)
-        pub_date = models.DateTimeField(verbose_name='Date published')
 
-        def __str__(self):
-            return self.question
+И более сложный вариант дочернего класса. Представление при вызове as_view() принимает в себя параметры запроса в свойство request, и мы этим можем воспользоваться.
 
-    class Choice(models.Model):
-        pass
 
+        # views.py
+        from django.views.generic import TemplateView
 
-./manage.py test fts
+        class AboutView(TemplateView):
+        get_template_names(self): # именно names, не name
+        if self.request.META['OS'] == 'Windows_NT':
+        return 'about_win.html'
+        else:
+        return 'about.html'
 
-        Creating test database for alias 'default'...
-        F
-        ======================================================================
-        FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-        ----------------------------------------------------------------------
-        Traceback (most recent call last):
-          File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 87, in test_can_create_new_poll_via_admin_site
-            self.fail('finish this test for Janus CMS')
-        AssertionError: finish this test for Janus CMS
 
+views.py
+--------
+        from django.views.generic import TemplateView
+        from .models import Item, Photo
 
-Добавляем Choices к админ странице Poll
-=======================================
+        class IndexPageView(TemplateView):
 
-https://docs.djangoproject.com/en/1.9/intro/tutorial02/#adding-related-objects
+            template_name = "gallery/index.html"
 
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
+            def get_context_data(self, **kwargs):
+                context = super(IndexPageView, self).get_context_data(**kwargs)
+                context['item_list'] = Item.objects.all()[:3]
+                return context
+urls.py
+-------
 
-        [...]
-        time_field.send_keys('00:00')
+        from django.conf.urls import patterns, include, url
+        from items.views import IndexPageView
 
-        # he sees he can enter choices for the Poll.  he adds three
-        choice_1 = self.browser.find_element_by_name('choice_set-0-choice')
-        choice_1.send_keys('Very awesome')
-        choice_2 = self.browser.find_element_by_name('choice_set-1-choice')
-        choice_2.send_keys('Quite awesome')
-        choice_3 = self.browser.find_element_by_name('choice_set-2-choice')
-        choice_3.send_keys('Moderately awesome')
+        urlpatterns = patterns('',
+            url(r'^$', IndexPageView.as_view(), name="index"),
+        )
 
-        # Gertrude clicks the save button
-        save_button = self.browser.find_element_by_css_selector("input[value='Save']")
-        [...]
+index.html:
+------------
+        {% extends "base.html" %}
 
+        {% block title %}Home{% endblock %}
+        {% block content %}
+        <h2>Welcome to the Gallery!</h2>
+        <p>Here you find pictures of various items.</p>
+        <h3>Showcase</h3>
+        <table>
+            <tr>
+                {% for item in item_list|slice:":3" %}
+                    <td>
+                        <a href="{{ item.get_absolute_url }}"><b>{{ item.name }}</b><br />
+                        {% if item.photo_set.count %}
+                            <img src="{{ item.photo_set.all.0.image.thumb_url }}" />
+                        {% else %}
+                            <span>No photos (yet)</span>
+                        {% endif %}
+                        </a>
+                    </td>
+                {% endfor %}
+            </tr>
+        </table>
+        <p><a href="{% url 'item_list' %}">View the full list &raquo;</a></p>
+        {% endblock %}
 
-Взаимосвязь моделей: Polls и Choices
--------------------------------------
+ListView
+========
 
-.. sourcecode:: python
-    :filename: mysite/polls/tests.py
+существует для отображения списка той или иной модели
 
-    class ChoiceModelTest(TestCase):
+В минимальном варианте достаточно указать класс в параметре model, по которому строить список, и создать шаблон. Если не указывать имя шаблона, то оно будет формироваться по следующему алгоритму: <имя_приложения>/<имя_модели>_list.html. В нашем случае это будет galery/item_list.html.
+Сформированный список по умолчанию попадает в шаблон как параметр object_list.
 
-        def test_creating_some_choices_for_a_poll(self):
-            # start by creating a new Poll object
-            poll = Poll()
-            poll.question="What's up?"
-            poll.pub_date = timezone.now()
-            poll.save()
 
-            # now create a Choice object
-            choice = Choice()
+CBV позволяет нам использовать особенности объектно-ориентированного программирования при разработке наших отображений. Теперь мы можем реализовывать базовые классы, несущие определенную функциональность и использовать их как примеси (mixins) для наших отображений.
 
-            # link it with our Poll
-            choice.poll = poll
+    from django.views.generic import ListView
 
-            # give it some text
-            choice.choice = "doin' fine..."
 
-            # and let's say it's had some votes
-            choice.votes = 3
+получение списка объектов или индивидуального объекта
+------------------------------------------------------
 
-            # save it
-            choice.save()
+определить представление:
+-------------------------
 
-            # try retrieving it from the database, using the poll object's reverse
-            # lookup
-            poll_choices = poll.choice_set.all()
-            self.assertEquals(poll_choices.count(), 1)
+### views.py
 
-            # finally, check its attributes have been saved
-            choice_from_db = poll_choices[0]
-            self.assertEquals(choice_from_db, choice)
-            self.assertEquals(choice_from_db.choice, "doin' fine...")
-            self.assertEquals(choice_from_db.votes, 3)
+        from django.views.generic import ListView
 
-Также подключаем модели
+        class ItemsListView(ListView):
 
-.. sourcecode:: python
-    :filename: mysite/polls/tests.py
+            template_name = "gallery/items_listing.html"
+            model = Item
 
-    from polls.models import Choice, Poll
 
+привяжем представление к url:
+------------------------------
+### urls.py
 
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
+        from django.conf.urls import patterns, include, url
+        from .views import ItemsListView
 
-    class Choice(object):
-        pass
+        urlpatterns = patterns('',
+            url(r'^$', ItemsListView.as_view(), name="item_list"),
+         
+        )
 
+Мы можем явно указать в представлении, какой шаблон мы хотим использовать. Для этого мы должны добавить в представление атрибут template_name, с указанием имени шаблона. Если явно не указывать этот атрибут, Django “вычислит” его из названия объекта. В данном случае, таким “вычисленным” шаблоном будет "photo/album_list.html" – часть “photo” берется из имени приложения, определяющего модель, а часть “album” - это просто название модели в нижнем регистре.
 
-    python manage.py test polls
+Таким образом, если в настройках TEMPLATE_LOADERS “включен” класс загрузчика django.template.loaders.app_directories.Loader, то путь к шаблону будет следующим : /path/to/project/templates/gallery/items_listing.html
 
-    ======================================================================
-    ERROR: test_creating_some_choices_for_a_poll (polls.tests.ChoiceModelTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/harry/workspace/TDDjango/mysite/polls/tests.py", line 62, in test_creating_some_choices_for_a_poll
-        choice.save()
-    AttributeError: 'Choice' object has no attribute 'save'
+При обработке шаблона (рэндеринге), будет использоваться контекст, содержащий переменную album_list. Это переменная хранит список всех объектов (album). 
 
-    ----------------------------------------------------------------------
-    Ran 4 tests in 0.745s
+шаблон gallery/items_listing.html:
+----------------------------------
 
-    FAILED (errors=1)
+            {% extends "base.html" %}
 
-Напишем класс Choice:
+            {% block title %}Item List{% endblock %}
 
-    class Choice(models.Model):
-        pass
+            {% block content %}
+            <p><a href="{% url 'gallery:item_list' %}">&laquo; Back to main page</a></p>
 
-https://docs.djangoproject.com/en/1.9/intro/tutorial01/#playing-with-the-api
+            <h2>Items</h2>
+            {% if object_list %}
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Sample Thumb</th>
+                    <th>Description</th>
+                </tr>
+                {% for item in object_list %}
+                <tr>
+                    <td><i>{{ item.name }}</i></td>
+                    <td>
+                        {% if item.photo_set.count %}
+                        <a href="{{ item.get_absolute_url }}">
+                            <img src="{{ item.photo_set.all.0.image.thumb_url }}" />
+                        </a>
+                        {% else %}
+                        (No photos currently uploaded)
+                        {% endif %}
+                    </td>
+                    <td>{{ item.description }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p>There are currently no items to display.</p>
+            {% endif %}
+            {% endblock %}
 
+Это действительно все, что нужно сделать. Все крутые “фичи” общих представлений-классов можно получить лишь устанавливая значения определенных атрибутов в представлении. 
 
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
+Создание “дружелюбного” контента для шаблона
+--------------------------------------------
+Если вы оперируете запросом(queryset) или объектом, Django способно добавить в контекст переменную с именем модели в нижнем регистре. Эта переменная предоставляется в дополнение к стандартному значению object_list, и содержит то же самое значение, н-р, album_list.
 
-    class Choice(models.Model):
-        poll = models.ForeignKey(Poll)
-        choice = models.CharField(max_length=200, default='')
-        votes = models.IntegerField(default=0)
+Если этот вариант вас не устраивает, то имя переменной контекста можно задать вручную. Для этой цели служит атрибут context_object_name, который определяет имя переменной в контексте:
 
-зарускаем тест
+# views.py
 
-    ....
-    ----------------------------------------------------------------------
-    Ran 4 tests in 0.003s
+        class ItemsListView(ListView):
 
-    OK
+            model = Item
+            context_object_name = 'my_favourite_albums'
 
-Админка: related objects inline
--------------------------------
 
-   python manage.py test fts
-   Creating test database for alias 'default'...
-   E
-   ======================================================================
-   ERROR: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-   ----------------------------------------------------------------------
-   Traceback (most recent call last):
-     File "/home/harry/workspace/mysite/fts/tests.py", line 71, in test_can_create_new_poll_via_admin_site
-       choice_1 = self.browser.find_element_by_name('choice_set-0-choice')
-     File "/usr/lib/python2.7/site-packages/selenium/webdriver/remote/webdriver.py", line 285, in find_element_by_name
-       return self.find_element(by=By.NAME, value=name)
-     File "/usr/lib/python2.7/site-packages/selenium/webdriver/remote/webdriver.py", line 671, in find_element
-   {'using': by, 'value': value})['value']
-     File "/usr/lib/python2.7/site-packages/selenium/webdriver/remote/webdriver.py", line 156, in execute
-       self.error_handler.check_response(response)
-     File "/usr/lib/python2.7/site-packages/selenium/webdriver/remote/errorhandler.py", line 147, in check_response
-       raise exception_class(message, screen, stacktrace)
-   NoSuchElementException: Message: u'Unable to locate element: {"method":"name","selector":"choice_set-0-choice"}' 
-   
-   ----------------------------------------------------------------------
-   Ran 1 test in 14.098s
-   
-   FAILED (errors=1)
+Добавление дополнительного контента
+------------------------------------
+Часто возникает потребность передать в контекст некоторые дополнительные данные, помимо тех, что автоматически предоставляются представлением. Представление-класс DetailView предоставляет нам только переменную контекста, содержащую данные об album, но как нам передать дополнительную информацию в шаблон?
 
+Вы можете создать подкласс от DetailView и переопределить в нем метод get_context_data. Реализация метода по умолчанию просто добавляет объект, который будет доступен в шаблоне. Но переопределив метод, вы можете добавить любые дополнительные данные(расширить контекст):
 
-.. sourcecode:: python
-    :filename: mysite/polls/admin.py
+        class ItemsListView(ListView):
 
-    from django.contrib import admin
-    from polls.models import Choice, Poll
-
-    class ChoiceInline(admin.StackedInline):
-        model = Choice
-        extra = 3
-
-    class PollAdmin(admin.ModelAdmin):
-        inlines = [ChoiceInline]
-
-    admin.site.register(Poll, PollAdmin)
-
-
-https://docs.djangoproject.com/en/1.9/intro/tutorial02/#adding-related-objects
-
-запускаем FT снова::
-
-    ======================================================================
-    FAIL: test_voting_on_a_new_poll (test_polls.PollsTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/harry/workspace/TDDjango/mysite/fts/test_polls.py", line 48, in test_voting_on_a_new_poll
-        self._setup_polls_via_admin()
-      File "/home/harry/workspace/TDDjango/mysite/fts/test_polls.py", line 42, in _setup_polls_via_admin
-        self.assertEquals(len(new_poll_links), 1)
-    AssertionError: 0 != 1
-
-    ----------------------------------------------------------------------
-
-.. sourcecode:: python
-    :filename: mysite/polls/tests.py
-
-    def test_choice_defaults(self):
-        choice = Choice()
-        self.assertEquals(choice.votes, 0)
-
-
-    python manage.py test polls
-    [...]
-    AssertionError: None != 0
-
-
-.. sourcecode:: python
-    :filename: mysite/polls/models.py
-
-    class Choice(models.Model):
-        poll = models.ForeignKey(Poll)
-        choice = models.CharField(max_length=200)
-        votes = models.IntegerField(default=0)
-
-Окончательно test::
-
-    .
-    ----------------------------------------------------------------------
-    Ran 2 tests in 21.043s
-
-    OK
-
-Заполнение админки
-==================
-
-http://stackoverflow.com/questions/2970608/what-are-named-tuples-in-python)
-
-.. sourcecode:: python
-    :filename: mysite/fts/tests.py
-
-    from django.test import TestCase
-    from collections import namedtuple
-    from django.test import LiveServerTestCase
-    from selenium import webdriver
-    # we need the special ``Keys``class to send a carriage return to the password field.
-    from selenium.webdriver.common.keys import Keys
-
-    import time
-    PollInfo = namedtuple('PollInfo', ['question', 'choices'])
-    POLL1 = PollInfo(
-        question="How awesome is Test-Driven Development?",
-        choices=[
-            'Very awesome',
-            'Quite awesome',
-            'Moderately awesome',
-        ],
-    )
-    POLL2 = PollInfo(
-        question="Which workshop treat do you prefer?",
-        choices=[
-            'Beer',
-            'Pizza',
-            'The Acquisition of Knowledge',
-        ],
-    )
-
-    class PollsTest(LiveServerTestCase):
-
-        fixtures = ['admin_user.json']
-
-        def setUp(self):
-            self.browser = webdriver.Firefox()
-            self.browser.implicitly_wait(3)
-
-        def tearDown(self):
-            self.browser.quit()
-
-        def test_can_create_new_poll_via_admin_site(self):
-            # Nerd opens her web browser, and goes to the admin page
-            self.browser.get(self.live_server_url + '/admin/')
-
-            # He sees the familiar 'Janus CMS' heading
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('Janus CMS', body.text)
-
-            # Nerd types in his username and passwords and hits return
-            username_field = self.browser.find_element_by_name('username')
-            username_field.send_keys('janus')
-
-            password_field = self.browser.find_element_by_name('password')
-            password_field.send_keys('ghbdtnjanus')
-            password_field.send_keys(Keys.RETURN)
-
-            # his username and password are accepted, and he is taken to
-            # the Site Administration page
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('Site administration', body.text)
-
-            # He now sees a couple of hyperlink that says "Polls"
-            polls_links = self.browser.find_elements_by_link_text('Polls')
-            self.assertEquals(len(polls_links), 1)
-
-            # The second one looks more exciting, so he clicks it
-            polls_links[0].click()
-
-            # he is taken to the polls listing page, which shows he has
-            # no polls yet
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('0 total', body.text)
-
-            # he sees a link to 'add' a new poll, so he clicks it
-            new_poll_link = self.browser.find_element_by_link_text('Add poll')
-            new_poll_link.click()
-
-            # he sees some input fields for "Question" and "Date published"
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('Question', body.text)
-            # self.assertIn('Pub date', body.text)
-            self.assertIn('Date published', body.text)
-
-            # he types in an interesting question for the Poll
-            question_field = self.browser.find_element_by_name('question')
-            question_field.send_keys("How awesome is Test-Driven Development?")
-
-            # he sets the date and time of publication - it'll be a new year's
-            # poll!
-            date_field = self.browser.find_element_by_name('pub_date_0')
-            date_field.send_keys('05/05/16')
-            time_field = self.browser.find_element_by_name('pub_date_1')
-            time_field.send_keys('00:00')
-
-            # he sees he can enter choices for the Poll.  he adds three
-            self.browser.find_element_by_id('choice_set0').click()
-            time.sleep(2)
-            choice_1 = self.browser.find_element_by_name('choice_set-0-choice')
-            #time.sleep(10)
-            #flag = choice_1.is_displayed() # flag = True - если элемент видим, flag = False - если нет
-            #self.assertEquals(flag, True)
-            
-            choice_1.send_keys('Very awesome')
-            self.browser.find_element_by_id('choice_set1').click()
-            time.sleep(2)
-            choice_2 = self.browser.find_element_by_name('choice_set-1-choice')
-            choice_2.send_keys('Quite awesome')
-            self.browser.find_element_by_id('choice_set2').click()
-            time.sleep(2)
-            choice_3 = self.browser.find_element_by_name('choice_set-2-choice')
-            choice_3.send_keys('Moderately awesome')
+            template_name = "gallery/items_listing.html"
+            model = Item
+            paginate_by = settings.PHOTOS_PER_PAGE
 
             
-
-            # Gertrude clicks the save button
-            save_button = self.browser.find_element_by_css_selector("input[value='Save']")
-            save_button.click()
-
-            # She is returned to the "Polls" listing, where she can see her
-            # new poll, listed as a clickable link
-            new_poll_links = self.browser.find_elements_by_link_text(
-                    "How awesome is Test-Driven Development?"
-            )
-            self.assertEquals(len(new_poll_links), 1)
+            def get_context_data(self, **kwargs):
+                context = super().get_context_data(**kwargs)
+                context['page_title'] = _('Albums')
+                return context
 
 
-            # TODO: use the admin site to create a Poll
-            self.fail('finish this test for Janus CMS')
+В общем случае, метод get_context_data объединяет(сливает вместе) данные контекста всех родительских классов с данными текущего класса. Чтобы сохранить такое поведение в пользовательских классах, в которых вы собираетесь изменять контекст, вы должны в начале вызвать метод get_context_data родительского класса. Если нет двух классов, которые пытаются определить одинаковый ключ, - вы получите желаемый результат. Однако, если есть некий класс, который пытается переопределить ключ, установленный родительскими классами(после вызова super), то любой потомок этого класса также должен явно установить такой ключ(после вызова super), если необходимо гарантировать полное переопределение данных родителей. Если у вас возникли проблемы, просмотрите mro(method resolution order) вашего представления.
 
-        def _setup_polls_via_admin(self):
-            # Gertrude logs into the admin site
-            self.browser.get(self.live_server_url + '/admin/')
-            username_field = self.browser.find_element_by_name('username')
-            username_field.send_keys('janus')
-            password_field = self.browser.find_element_by_name('password')
-            password_field.send_keys('ghbdtnjanus')
-            password_field.send_keys(Keys.RETURN)
-
-            # She has a number of polls to enter.  For each one, she:
-            for poll_info in [POLL1, POLL2]:
-                # Follows the link to the Polls app, and adds a new Poll
-                self.browser.find_elements_by_link_text('Polls')[0].click()
-                self.browser.find_element_by_link_text('Add poll').click()
-
-                # Enters its name, and uses the 'today' and 'now' buttons to set
-                # the publish date
-                question_field = self.browser.find_element_by_name('question')
-                question_field.send_keys(poll_info.question)
-                date_field = self.browser.find_element_by_name('pub_date_0')
-                date_field.send_keys('05/05/16')
-                time_field = self.browser.find_element_by_name('pub_date_1')
-                time_field.send_keys('00:00')
-                #self.browser.find_element_by_link_text('Today').click()
-                #self.browser.find_element_by_link_text('Now').click()
-
-                # Sees she can enter choices for the Poll on this same page,
-                # so she does
-                for i, choice_text in enumerate(poll_info.choices):
-                    self.browser.find_element_by_id('choice_set%d' % i).click()
-                    time.sleep(2)
-                    choice_field = self.browser.find_element_by_name('choice_set-%d-choice' % i)
-                    choice_field.send_keys(choice_text)
-
-                # Saves her new poll
-                save_button = self.browser.find_element_by_css_selector("input[value='Save']")
-                save_button.click()
-
-                # Is returned to the "Polls" listing, where she can see her
-                # new poll, listed as a clickable link by its name
-                new_poll_links = self.browser.find_elements_by_link_text(
-                        poll_info.question
-                )
-                self.assertEquals(len(new_poll_links), 1)
-
-                # She goes back to the root of the admin site
-                self.browser.get(self.live_server_url + '/admin/')
-
-            # She logs out of the admin site
-            self.browser.find_element_by_link_text('Log out').click()
+Отображение подмножеств объектов
+---------------------------------
+Аргумент model, определяющий модель базы данных, с которой работает данное представление, доступен во всех общих представлениях-классах, которые предназначены для отображения единичного объекта или списка объектов. Тем не менее, аргумент model это не единственный способ, указать представлению с какими данными оно должно работать. Вы также можете указать необходимый список объектов используя аргумент queryset:
 
 
-        def test_voting_on_a_new_poll(self):
-            # First, Gertrude the administrator logs into the admin site and
-            # creates a couple of new Polls, and their response choices
-            self._setup_polls_via_admin()
+        class ItemObject(ListView):
 
-            # Now, Herbert the regular user goes to the homepage of the site. He
-            # sees a list of polls.
-            self.browser.get(self.live_server_url)
-            heading = self.browser.find_element_by_tag_name('h1')
-            self.assertEquals(heading.text, 'Polls')
+            context_object_name = 'item'
+            queryset = Item.objects.all()
 
-            # He clicks on the link to the first Poll, which is called
-            # 'How awesome is test-driven development?'
-            first_poll_title = 'How awesome is Test-Driven Development?'
-            self.browser.find_element_by_link_text(first_poll_title).click()
+Запись model = Item это всего лишь сокращенный вариант записи queryset = Item.objects.all(). Однако, используя queryset вы можете в полной мере использовать механизмы выборки данных, фильтрации , предоставив вашему представлению более конкретный список объектов, с которым оно должно работать. 
 
-            # He is taken to a poll 'results' page, which says
-            # "no-one has voted on this poll yet"
-            main_heading = self.browser.find_element_by_tag_name('h1')
-            self.assertEquals(main_heading.text, 'Poll Results')
-            sub_heading = self.browser.find_element_by_tag_name('h2')
-            self.assertEquals(sub_heading.text, first_poll_title)
-            body = self.browser.find_element_by_tag_name('body')
-            self.assertIn('No-one has voted on this poll yet', body.text)
-
-            # He also sees a form, which offers him several choices.
-            # There are three options with radio buttons
-            choice_inputs = self.browser.find_elements_by_css_selector(
-                    "input[type='radio']"
-            )
-            self.assertEquals(len(choice_inputs), 3)
-
-            # The buttons have labels to explain them
-            choice_labels = self.browser.find_elements_by_tag_name('label')
-            choices_text = [c.text for c in choice_labels]
-            self.assertEquals(choices_text, [
-                'Vote:', # this label is auto-generated for the whole form
-                'Very awesome',
-                'Quite awesome',
-                'Moderately awesome',
-            ])
-            # He decided to select "very awesome", which is answer #1
-            chosen = self.browser.find_element_by_css_selector(
-                    "input[value='1']"
-            )
-            chosen.click()
-
-            # Herbert clicks 'submit'
-            self.browser.find_element_by_css_selector(
-                    "input[type='submit']"
-                ).click()
-
-            # The page refreshes, and he sees that his choice
-            # has updated the results.  they now say
-            # "100 %: very awesome".
-            body_text = self.browser.find_element_by_tag_name('body').text
-            self.assertIn('100 %: Very awesome', body_text)
-
-            # The page also says "1 vote"
-            self.assertIn('1 vote', body_text)
-
-            # But not "1 votes" -- Herbert is impressed at the attention to detail
-            self.assertNotIn('1 votes', body_text)
-
-            # Herbert suspects that the website isn't very well protected
-            # against people submitting multiple votes yet, so he tries
-            # to do a little astroturfing
-            self.browser.find_element_by_css_selector("input[value='1']").click()
-            self.browser.find_element_by_css_selector("input[type='submit']").click()
-
-            # The page refreshes, and he sees that his choice has updated the
-            # results.  it still says # "100 %: very awesome".
-            body_text = self.browser.find_element_by_tag_name('body').text
-            self.assertIn('100 %: Very awesome', body_text)
-
-            # But the page now says "2 votes"
-            self.assertIn('2 votes', body_text)
-
-            # Cackling manically over his l33t haxx0ring skills, he tries
-            # voting for a different choice
-            self.browser.find_element_by_css_selector("input[value='2']").click()
-            self.browser.find_element_by_css_selector("input[type='submit']").click()
-
-            # Now, the percentages update, as well as the votes
-            body_text = self.browser.find_element_by_tag_name('body').text
-            self.assertIn('67 %: Very awesome', body_text)
-            self.assertIn('33 %: Quite awesome', body_text)
-            self.assertIn('3 votes', body_text)
-
-            # Satisfied, he goes back to sleep
-
-Мы должны получить AssertionError "TODO"::
-
-        FAIL: test_can_create_new_poll_via_admin_site (fts.tests.PollsTest)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/home/janus/github/tdd-django/mysite/fts/tests.py", line 125, in test_can_create_new_poll_via_admin_site
-        self.fail('finish this test for Janus CMS')
-    AssertionError: finish this test for Janus CMS
+Вот простой пример: нам необходимо упорядочить список по дате публикации:
 
 
+    class List(ListView):
+        queryset = Item.objects.order_by('-publication_date')
+        context_object_name = 'album_list'
 
+Если мы хотим получить список определенного year='2015', мы можем использовать аналогичную технику:
+
+
+        class List(ListView):
+            model = Item
+            paginate_by = settings.PHOTOS_PER_PAGE
+            queryset = Item.objects.filter(item__year='2015')
+            template_name = 'galery/album_list.html'
+
+            def get_context_data(self, **kwargs):
+                context = super().get_context_data(**kwargs)
+                context['page_title'] = _('Albums')
+                return context
+
+
+Обратите внимание, что вместе с созданием отфильтрованной выборки объектов с использованием queryset, мы также используем другое(пользовательское) имя шаблона. Если мы этого не сделаем, представление будет использовать тот же шаблон, что и для отображения “родного” списка объектов, что нас не устраивает.
+
+
+DetailView Просмотр информации об отдельном объекте
+====================================================
+
+DetailView - отвечает за просмотр отдельного объекта.
+Чтобы получить единичный объект, нам необходимо его идентифицировать по какому-нибудь параметру. Обычно для этого используется так называемый уникальный первичный ключ (pk, id). Django также позволяет идентифицировать объект по полю slug, которое может быть любым уникальным словом. Разумеется для SEO иногда удобнее использовать именно slug, в случае если объектами выступают статьи или список пользователей. Однако в других случаях использовать для идентификации slug нет смысла (например просмотр комментария или личного сообщения). В таких случаях используется первичный ключ.
+
+views.py
+--------
+        from django.views.generic import TemplateView, ListView, DetailView
+        from .models import Item, Photo
+
+        class IndexPageView(TemplateView):
+
+            template_name = "gallery/index.html"
+
+            def get_context_data(self, **kwargs):
+                context = super(IndexPageView, self).get_context_data(**kwargs)
+                context['item_list'] = Item.objects.all()[:3]
+                return context
+
+        class ItemsListView(ListView):
+
+            template_name = "gallery/items_listing.html"
+
+            model = Item
+
+        class ItemObjectView(DetailView):
+
+            template_name = "gallery/items_detail.html"
+
+            model = Item
+
+        class PhotoObjectView(DetailView):
+
+            template_name = "gallery/photo_detail.html"
+
+            model = Photo
+
+
+наш объект будет доступен с помощью метода get_object. Этот метод поочередно пытается найти в маршруте переменные pk и slug, в данном случае переменная с именем pk будет обладать большим приоритетом. С помощью метода get_slug_field мы можем переопределить имя поля slug нашей модели. По умолчанию данный метод возвращает значение атрибута slug_field. Наш объект хранится в атрибуте object.
+
+В случаях, когда необходимо отобразить огромное число объектов, крайне нежелательно выводить их все одновременно. В этом случае требуется механизм для постраничного вывода данных (пагинация). Класс DetailView наследует примесь MultipleObjectMixin, которая реализует требуемый нам функционал. Для определения количества объектов на страницу используется метод get_paginate_by, который по умолчанию возвращает значение атрибута paginate_by. С помощью атрибута мы можем без особых хлопот указать количество выводимых на 1 страницу объектов.
+
+Иногда возникает необходимость реализовать постраничный вывод своим способом, для этого мы можем передать наш класс пагинации атрибуту paginator_class. По умолчанию этот атрибут содержит ссылку на стандартный класс Paginator, который реализован в модуле django.core.paginator.
+
+Атрибут allow_empty определяет как обработать ситуацию, когда нет ни одного объекта в списке. Если мы установим значение данного атрибута в True (по умолчанию), то будет возвращаться пустой список объектов. В случае значения False будет возвращаться ошибка 404. Значение данного атрибута возвращает метод get_allow_empty. Его же можно использовать, если требуется некоторая дополнительная проверка или изменение логики.
+
+
+Атрибут object_list хранит список наших объектов. Необходимо помнить о том, что мы должны не забыть передать текущую страницу нашему отображению для корректной работы. Наиболее простой способ — использование именованных групп в нашем файле urls.py
+
+После того, как мы выбрали способ идентификации объекта, мы должны сообщить Django о своем выборе, передав переменную с соответствующим именем с помощью маршрута файла urls.py.
+
+urls.py
+-------
+
+        from django.conf.urls import patterns, include, url
+        from .views import ItemsListView, ItemObjectView, PhotoObjectView
+
+        urlpatterns = patterns('',
+            url(r'^$', ItemsListView.as_view(), name="item_list"),
+            url(r'^(?P<pk>\d+)/$', ItemObjectView.as_view(), name="item_object"),
+            url(r'^photo/(?P<pk>\d+)/$', PhotoObjectView.as_view(), name="photo_object")
+        )
+
+
+В шаблоне наш список объектов будет доступен по имени, которое задано с помощью атрибута context_object_name - item.name (или возвращается методом get_context_object_name). Объекты с текущей страницы находятся в переменной с именем object_list. Значение переменной is_paginated (булево значение) определяет разбит ли наш список объектов на страницы.
+
+
+items_detail.html
+-----------------
+
+        {% extends "base.html" %}
+
+        {% block title %}{{ object.name }}{% endblock %}
+
+        {% block content %}
+
+        <p><a href="{% url 'gallery:item_list' %}">&laquo; Back to full listing</a></p>
+        <h2>{{ object.name }}</h2>
+        <p>{{ object.description }}</p>
+
+        <h3>Photos</h3>
+        <table>
+            <tr>
+                <th>Title</th>
+                <th>Thumbnail</th>
+                <th>Caption</th>
+            </tr>
+            {% for photo in object.photo_set.all %}
+            <tr>
+                <td><i>{{ photo.title }}</i></td>
+                <td>
+                    <a href="{{ photo.get_absolute_url }}">
+                        <img src="{{ photo.image.thumb_url }}" />
+                    </a>
+                </td>
+                <td>{{ photo.caption }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endblock %}
+
+
+photo_detail.html
+-----------------
+
+        {% extends "base.html" %}
+
+        {% block title %}{{ object.item.name }} - {{ object.title }}{% endblock %}
+
+        {% block content %}
+
+        <a href="{{ object.item.get_absolute_url }}">&laquo; Back to {{ object.item.name }} detail page</a>
+        <h2>{{ object.item.name }} - {{ object.title }}</h2>
+        <img src="{{ object.image.url }}" />
+        {% if object.caption %}
+        <p>{{ object.caption }}</p>
+        {% endif %}
+        {% endblock %}
+
+urls.py
+-------
+
+        urlpatterns = [
+            
+            url(r'^$', views.home, name='main'),
+            url(r'', include('social.apps.django_app.urls', namespace='social')),
+            url(r'^shop/', include('shop.urls', namespace='shop')),
+            
+            url(r'^gallery/', include('gallery.urls', namespace='gallery')),
+
+            url(r'^reviews/', include('reviews.urls', namespace='reviews')),
+            url(r'^pages/(?P<url>.*)$', pages_views.main_view),
+            url(r'^tinymce/', include('tinymce.urls')),
+            url(r'^ckeditor/', include('ckeditor_uploader.urls')),
+            url(r'^users/', include('userprofiles.urls', namespace="users")),
+        ]
