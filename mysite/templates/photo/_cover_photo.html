@@ -1,5 +1,0 @@
-{% if object.cover_photo %}
-    <img src="{{ object.cover_photo.file_thumb.url|default:"" }}" alt="{{ object.name }}">
-{% else %}
-    <img src="{{ STATIC_URL }}img/cover-blank.png">
-{% endif %}
